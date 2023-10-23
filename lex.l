@@ -55,7 +55,7 @@ INVALID_CHAR \'.*\'
 INVALID_ID ({INT}{ID})|{INVALID_CHAR}
 SINGLE_LINE_COMMENT "//".*$
 MULTI_LINE_COMMENT "/*"((("*"[^/])?)|[^*])*"*/" 
-
+EOL "\n" { lineno += 1; }
 
 %%
 

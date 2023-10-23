@@ -1,12 +1,51 @@
 %{
     #include "lex.yy.c"
+    #include "stdlib.h"
+
+    #define YYSTYPE treeNode*
+
+    size_t lineno = 0;
+
+    void output_line(const char *s, size_t spaceno) {
+        for(size_t i = 0; i < spaceno; i++)
+            putchar(' ');
+        printf("%s (%zu)\n", s, lineno);
+    }
+
+    typedef struct _treeNode {
+        const char *s;
+        struct _treeNode *child;
+        struct _treeNode *next;
+    } treeNode;
+
+    treeNode new_node(const char *s) {
+        treeNode p = (treeNode*) malloc(sizeof(treeNode));
+        p->s = s;
+        p->child = p->next = NULL;
+    }
+
+    void make_list(treeNode *head, ...) {
+        va_list args;
+        va_start(args, head);
+
+        treeNode *value = head;
+
+        while (value != NULL) {
+            nxt = va_arg(args, treeNode*);
+            value->next = nxt;
+            value = nxt;
+        }
+
+        va_end(args);
+    }
+
     void yerror(const char *s);
 %}
 
 %%
 
 /* high-level definition */
-Program : ExtDefList {}
+Program : ExtDefList { $$ = new_node("Program"); $$->child = $1; }
     ;
 
 ExtDefList : {}
@@ -15,7 +54,7 @@ ExtDefList : {}
 
 ExtDef : Specifier ExtDecList SEMI {}
     | Specifier SEMI {}
-    | Specifier FunDec CompSt {}
+    | Specifier FunDec CompSt { $$ = new_node("ExtDef"); $$->child = $1; make_list($1, $2, $3);}
     ;
 
 ExtDecList : VarDec {}
@@ -52,7 +91,7 @@ CompSt : LC DefList StmtList RC {}
     ;
 
 StmtList : {}
-    |Stmt StmtList {}
+    | Stmt StmtList {}
     ;
 
 Stmt : Exp SEMI {}
