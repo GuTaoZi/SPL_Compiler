@@ -1,5 +1,10 @@
 #include "treeNode.h"
 #include <stdarg.h>
+#include <stdio.h>
+#include <string.h>
+
+const char *need_output[] = {"INT", "CHAR", "FLOAT", "TYPE", "ID"};
+const int lno = 5;
 
 treeNode *new_node(char *name, const char *val, const size_t lino)
 {

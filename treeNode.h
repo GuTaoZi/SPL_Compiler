@@ -3,8 +3,8 @@
 #include "stdlib.h"
 
 // These TOKENs need to output its value
-char *need_output[] = {"INT", "CHAR", "FLOAT", "TYPE", "ID"};
-int lno = 5;
+extern const char *need_output[];
+extern const int lno;
 
 //// add a tree node with its children ////
 #define add0(self, name)                       \
