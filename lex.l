@@ -29,8 +29,11 @@ INVALID_NUMBER (0{digit}*)|(({FLOAT}.({digit}|.)*))|({hexadecimal}.({digit}|.)*)
 "if"                                         { yylval = new_node("IF", yytext, yylineno); return IF; }
 "else"                                     { yylval = new_node("ELSE", yytext, yylineno); return ELSE; }
 "while"                                   { yylval = new_node("WHILE", yytext, yylineno); return WHILE; }
+"for"                                       { yylval = new_node("FOR", yytext, yylineno); return FOR; }
 "return"                                 { yylval = new_node("RETURN", yytext, yylineno); return RETURN; }
+"include"                               { yylval = new_node("INCLUDE", yytext, yylineno); return INCLUDE; }
 
+"#"                                       { yylval = new_node("SHARP", yytext, yylineno); return SHARP; }
 "."                                         { yylval = new_node("DOT", yytext, yylineno); return DOT; }
 ";"                                        { yylval = new_node("SEMI", yytext, yylineno); return SEMI; }
 ":"                                       { yylval = new_node("COLON", yytext, yylineno); return COLON; }
@@ -58,6 +61,7 @@ INVALID_NUMBER (0{digit}*)|(({FLOAT}.({digit}|.)*))|({hexadecimal}.({digit}|.)*)
 "{"                                          { yylval = new_node("LC", yytext, yylineno); return LC; }
 "}"                                          { yylval = new_node("RC", yytext, yylineno); return RC; }
 
+"<.>"                                     { yylval = new_node("ABSTR", yytext, yylineno); return ABSTR; }
 {ID}                                         { yylval = new_node("ID", yytext, yylineno); return ID; }
 {INT}                                       { yylval = new_node("INT", yytext, yylineno); return INT; }
 {FLOAT}                       { yylval = new_node("FLOAT", yytext, yylineno); return FLOAT; }

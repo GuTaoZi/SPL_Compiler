@@ -13,11 +13,11 @@
 %}
 
 %token TYPE 
-%token STRUCT IF ELSE WHILE RETURN
-%token DOT SEMI COLON COMMA ASSIGN LT LE GT GE NE EQ PLUS MINUS MUL DIV
+%token STRUCT IF ELSE WHILE FOR RETURN INCLUDE
+%token SHARP DOT SEMI COLON COMMA ASSIGN LT LE GT GE NE EQ PLUS MINUS MUL DIV
 %token AND OR NOT
 %token LP RP LB RB LC RC
-%token ID INT FLOAT CHAR INVALID_CHAR INVALID_ID
+%token ABSTR ID INT FLOAT CHAR INVALID_CHAR INVALID_ID
 %token SINGLE_LINE_COMMENT MULTI_LINE_COMMENT
 
 %left ASSIGN
@@ -31,12 +31,19 @@
 
 %nonassoc LOWER_ELSE
 %nonassoc ELSE
+%nonassoc LOWER_FOR
+%nonassoc UPPER_FOR
 
 %%
 
 /* high-level definition */
-Program : ExtDefList { add1($$, "Program", 1, $1); root = $$;}
+Program : IncDefList ExtDefList { addn($$, "Program", 2, $1, $2); root = $$;}
     ;
+
+IncDef : SHARP INCLUDE ABSTR { addn($$, "IncDef", 3, $1, $2, $3); }
+
+IncDefList :            { add0($$, "IncDefList"); }
+    | IncDef IncDefList { addn($$, "IncDefList", 2, $1, $2); }
 
 ExtDefList :            { add0($$, "ExtDefList"); }
     | ExtDef ExtDefList { addn($$, "ExtDefList", 2, $1, $2); }
@@ -96,8 +103,8 @@ Stmt : Exp SEMI                                 { addn($$, "Stmt", 2, $1, $2); }
     | IF LP Exp RP Stmt  %prec LOWER_ELSE       { addn($$, "Stmt", 5, $1, $2, $3, $4, $5); }
     | IF LP Exp RP Stmt ELSE Stmt               { addn($$, "Stmt", 7, $1, $2, $3, $4, $5, $6, $7); }
     | WHILE LP Exp RP Stmt                      { addn($$, "Stmt", 5, $1, $2, $3, $4, $5); }
-    | FOR LP DefList SEMI Exp SEMI Exp RP Stmt  { addn($$, "Stmt", 9, $1, $2, $3, $4, $5, $6, $7, $8, $9); }
-    | FOR LP ForeachType COLON VarDec RP Stmt   { addn($$, "Stmt", 7, $1, $2, $3, $4, $5, $6, $7); }
+    | FOR LP DefList SEMI Exp SEMI Exp RP Stmt  %prec UPPER_FOR { addn($$, "Stmt", 9, $1, $2, $3, $4, $5, $6, $7, $8, $9); }
+    | FOR LP ForeachType COLON VarDec RP Stmt   %prec LOWER_FOR { addn($$, "Stmt", 7, $1, $2, $3, $4, $5, $6, $7); }
     ;
 
 /* local definition */
