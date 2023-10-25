@@ -33,6 +33,7 @@ INVALID_NUMBER (0{digit}*)|(({FLOAT}.({digit}|.)*))|({hexadecimal}.({digit}|.)*)
 
 "."                                         { yylval = new_node("DOT", yytext, yylineno); return DOT; }
 ";"                                        { yylval = new_node("SEMI", yytext, yylineno); return SEMI; }
+":"                                       { yylval = new_node("COLON", yytext, yylineno); return COLON; }
 ","                                       { yylval = new_node("COMMA", yytext, yylineno); return COMMA; }
 "="                                      { yylval = new_node("ASSIGN", yytext, yylineno); return ASSIGN; }
 "<"                                          { yylval = new_node("LT", yytext, yylineno); return LT; }

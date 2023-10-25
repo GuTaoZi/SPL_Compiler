@@ -14,7 +14,7 @@
 
 %token TYPE 
 %token STRUCT IF ELSE WHILE RETURN
-%token DOT SEMI COMMA ASSIGN LT LE GT GE NE EQ PLUS MINUS MUL DIV
+%token DOT SEMI COLON COMMA ASSIGN LT LE GT GE NE EQ PLUS MINUS MUL DIV
 %token AND OR NOT
 %token LP RP LB RB LC RC
 %token ID INT FLOAT CHAR INVALID_CHAR INVALID_ID
@@ -62,6 +62,10 @@ StructSpecifier : STRUCT ID LC DefList RC   { addn($$, "StructSpecifier", 5, $1,
     | STRUCT ID                             { addn($$, "StructSpecifier", 2, $1, $2); }
     ;
 
+ForeachType: TYPE VarDec   { addn($$, "ForeachType", 2, $1, $2); }
+    | STRUCT ID VarDec     { addn($$, "ForeachType", 3, $1, $2, $3); }
+    ;
+
 /* declarator */
 VarDec : ID             { add1($$, "VarDec", 1, $1); }
     | VarDec LB INT RB  { addn($$, "VarDec", 4, $1, $2, $3, $4); }
@@ -86,12 +90,14 @@ StmtList : { add0($$, "StmtList"); }
     | Stmt StmtList { addn($$, "StmtList", 2, $1, $2); }
     ;
 
-Stmt : Exp SEMI                     { addn($$, "Stmt", 2, $1, $2); }
-    | CompSt                        { add1($$, "Stmt", 1, $1); }
-    | RETURN Exp SEMI               { addn($$, "Stmt", 3, $1, $2, $3); }
-    | IF LP Exp RP Stmt  %prec LOWER_ELSE  { addn($$, "Stmt", 5, $1, $2, $3, $4, $5); }
-    | IF LP Exp RP Stmt ELSE Stmt   { addn($$, "Stmt", 7, $1, $2, $3, $4, $5, $6, $7); }
-    | WHILE LP Exp RP Stmt          { addn($$, "Stmt", 5, $1, $2, $3, $4, $5); }
+Stmt : Exp SEMI                                 { addn($$, "Stmt", 2, $1, $2); }
+    | CompSt                                    { add1($$, "Stmt", 1, $1); }
+    | RETURN Exp SEMI                           { addn($$, "Stmt", 3, $1, $2, $3); }
+    | IF LP Exp RP Stmt  %prec LOWER_ELSE       { addn($$, "Stmt", 5, $1, $2, $3, $4, $5); }
+    | IF LP Exp RP Stmt ELSE Stmt               { addn($$, "Stmt", 7, $1, $2, $3, $4, $5, $6, $7); }
+    | WHILE LP Exp RP Stmt                      { addn($$, "Stmt", 5, $1, $2, $3, $4, $5); }
+    | FOR LP DefList SEMI Exp SEMI Exp RP Stmt  { addn($$, "Stmt", 9, $1, $2, $3, $4, $5, $6, $7, $8, $9); }
+    | FOR LP ForeachType COLON VarDec RP Stmt   { addn($$, "Stmt", 7, $1, $2, $3, $4, $5, $6, $7); }
     ;
 
 /* local definition */
