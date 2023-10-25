@@ -1,0 +1,140 @@
+NODE GET:TYPE - int
+NODE GET:IncDefList - (null)
+NODE GET:Specifier - (null)
+NODE GET:ID - test_1_r01
+NODE GET:LP - (
+NODE GET:TYPE - int
+NODE GET:Specifier - (null)
+NODE GET:ID - a
+NODE GET:VarDec - (null)
+NODE GET:COMMA - ,
+NODE GET:ParamDec - (null)
+NODE GET:TYPE - int
+NODE GET:Specifier - (null)
+NODE GET:ID - b
+NODE GET:VarDec - (null)
+NODE GET:RP - )
+NODE GET:ParamDec - (null)
+NODE GET:VarList - (null)
+NODE GET:VarList - (null)
+NODE GET:FunDec - (null)
+NODE GET:LC - {
+NODE GET:ID - c
+NODE GET:DefList - (null)
+NODE GET:ASSIGN - =
+NODE GET:Exp - (null)
+NODE GET:CHAR - 'c'
+NODE GET:Exp - (null)
+NODE GET:SEMI - ;
+NODE GET:Exp - (null)
+NODE GET:Stmt - (null)
+NODE GET:IF - if
+NODE GET:LP - (
+NODE GET:ID - a
+NODE GET:GT - >
+NODE GET:Exp - (null)
+NODE GET:ID - b
+NODE GET:RP - )
+NODE GET:Exp - (null)
+NODE GET:Exp - (null)
+NODE GET:LC - {
+NODE GET:RETURN - return
+NODE GET:DefList - (null)
+NODE GET:ID - a
+NODE GET:SEMI - ;
+NODE GET:Exp - (null)
+NODE GET:Stmt - (null)
+NODE GET:RC - }
+NODE GET:StmtList - (null)
+NODE GET:StmtList - (null)
+NODE GET:CompSt - (null)
+NODE GET:Stmt - (null)
+NODE GET:ELSE - else
+NODE GET:LC - {
+NODE GET:RETURN - return
+NODE GET:DefList - (null)
+NODE GET:ID - b
+NODE GET:SEMI - ;
+NODE GET:Exp - (null)
+NODE GET:Stmt - (null)
+NODE GET:RC - }
+NODE GET:StmtList - (null)
+NODE GET:StmtList - (null)
+NODE GET:CompSt - (null)
+NODE GET:Stmt - (null)
+NODE GET:Stmt - (null)
+NODE GET:RC - }
+NODE GET:StmtList - (null)
+NODE GET:StmtList - (null)
+NODE GET:StmtList - (null)
+NODE GET:CompSt - (null)
+NODE GET:ExtDef - (null)
+NODE GET:ExtDefList - (null)
+NODE GET:ExtDefList - (null)
+NODE GET:Program - (null)
+Program (1)
+  ExtDefList (1)
+    ExtDef (1)
+      Specifier (1)
+        TYPE: int
+      FunDec (1)
+        ID: test_1_r01
+        LP
+        VarList (1)
+          ParamDec (1)
+            Specifier (1)
+              TYPE: int
+            VarDec (1)
+              ID: a
+          COMMA
+          VarList (1)
+            ParamDec (1)
+              Specifier (1)
+                TYPE: int
+              VarDec (1)
+                ID: b
+        RP
+      CompSt (2)
+        LC
+        StmtList (3)
+          Stmt (3)
+            Exp (3)
+              Exp (3)
+                ID: c
+              ASSIGN
+              Exp (3)
+                CHAR: 'c'
+            SEMI
+          StmtList (4)
+            Stmt (4)
+              IF
+              LP
+              Exp (4)
+                Exp (4)
+                  ID: a
+                GT
+                Exp (4)
+                  ID: b
+              RP
+              Stmt (5)
+                CompSt (5)
+                  LC
+                  StmtList (6)
+                    Stmt (6)
+                      RETURN
+                      Exp (6)
+                        ID: a
+                      SEMI
+                  RC
+              ELSE
+              Stmt (9)
+                CompSt (9)
+                  LC
+                  StmtList (10)
+                    Stmt (10)
+                      RETURN
+                      Exp (10)
+                        ID: b
+                      SEMI
+                  RC
+        RC
