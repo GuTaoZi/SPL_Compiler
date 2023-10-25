@@ -97,7 +97,7 @@ ParamDec : Specifier VarDec { addn($$, "ParamDec", 2, $1, $2); }
 
 /* statement */
 CompSt : LC DefList StmtList RC { addn($$, "CompSt", 4, $1, $2, $3, $4); }
-    | LC DefList StmtList error { has_error = 1; print_B_error($1->lineno, "Missing closing curly bracket \'}\'\n");}
+    | LC DefList StmtList error { has_error = 1; print_B_error($1->lineno, "Missing closing curly bracket \'}\'\n"); }
     ;
 
 StmtList : { add0($$, "StmtList"); }
