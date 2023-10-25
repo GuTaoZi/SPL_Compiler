@@ -27,7 +27,7 @@
 %left PLUS MINUS
 %left MUL DIV
 %left NOT
-%left DOT RP RB RC
+%left DOT RP RB RC LP LB LC
 
 %nonassoc LOWER_ELSE
 %nonassoc ELSE

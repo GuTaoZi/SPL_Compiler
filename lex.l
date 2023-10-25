@@ -63,7 +63,7 @@ INVALID_NUMBER (0{digit}*)|(({FLOAT}.({digit}|.)*))|({hexadecimal}.({digit}|.)*)
 \'(\\x{hex_digit}{2}|.)\'                  { yylval = new_node("CHAR", yytext, yylineno); return CHAR; }
 {INVALID_CHAR}                     { yylval = new_node("INVALID_CHAR", yytext, yylineno); has_error = 1; fprintf(yyout,"Error type A at Line %d: unknown lexeme %s\n", yylineno, yytext); return INVALID_CHAR; }
 ({INT}{ID})|{INVALID_CHAR}           { yylval = new_node("INVALID_ID", yytext, yylineno); has_error = 1; fprintf(yyout,"Error type A at Line %d: unknown lexeme %s\n", yylineno, yytext); return INVALID_ID; }
-{INVALID_NUMBER}                         (yylval = new_node("INVALID_NUMBER",yytext,yylineno); has_error = 1; fprintf(yyout,"Error type A at Line %d: unknown lexeme %s\n", yylineno, yytext); return INVALID_NUMBER;)
+{INVALID_NUMBER}                         {yylval = new_node("INVALID_NUMBER",yytext,yylineno); has_error = 1; fprintf(yyout,"Error type A at Line %d: unknown lexeme %s\n", yylineno, yytext); return INVALID_NUMBER;}
 "//".*$                     { yylval = new_node("SINGLE_LINE_COMMENT", yytext, yylineno); return SINGLE_LINE_COMMENT; }
 "/*"((("*"[^/])?)|[^*])*"*/" { yylval = new_node("MULTI_LINE_COMMENT", yytext, yylineno); return MULTI_LINE_COMMENT; }
 .|\n|\r {;}
