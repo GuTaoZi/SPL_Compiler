@@ -162,6 +162,7 @@ Exp : Exp ASSIGN Exp    { addn($$, "Exp", 3, $1, $2, $3); }
     | INT               { add1($$, "Exp", 1, $1); }
     | FLOAT             { add1($$, "Exp", 1, $1); }
     | CHAR              { add1($$, "Exp", 1, $1); }
+    | STRING            { add1(&&, "Exp", 1, $1); }
     | INVALID_NUMBER    { has_error = 1;}
     | Exp INVALID_NUMBER Exp { has_error =1;}
     | LP Exp error      { has_error = 1; print_B_error("Missing closing parenthesis \')\'\n", $1->lineno);}
