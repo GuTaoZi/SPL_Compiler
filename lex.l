@@ -78,7 +78,7 @@ INVALID_NUMBER (0{digit}*)|(({FLOAT}.({digit}|.)*))|({hexadecimal}.({digit}|.)*)
 {STRING}                                 { yylval = new_node("STRING", yytext, yylineno); return STRING; }
 {INVALID_CHAR}                     { yylval = new_node("INVALID_CHAR", yytext, yylineno); has_error = 1; print_A_error(yylineno, yytext); return INVALID_CHAR; }
 ({INT}{ID})|{INVALID_CHAR}           { yylval = new_node("INVALID_ID", yytext, yylineno); has_error = 1; print_A_error(yylineno, yytext); return INVALID_ID; }
-{INVALID_NUMBER}                    { yylval = new_node("INVALID_NUMBER",yytext,yylineno); has_error = 1; print_A_error(yylineno, yytext); return INVALID_NUMBER; }
-"//".*$                     { yylval = new_node("SINGLE_LINE_COMMENT", yytext, yylineno); return SINGLE_LINE_COMMENT; }
-"/*"((("*"[^/])?)|[^*])*"*/" { yylval = new_node("MULTI_LINE_COMMENT", yytext, yylineno); return MULTI_LINE_COMMENT; }
+{INVALID_NUMBER}                   { yylval = new_node("INVALID_NUMBER",yytext,yylineno); has_error = 1; print_A_error(yylineno, yytext); return INVALID_NUMBER; }
+"//".*$                      { fprintf(yyout,"Single LINE COMMENT at Line %d\n", lineno); }
+"/*"((("*"[^/])?)|[^*])*"*/"  { fprintf(yyout,"MULTI LINE COMMENT at Line %d\n", lineno); }
 .|{new_line} {;}
