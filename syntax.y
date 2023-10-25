@@ -8,8 +8,8 @@
 
     void yyerror(const char *s);
     
-    void print_B_error(char *cause, size_t lineno)
-    { fprintf(yyout, "Error type B at Line %d: %s \';\'\n", yylineno); }
+    void print_B_error(const char *cause, size_t lineno)
+    { fprintf(yyout, "Error type B at Line %d: %s \';\'\n", lineno); }
 %}
 
 %token TYPE 
@@ -45,8 +45,8 @@ ExtDefList :            { add0($$, "ExtDefList"); }
 ExtDef : Specifier ExtDecList SEMI  { addn($$, "ExtDef", 3, $1, $2, $3); }
     | Specifier SEMI                { addn($$, "ExtDef", 2, $1, $2); }
     | Specifier FunDec CompSt       { addn($$, "ExtDef", 3, $1, $2, $3); }
-    | Specifier ExtDecList          { has_error = 1; print_B_error("Missing semicolon", yylineno); }
-    | Specifier error               { has_error = 1; print_B_error("Missing semicolon", yylineno); }
+    | Specifier ExtDecList          { has_error = 1; print_B_error("Missing semicolon", $1->lineno); }
+    | Specifier error               { has_error = 1; print_B_error("Missing semicolon", $1->lineno); }
     ;
 
 ExtDecList : VarDec             { add1($$, "ExtDecList", 1, $1); }
