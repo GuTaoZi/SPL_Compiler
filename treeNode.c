@@ -1,4 +1,5 @@
 #include "treeNode.h"
+#include "lex.yy.c"
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
@@ -34,13 +35,13 @@ void output_line(treeNode *u, size_t spaceno)
     if (u->child != NULL)
     {
         for (size_t i = 0; i < spaceno; i++)
-            putchar(' ');
-        printf("%s (%zu)\n", u->name, u->lineno);
+            fprintf(yyout, " ");
+        fprintf(yyout, "%s (%zu)\n", u->name, u->lineno);
     }
     else if (u->val != NULL)
     {
         for (size_t i = 0; i < spaceno; i++)
-            putchar(' ');
+            fprintf(yyout, " ");
         int flg = 1;
         for (int i = 0; i < lno; i++)
         {
@@ -51,9 +52,9 @@ void output_line(treeNode *u, size_t spaceno)
             }
         }
         if (flg)
-            printf("%s\n", u->name);
+            fprintf(yyout, "%s\n", u->name);
         else
-            printf("%s: %s\n", u->name, u->val);
+            fprintf(yyout, "%s: %s\n", u->name, u->val);
     }
 }
 

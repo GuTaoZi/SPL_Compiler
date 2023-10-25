@@ -147,7 +147,41 @@ void yyerror(const char *s)
 
 int main(int argc, char **argv)
 {
+    FILE* file_in;
+    FILE* file_out;
+    if(argc == 2 || argc == 3) {
+        file_in = fopen(argv[1], "r");
+        if (file_in == NULL) {
+            perror("Error opening input file");
+            return 1;
+        }
+        if(argc == 2) {
+            int la = strlen(argv[1]);
+            argv[1][la-3] = 'o';
+            argv[1][la-2] = 'u';
+            argv[1][la-1] = 't';
+            file_out = fopen(argv[1], "w");
+        } else if(argc == 3) {
+            file_out = fopen(argv[2], "w");
+        }
+        if (file_out == NULL) {
+            perror("Error opening output file");
+            return 1;
+        }
+        // Redirect Flex to read from file
+    } else if(argc == 1) {
+        file_in = stdin;
+        file_out = stdout;
+    } else {
+        fprintf(stderr, "Parameters Error!\nShould be %s [input_file] [output_file]\n", argv[0]);
+        return -1;
+    }
+    yyin = file_in;
+    yyout = file_out;
     yyparse();
-    output_tree(root, 0);
+    if (!has_error)
+        output_tree(root, 0);
+    fclose(file_in);
+    fclose(file_out);
     return 0;
 }
