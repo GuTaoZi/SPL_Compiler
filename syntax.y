@@ -42,8 +42,8 @@ ExtDefList :            { add0($$, "ExtDefList"); }
 ExtDef : Specifier ExtDecList SEMI  { addn($$, "ExtDef", 3, $1, $2, $3); }
     | Specifier SEMI                { addn($$, "ExtDef", 2, $1, $2); }
     | Specifier FunDec CompSt       { addn($$, "ExtDef", 3, $1, $2, $3); }
-    | Specifier ExtDecList          { has_error = 1; fprintf(stdout,"Error type B at Line %d: Missing semicolon \';\'\n", yylineno, yytext);}
-    | Specifier Error               { has_error = 1; fprintf(stdout,"Error type B at Line %d: Missing semicolon \';\'\n", yylineno, yytext);}
+    | Specifier ExtDecList          { has_error = 1; fprintf(yyout,"Error type B at Line %d: Missing semicolon \';\'\n", yylineno, yytext);}
+    | Specifier error               { has_error = 1; fprintf(yyout,"Error type B at Line %d: Missing semicolon \';\'\n", yylineno, yytext);}
     ;
 
 ExtDecList : VarDec             { add1($$, "ExtDecList", 1, $1); }
