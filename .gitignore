@@ -2,3 +2,6 @@
 a.out
 bin/
 test
+syntax.tab.*
+lex.yy.c
+test.c

@@ -10,7 +10,7 @@
     
     void print_B_error(char *cause, size_t lineno)
     {
-        fprintf(yyout, "Error type B at Line %d: %s \n", lineno);
+        fprintf(yyout, "Error type B at Line %zu: %s \n", lineno, cause);
     }
 %}
 
@@ -19,7 +19,7 @@
 %token SHARP DOT SEMI COLON COMMA ASSIGN LT LE GT GE NE EQ PLUS MINUS MUL DIV
 %token AND OR NOT
 %token LP RP LB RB LC RC
-%token ABSTR ID INT FLOAT CHAR INVALID_CHAR INVALID_ID
+%token ABSTR ID INT FLOAT CHAR STRING INVALID_CHAR INVALID_ID INVALID_NUMBER
 %token SINGLE_LINE_COMMENT MULTI_LINE_COMMENT
 
 %left ASSIGN
@@ -162,7 +162,7 @@ Exp : Exp ASSIGN Exp    { addn($$, "Exp", 3, $1, $2, $3); }
     | INT               { add1($$, "Exp", 1, $1); }
     | FLOAT             { add1($$, "Exp", 1, $1); }
     | CHAR              { add1($$, "Exp", 1, $1); }
-    | STRING            { add1(&&, "Exp", 1, $1); }
+    | STRING            { add1($$, "Exp", 1, $1); }
     | INVALID_NUMBER    { has_error = 1;}
     | Exp INVALID_NUMBER Exp { has_error =1;}
     | LP Exp error      { has_error = 1; print_B_error("Missing closing parenthesis \')\'\n", $1->lineno);}

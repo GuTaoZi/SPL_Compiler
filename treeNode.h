@@ -1,6 +1,9 @@
 #ifndef __TREENODE_H__
 #define __TREENODE_H__
+#include <stdio.h>
 #include "stdlib.h"
+
+extern FILE* yyout;
 
 // These TOKENs need to output its value
 extern const char *need_output[];

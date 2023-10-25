@@ -1,5 +1,4 @@
 #include "treeNode.h"
-#include "lex.yy.c"
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>

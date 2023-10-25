@@ -3,11 +3,11 @@
     #include "treeNode.h"
     #include "syntax.tab.h"
     #define YYSTYPE treeNode*
-    extern int has_error = 0;
+    int has_error = 0;
 
     void print_A_error(size_t lineno, char *text)
     {
-        fprintf(yyout,"Error type A at Line %d: unknown lexeme %s\n", lineno, text);
+        fprintf(yyout,"Error type A at Line %zu: unknown lexeme %s\n", lineno, text);
     }
 %}
 
@@ -78,7 +78,7 @@ INVALID_NUMBER (0{digit}*)|(({FLOAT}.({digit}|.)*))|({hexadecimal}.({digit}|.)*)
 {STRING}                                 { yylval = new_node("STRING", yytext, yylineno); return STRING; }
 {INVALID_CHAR}                     { yylval = new_node("INVALID_CHAR", yytext, yylineno); has_error = 1; print_A_error(yylineno, yytext); return INVALID_CHAR; }
 ({INT}{ID})|{INVALID_CHAR}           { yylval = new_node("INVALID_ID", yytext, yylineno); has_error = 1; print_A_error(yylineno, yytext); return INVALID_ID; }
-{INVALID_NUMBER}                    {yylval = new_node("INVALID_NUMBER",yytext,yylineno); has_error = 1; print_A_error(yylineno, yytext); return INVALID_NUMBER;}
+{INVALID_NUMBER}                    { yylval = new_node("INVALID_NUMBER",yytext,yylineno); has_error = 1; print_A_error(yylineno, yytext); return INVALID_NUMBER; }
 "//".*$                     { yylval = new_node("SINGLE_LINE_COMMENT", yytext, yylineno); return SINGLE_LINE_COMMENT; }
 "/*"((("*"[^/])?)|[^*])*"*/" { yylval = new_node("MULTI_LINE_COMMENT", yytext, yylineno); return MULTI_LINE_COMMENT; }
 .|{new_line} {;}
