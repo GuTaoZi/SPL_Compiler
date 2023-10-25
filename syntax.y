@@ -72,8 +72,8 @@ StructSpecifier : STRUCT ID LC DefList RC   { addn($$, "StructSpecifier", 5, $1,
     | STRUCT ID LC DefList error            { has_error = 1; print_B_error("Missing closing curly braces \'}\'\n", $1->lineno); }
     ;
 
-ForeachType: TYPE VarDec   { addn($$, "ForeachType", 2, $1, $2); }
-    | STRUCT ID VarDec     { addn($$, "ForeachType", 3, $1, $2, $3); }
+ForType: TYPE VarDec   { addn($$, "ForType", 2, $1, $2); }
+    | STRUCT ID VarDec     { addn($$, "ForType", 3, $1, $2, $3); }
     ;
 
 /* declarator */
@@ -110,14 +110,14 @@ Stmt : Exp SEMI                                 { addn($$, "Stmt", 2, $1, $2); }
     | IF LP Exp RP Stmt  %prec LOWER_ELSE       { addn($$, "Stmt", 5, $1, $2, $3, $4, $5); }
     | IF LP Exp RP Stmt ELSE Stmt               { addn($$, "Stmt", 7, $1, $2, $3, $4, $5, $6, $7); }
     | WHILE LP Exp RP Stmt                      { addn($$, "Stmt", 5, $1, $2, $3, $4, $5); }
-    | FOR LP DefList SEMI Exp SEMI Exp RP Stmt  %prec UPPER_FOR { addn($$, "Stmt", 9, $1, $2, $3, $4, $5, $6, $7, $8, $9); }
-    | FOR LP ForeachType COLON VarDec RP Stmt   %prec LOWER_FOR { addn($$, "Stmt", 7, $1, $2, $3, $4, $5, $6, $7); }
+    | FOR LP ForType DecList SEMI Exp SEMI Exp RP Stmt  %prec UPPER_FOR { addn($$, "Stmt", 10, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10); }
+    | FOR LP ForType VarDec COLON Exp RP Stmt      %prec LOWER_FOR { addn($$, "Stmt", 8, $1, $2, $3, $4, $5, $6, $7, $8); }
     | Exp error                     { has_error = 1; print_B_error("Missing semicolon \';\'", $1->lineno);}
     | RETURN Exp error              { has_error = 1; print_B_error("Missing semicolon \';\'", $1->lineno);}
     | IF LP Exp error Stmt          { has_error = 1; print_B_error("Missing closing parenthesis \')\'\n", $1->lineno);}
     | WHILE LP Exp error Stmt       { has_error = 1; print_B_error("Missing closing parenthesis \')\'\n", $1->lineno);}
-    | FOR LP DefList SEMI Exp SEMI Exp error Stmt { has_error = 1; print_B_error("Missing closing parenthesis \')\'\n", $1->lineno);}
-    | FOR LP ForeachType COLON VarDec error Stmt  { has_error = 1; print_B_error("Missing closing parenthesis \')\'\n", $1->lineno);}
+    | FOR LP ForType DecList SEMI Exp SEMI Exp error Stmt %prec UPPER_FOR { has_error = 1; print_B_error("Missing closing parenthesis \')\'\n", $1->lineno);}
+    | FOR LP ForType VarDec COLON Exp error Stmt  %prec LOWER_FOR { has_error = 1; print_B_error("Missing closing parenthesis \')\'\n", $1->lineno);}
     ;
 
 /* local definition */
