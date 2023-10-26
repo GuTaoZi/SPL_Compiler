@@ -1,0 +1,6 @@
+int test_string_r01(){
+    char u = "\\";
+    char u = "\\
+    ";
+    ww;
+}

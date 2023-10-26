@@ -27,8 +27,8 @@ FLOAT ({digit}+\.{digit}+)
 
 new_line \n|(\r\n)
 ws \t|" "
-VALID_STRING_LINE ([^\"{new_line}]*\\\")*([^\"{new_line}])
-STRING \"({VALID_STRING_LINE}\\{new_line})*{VALID_STRING_LINE}*\"
+VALID_STRING_LINE ([^\\\"\n]*(\\.))*[^\\\"\n]*
+STRING \"({VALID_STRING_LINE}\\{new_line})*{VALID_STRING_LINE}\"
 
 ID {letter_}+({letter_}|{digit})*
 INT {decimal}|{hexadecimal}
@@ -89,7 +89,7 @@ abstr <.+>
 "//".*$                      { fprintf(yyout,"Single LINE COMMENT at Line %d\n", yylineno); }
 "/*"((("*"[^/])?)|[^*])*"*/"  { fprintf(yyout,"MULTI LINE COMMENT at Line %d\n", yylineno); }
 {ws}|{new_line} {;}
-. { yylval = new_node("INVALID_ID", yytext, yylineno); has_error = 1; print_A_error(yylineno, yytext); return INVALID_ID; }
+. { yylval = new_node("INVALID_ID", yytext, yylineno); has_error = 1; print_A_error(yylineno, yytext); return INVALID; }
 
 %%
 
