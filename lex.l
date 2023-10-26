@@ -79,7 +79,7 @@ abstr <.+>
 
 {abstr}                                   { yylval = new_node("ABSTR", yytext, yylineno); return ABSTR; }
 {ID}                                         { yylval = new_node("ID", yytext, yylineno); return ID; }
-{INT}                                      { yylval = new_node("UINT", my_toint(yytext), yylineno); return UINT; }
+{INT}                                       { yylval = new_node("INT", my_toint(yytext), yylineno); return UINT; }
 {FLOAT}                                   { yylval = new_node("FLOAT", yytext, yylineno); return FLOAT; }
 \'(\\x{hex_digit}{2}|.)\'                  { yylval = new_node("CHAR", yytext, yylineno); return CHAR; }
 {STRING}                                 { yylval = new_node("STRING", yytext, yylineno); return STRING; }

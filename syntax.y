@@ -58,7 +58,7 @@ ExtDef : Specifier ExtDecList SEMI  { addn($$, "ExtDef", 3, $1, $2, $3); }
     | Specifier SEMI                { addn($$, "ExtDef", 2, $1, $2); }
     | Specifier FunDec CompSt       { addn($$, "ExtDef", 3, $1, $2, $3); }
     | Specifier ExtDecList error    { add0($$, "ExtDef"); has_error = 1; print_B_error("ExtDef", $1->lineno, "Missing semicolon \';\'"); }
-    | Specifier error               { add0($$, "ExtDef"); has_error = 1; print_B_error("ExtDef", $1->lineno, "Missing semicolon \';\'"); }
+    | Specifier error               { add0($$, "ExtDef"); has_error = 1; print_B_error("ExtDef", $1->lineno, "Missing semicolon 22 \';\'"); }
     ;
 
 ExtDecList : VarDec             { add1($$, "ExtDecList", 1, $1); }
@@ -83,6 +83,7 @@ ForType: TYPE       { add1($$, "ForType", 1, $1); }
 VarDec : ID             { add1($$, "VarDec", 1, $1); }
     | VarDec LB INT RB  { addn($$, "VarDec", 4, $1, $2, $3, $4); }
     | VarDec LB INT error { add0($$, "VarDec"); has_error = 1; print_B_error("VarDec", $1->lineno, "Missing closing braces \']\'"); }
+    | INVALID           { add0($$, "VarDec"); has_error = 1;}
     ;
 
 FunDec : ID LP VarList RP   { addn($$, "FunDec", 4, $1, $2, $3, $4); }
@@ -100,11 +101,12 @@ ParamDec : Specifier VarDec { addn($$, "ParamDec", 2, $1, $2); }
 
 /* statement */
 CompSt : LC DefList StmtList RC { addn($$, "CompSt", 4, $1, $2, $3, $4); }
-    | LC DefList StmtList error { has_error = 1; print_B_error("CompSt", $3->lineno, "Missing closing curly bracket \'}\'"); }
+    | LC DefList StmtList error { add0($$, "CompSt"); has_error = 1; print_B_error("CompSt", $3->lineno, "Missing closing curly bracket \'}\'"); }
     ;
 
 StmtList :          { add0($$, "StmtList"); }
     | Stmt StmtList { addn($$, "StmtList", 2, $1, $2); }
+    | Stmt DefList StmtList { add0($$, "StmtList");  has_error = 1; print_B_error("StmtList", $1->lineno, "Missing specifier"); }
     ;
 
 Stmt : Exp SEMI                                 { addn($$, "Stmt", 2, $1, $2); }
@@ -130,7 +132,6 @@ DefList :           { add0($$, "DefList"); }
 
 Def : Specifier DecList SEMI { addn($$, "Def", 3, $1, $2, $3); }
     | Specifier DecList error { addn($$, "Def", 2, $1, $2); has_error = 1;  print_B_error("Def", $2->lineno, "Missing semicolon \';\'"); }
-    | error DecList SEMI { addn($$, "Def", 2, $2, $3); has_error = 1;  print_B_error("Def", $2->lineno, "Missing Specifier \')\'"); }
     ;
 
 DecList : Dec           { add1($$, "DecList", 1, $1); }
