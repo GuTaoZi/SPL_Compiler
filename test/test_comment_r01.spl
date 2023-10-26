@@ -1,0 +1,14 @@
+/* hh
+qdasd
+ww */
+int test_comment_r01(){
+    /* hh
+    qdasd
+    ww */
+
+    int q, w; // huhu
+    char e; // hihi
+}
+/* hh
+qdasd
+ww */

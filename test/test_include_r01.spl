@@ -1,0 +1,8 @@
+#include<hi>
+#include<hello>
+#include <wwqq>
+int test_include_r01()
+{
+  int hi = 0;
+  hi = hello;
+}

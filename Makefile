@@ -1,6 +1,7 @@
 CC=gcc
 FLEX=flex
 BISON=bison
+mkdir ./bin
 splc:
 	$(BISON) -d syntax.y
 	$(FLEX) lex.l
