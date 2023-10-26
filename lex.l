@@ -4,11 +4,14 @@
     #include "syntax.tab.h"
     #define YYSTYPE treeNode*
     int has_error = 0;
+    char str[256];
 
     void print_A_error(size_t lineno, char *text)
     {
         fprintf(yyout,"Error type A at Line %zu: unknown lexeme %s\n", lineno, text);
     }
+
+    char* my_toint(const char* s);
 %}
 
 letter [a-zA-Z]
@@ -23,6 +26,7 @@ invalid_hexadecimal [+-]?(0x)(({letter}|{digit})+)
 FLOAT ({digit}+\.{digit}+)
 
 new_line \n|(\r\n)
+ws \t|" "
 VALID_STRING_CHAR [^\"{new_line}]
 STRING \"({VALID_STRING_CHAR}*\\{new_line})*{VALID_STRING_CHAR}*\"
 
@@ -73,7 +77,7 @@ INVALID_NUMBER (0{digit}*)|(({FLOAT}\.({digit}|\.)*))|({hexadecimal}\.({digit}|\
 
 "<.>"                                     { yylval = new_node("ABSTR", yytext, yylineno); return ABSTR; }
 {ID}                                         { yylval = new_node("ID", yytext, yylineno); return ID; }
-{INT}                                       { yylval = new_node("INT", yytext, yylineno); return INT; }
+{INT}                                       { yylval = new_node("INT", my_toint(yytext), yylineno); return INT; }
 {FLOAT}                                   { yylval = new_node("FLOAT", yytext, yylineno); return FLOAT; }
 \'(\\x{hex_digit}{2}|.)\'                  { yylval = new_node("CHAR", yytext, yylineno); return CHAR; }
 {STRING}                                 { yylval = new_node("STRING", yytext, yylineno); return STRING; }
@@ -82,4 +86,38 @@ INVALID_NUMBER (0{digit}*)|(({FLOAT}\.({digit}|\.)*))|({hexadecimal}\.({digit}|\
 ({INT}{ID})|{INVALID_CHAR}           { yylval = new_node("INVALID_ID", yytext, yylineno); has_error = 1; print_A_error(yylineno, yytext); return INVALID_ID; }
 "//".*$                      { fprintf(yyout,"Single LINE COMMENT at Line %d\n", yylineno); }
 "/*"((("*"[^/])?)|[^*])*"*/"  { fprintf(yyout,"MULTI LINE COMMENT at Line %d\n", yylineno); }
-.|{new_line} {;}
+{ws}|{new_line} {;}
+. { yylval = new_node("INVALID_ID", yytext, yylineno); has_error = 1; print_A_error(yylineno, yytext); return INVALID_ID; }
+
+%%
+
+char* my_toint(const char* s){
+    int u = 0, k;
+    int f = 1;
+    long long ans = 0;
+    if(s[u] == '+' || s[u]=='-'){
+        if(s[u]=='-') f = -1;
+        u ++;
+    }
+    if(s[u]=='0' && s[u+1] == 'x'){
+        u+=2;
+        while(s[u] != 0){
+            if('0'<=s[u] && s[u]<='9'){
+                k = s[u]-'0';
+            } else if('a' <= s[u] && s[u] <= 'z') {
+                k = s[u]-'a'+10;
+            } else {
+                k = s[u]-'A'+10;
+            }
+            ans = (ans << 4) + k;
+            u ++;
+        }
+    } else {
+        while(s[u] != 0){
+            ans = (ans << 3) + (ans << 1) + s[u]-'0';
+            u ++;
+        }
+    }
+    sprintf(str, "%lld", ans);
+    return str;
+}

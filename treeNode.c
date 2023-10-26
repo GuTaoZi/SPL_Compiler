@@ -8,7 +8,7 @@ const int lno = 7;
 
 treeNode *new_node(char *name, const char *val, const size_t lino)
 {
-    fprintf(yyout, "NODE GET:%s - %s\n", name, val);
+    // fprintf(yyout, "NODE GET:%s - %s\n", name, val);
     treeNode *p = (treeNode *)malloc(sizeof(treeNode));
     p->name = name;
     if (val == NULL)
