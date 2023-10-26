@@ -8,7 +8,7 @@
 
     void yyerror(const char *s);
     
-    void print_B_error( char* node_name, size_t lineno, char *msg)
+    void print_B_error(char* node_name, size_t lineno, char *msg)
     {
         fprintf(yyout, "Error type B at Line %zu: %s\n", lineno, msg, node_name);
     }
@@ -19,18 +19,18 @@
 %token SHARP DOT SEMI COLON COMMA ASSIGN LT LE GT GE NE EQ PLUS MINUS MUL DIV
 %token AND OR NOT
 %token LP RP LB RB LC RC
-%token ABSTR ID INT FLOAT CHAR STRING INVALID_CHAR INVALID_ID INVALID_NUMBER
+%token ABSTR ID UINT FLOAT CHAR STRING INVALID_CHAR INVALID_ID INVALID_NUMBER
 %token SINGLE_LINE_COMMENT MULTI_LINE_COMMENT
 
 %left INVALID_NUMBER
 
-%left ASSIGN
+%right ASSIGN
 %left OR
 %left AND
 %left LT LE GT GE EQ NE
 %left PLUS MINUS
 %left MUL DIV
-%left NOT
+%right NOT
 %left DOT RP RB RC LP LB LC
 
 
@@ -75,8 +75,8 @@ StructSpecifier : STRUCT ID LC DefList RC   { addn($$, "StructSpecifier", 5, $1,
     | STRUCT ID LC DefList error            { add0($$, "StructSpecifier"); has_error = 1; print_B_error("StructSpecifier", $1->lineno, "Missing closing curly braces \'}\'"); }
     ;
 
-ForType: TYPE VarDec   { addn($$, "ForType", 2, $1, $2); }
-    | STRUCT ID VarDec     { addn($$, "ForType", 3, $1, $2, $3); }
+ForType: TYPE       { add1($$, "ForType", 1, $1); }
+    | STRUCT ID     { addn($$, "ForType", 2, $1, $2); }
     ;
 
 /* declarator */
@@ -182,6 +182,18 @@ Args : Exp COMMA Args   { addn($$, "Args", 3, $1, $2, $3); }
 INVALID: INVALID_CHAR   {add0($$, "invalid");}
     | INVALID_ID        {add0($$, "invalid");}
     | INVALID_NUMBER    {add0($$, "invalid");}
+
+INT: UINT           {$$ = $1;}
+    | PLUS UINT     {$$ = $1;}
+    | MINUS UINT    {
+                        $$ = $1;
+                        int ll = strlen($$->val);
+                        $$->val = (char *)realloc($$->val, (ll + 2) * sizeof(char));
+                        for(int i=ll;i>=1;i--){
+                            $$->val[i] = $$->val[i-1];
+                        }
+                        $$->val[0]='-';
+                    }
 
 %%
 

@@ -20,8 +20,8 @@ digit [0-9]
 pos_digit [1-9]
 hex_digit [0-9a-fA-F]
 
-decimal [+-]?(0|{pos_digit}{digit}*)
-hexadecimal [+-]?(0x)({hex_digit}+)
+decimal (0|{pos_digit}{digit}*)
+hexadecimal (0x)({hex_digit}+)
 invalid_hexadecimal [+-]?(0x)(({letter}|{digit})+)
 FLOAT ({digit}+\.{digit}+)
 
@@ -34,6 +34,8 @@ ID {letter_}+({letter_}|{digit})*
 INT {decimal}|{hexadecimal}
 INVALID_CHAR \'.*\'
 INVALID_NUMBER (0{digit}*)|(({FLOAT}\.({digit}|\.)*))|({hexadecimal}\.({digit}|\.)*)|({invalid_hexadecimal})
+
+abstr <.+>
 
 %%
 
@@ -75,9 +77,9 @@ INVALID_NUMBER (0{digit}*)|(({FLOAT}\.({digit}|\.)*))|({hexadecimal}\.({digit}|\
 "{"                                          { yylval = new_node("LC", yytext, yylineno); return LC; }
 "}"                                          { yylval = new_node("RC", yytext, yylineno); return RC; }
 
-"<.>"                                     { yylval = new_node("ABSTR", yytext, yylineno); return ABSTR; }
+{abstr}                                   { yylval = new_node("ABSTR", yytext, yylineno); return ABSTR; }
 {ID}                                         { yylval = new_node("ID", yytext, yylineno); return ID; }
-{INT}                                       { yylval = new_node("INT", my_toint(yytext), yylineno); return INT; }
+{INT}                                      { yylval = new_node("UINT", my_toint(yytext), yylineno); return UINT; }
 {FLOAT}                                   { yylval = new_node("FLOAT", yytext, yylineno); return FLOAT; }
 \'(\\x{hex_digit}{2}|.)\'                  { yylval = new_node("CHAR", yytext, yylineno); return CHAR; }
 {STRING}                                 { yylval = new_node("STRING", yytext, yylineno); return STRING; }
