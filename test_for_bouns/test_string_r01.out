@@ -1,0 +1,40 @@
+NODE GET:TYPE - int
+NODE GET:IncDefList - (null)
+NODE GET:Specifier - (null)
+NODE GET:ID - test_string_r01
+NODE GET:LP - (
+NODE GET:RP - )
+NODE GET:FunDec - (null)
+NODE GET:LC - {
+NODE GET:TYPE - char
+NODE GET:Specifier - (null)
+NODE GET:ID - u
+NODE GET:VarDec - (null)
+NODE GET:ASSIGN - =
+NODE GET:STRING - "\\"
+NODE GET:Exp - (null)
+NODE GET:SEMI - ;
+NODE GET:Dec - (null)
+NODE GET:DecList - (null)
+NODE GET:Def - (null)
+NODE GET:TYPE - char
+NODE GET:Specifier - (null)
+NODE GET:ID - u
+NODE GET:VarDec - (null)
+NODE GET:ASSIGN - =
+NODE GET:INVALID_ID - "
+Error type A at Line 3: unknown lexeme "
+NODE GET:Exp - (null)
+NODE GET:INVALID_ID - \
+Error type A at Line 3: unknown lexeme \
+NODE GET:INVALID_ID - \
+Error type A at Line 3: unknown lexeme \
+NODE GET:Exp - (null)
+NODE GET:INVALID_ID - "
+Error type A at Line 4: unknown lexeme "
+NODE GET:SEMI - ;
+NODE GET:ExtDef - (null)
+Error type B at Line 1: Missing semicolon 22 ';'
+NODE GET:ExtDefList - (null)
+NODE GET:ExtDefList - (null)
+NODE GET:Program - (null)

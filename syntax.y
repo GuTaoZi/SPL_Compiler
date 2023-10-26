@@ -57,7 +57,7 @@ ExtDef : Specifier ExtDecList SEMI  { addn($$, "ExtDef", 3, $1, $2, $3); }
     | Specifier SEMI                { addn($$, "ExtDef", 2, $1, $2); }
     | Specifier FunDec CompSt       { addn($$, "ExtDef", 3, $1, $2, $3); }
     | Specifier ExtDecList error    { add0($$, "ExtDef"); has_error = 1; print_B_error("ExtDef", $1->lineno, "Missing semicolon \';\'"); }
-    | Specifier error               { add0($$, "ExtDef"); has_error = 1; print_B_error("ExtDef", $1->lineno, "Missing semicolon 22 \';\'"); }
+    | Specifier error               { add0($$, "ExtDef"); has_error = 1; print_B_error("ExtDef", $1->lineno, "Missing semicolon \';\'"); }
     ;
 
 ExtDecList : VarDec             { add1($$, "ExtDecList", 1, $1); }
@@ -71,7 +71,7 @@ Specifier : TYPE        { add1($$, "Specifier", 1, $1); }
 
 StructSpecifier : STRUCT ID LC DefList RC   { addn($$, "StructSpecifier", 5, $1, $2, $3, $4, $5); }
     | STRUCT ID                             { addn($$, "StructSpecifier", 2, $1, $2); }
-    | STRUCT ID LC DefList error            { add0($$, "StructSpecifier"); has_error = 1; print_B_error("StructSpecifier", $1->lineno, "Missing closing curly braces \'}\'"); }
+    | STRUCT ID LC DefList error            { add0($$, "StructSpecifier"); has_error = 1; print_B_error("StructSpecifier", $3->lineno, "Missing closing curly braces \'}\'"); }
     ;
 
 ForType: TYPE       { add1($$, "ForType", 1, $1); }
@@ -81,14 +81,14 @@ ForType: TYPE       { add1($$, "ForType", 1, $1); }
 /* declarator */
 VarDec : ID             { add1($$, "VarDec", 1, $1); }
     | VarDec LB INT RB  { addn($$, "VarDec", 4, $1, $2, $3, $4); }
-    | VarDec LB INT error { add0($$, "VarDec"); has_error = 1; print_B_error("VarDec", $1->lineno, "Missing closing braces \']\'"); }
+    | VarDec LB INT error { add0($$, "VarDec"); has_error = 1; print_B_error("VarDec", $2->lineno, "Missing closing braces \']\'"); }
     | INVALID           { add0($$, "VarDec"); has_error = 1;}
     ;
 
 FunDec : ID LP VarList RP   { addn($$, "FunDec", 4, $1, $2, $3, $4); }
     | ID LP RP              { addn($$, "FunDec", 3, $1, $2, $3); }
-    | ID LP VarList error   { add0($$, "FunDec"); has_error = 1; print_B_error("FunDec", $1->lineno, "Missing closing parenthesis \')\'"); }
-    | ID LP error           { add0($$, "FunDec"); has_error = 1; print_B_error("FunDec", $1->lineno, "Missing closing parenthesis \')\'"); }
+    | ID LP VarList error   { add0($$, "FunDec"); has_error = 1; print_B_error("FunDec", $2->lineno, "Missing closing parenthesis \')\'"); }
+    | ID LP error           { add0($$, "FunDec"); has_error = 1; print_B_error("FunDec", $2->lineno, "Missing closing parenthesis \')\'"); }
     ;
 
 VarList : ParamDec COMMA VarList    { addn($$, "VarList", 3, $1, $2, $3); }
@@ -100,7 +100,7 @@ ParamDec : Specifier VarDec { addn($$, "ParamDec", 2, $1, $2); }
 
 /* statement */
 CompSt : LC DefList StmtList RC { addn($$, "CompSt", 4, $1, $2, $3, $4); }
-    | LC DefList StmtList error { add0($$, "CompSt"); has_error = 1; print_B_error("CompSt", $3->lineno, "Missing closing curly bracket \'}\'"); }
+    | LC DefList StmtList error { add0($$, "CompSt"); has_error = 1; print_B_error("CompSt", $1->lineno, "Missing closing curly bracket \'}\'"); }
     ;
 
 StmtList :          { add0($$, "StmtList"); }
@@ -108,7 +108,8 @@ StmtList :          { add0($$, "StmtList"); }
     | Stmt DefList StmtList { add0($$, "StmtList");  has_error = 1; print_B_error("StmtList", $1->lineno, "Missing specifier"); }
     ;
 
-Stmt : Exp SEMI                                 { addn($$, "Stmt", 2, $1, $2); }
+Stmt : SEMI                                     { add1($$, "Stmt", 1, $1); }
+    | Exp SEMI                                  { addn($$, "Stmt", 2, $1, $2); }
     | CompSt                                    { add1($$, "Stmt", 1, $1); }
     | RETURN Exp SEMI                           { addn($$, "Stmt", 3, $1, $2, $3); }
     | IF LP Exp RP Stmt  %prec LOWER_ELSE       { addn($$, "Stmt", 5, $1, $2, $3, $4, $5); }
@@ -117,11 +118,15 @@ Stmt : Exp SEMI                                 { addn($$, "Stmt", 2, $1, $2); }
     | FOR LP ForType DecList SEMI Exp SEMI Exp RP Stmt  %prec UPPER_FOR { addn($$, "Stmt", 10, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10); }
     | FOR LP ForType VarDec COLON Exp RP Stmt      %prec LOWER_FOR      { addn($$, "Stmt", 8, $1, $2, $3, $4, $5, $6, $7, $8); }
     | Exp error                     { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Missing semicolon \';\'"); }
-    | RETURN Exp error              { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Missing semicolon \';\'"); }
-    | IF LP Exp error Stmt          { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Missing closing parenthesis \')\'"); }
-    | WHILE LP Exp error Stmt       { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Missing closing parenthesis \')\'"); }
-    | FOR LP ForType DecList SEMI Exp SEMI Exp error Stmt %prec UPPER_FOR   { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Missing closing parenthesis \')\'"); }
-    | FOR LP ForType VarDec COLON Exp error Stmt  %prec LOWER_FOR           { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Missing closing parenthesis \')\'"); }
+    | RETURN Exp error              { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $2->lineno, "Missing semicolon \';\'"); }
+    | IF LP Exp error Stmt          { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $2->lineno, "Missing closing parenthesis \')\'"); }
+    | WHILE LP Exp error Stmt       { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $2->lineno, "Missing closing parenthesis \')\'"); }
+    | IF error Exp RP Stmt          { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Expected \'(\' after \'if\'"); }
+    | WHILE error Exp RP Stmt       { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Expected \'(\' after \'while\'"); }
+    | FOR error                     { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Expected \'(\' after \'for\'"); }
+    | FOR LP ForType DecList SEMI Exp SEMI Exp error Stmt %prec UPPER_FOR   { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $2->lineno, "Missing closing parenthesis \')\'"); }
+    | FOR LP ForType VarDec COLON Exp error Stmt  %prec LOWER_FOR           { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $2->lineno, "Missing closing parenthesis \')\'"); }
+    | ELSE Stmt                     { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Expected \'if\' before \'else\'"); }
     ;
 
 /* local definition */
@@ -170,9 +175,9 @@ Exp : Exp ASSIGN Exp    { addn($$, "Exp", 3, $1, $2, $3); }
     | INVALID           { add0($$, "Exp"); has_error = 1; }
     | Exp INVALID Exp   { add0($$, "Exp"); has_error = 1; }
     | LP Exp error      { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing closing parenthesis \')\'"); }
-    | ID LP Args error  { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing closing parenthesis \')\'"); }
-    | ID LP error       { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing closing parenthesis \')\'"); }
-    | Exp LB Exp error  { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing closing braces \']\'"); }
+    | ID LP Args error  { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $2->lineno, "Missing closing parenthesis \')\'"); }
+    | ID LP error       { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $2->lineno, "Missing closing parenthesis \')\'"); }
+    | Exp LB Exp error  { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $2->lineno, "Missing closing braces \']\'"); }
     ;
 
 Args : Exp COMMA Args   { addn($$, "Args", 3, $1, $2, $3); }

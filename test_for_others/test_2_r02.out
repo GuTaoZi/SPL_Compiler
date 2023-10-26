@@ -1,0 +1,49 @@
+Program (1)
+  ExtDefList (1)
+    ExtDef (1)
+      Specifier (1)
+        TYPE: int
+      FunDec (1)
+        ID: test_2_r02
+        LP
+        RP
+      CompSt (1)
+        LC
+        StmtList (2)
+          Stmt (2)
+            IF
+            LP
+            Exp (2)
+              Exp (2)
+                ID: x
+              EQ
+              Exp (2)
+                INT: 5
+            RP
+            Stmt (2)
+              CompSt (2)
+                LC
+                StmtList (3)
+                  Stmt (3)
+                    Exp (3)
+                      Exp (3)
+                        ID: a
+                      ASSIGN
+                      Exp (3)
+                        INT: 0
+                    SEMI
+                RC
+          StmtList (5)
+            Stmt (5)
+              WHILE
+              LP
+              Exp (5)
+                Exp (5)
+                  ID: x
+                ASSIGN
+                Exp (5)
+                  INT: 1
+              RP
+              Stmt (5)
+                SEMI
+        RC

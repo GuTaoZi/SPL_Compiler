@@ -1,0 +1,5 @@
+int test_2_r02(){
+    if(x==5) ;
+    while(x=1) ;
+    ;
+}
