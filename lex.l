@@ -27,8 +27,8 @@ FLOAT ({digit}+\.{digit}+)
 
 new_line \n|(\r\n)
 ws \t|" "
-VALID_STRING_CHAR [^\"{new_line}]
-STRING \"({VALID_STRING_CHAR}*\\{new_line})*{VALID_STRING_CHAR}*\"
+VALID_STRING_LINE ([^\"{new_line}]*\\\")*([^\"{new_line}])
+STRING \"({VALID_STRING_LINE}\\{new_line})*{VALID_STRING_LINE}*\"
 
 ID {letter_}+({letter_}|{digit})*
 INT {decimal}|{hexadecimal}
