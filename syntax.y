@@ -14,15 +14,14 @@
     }
 %}
 
+%token INVALID
 %token TYPE 
 %token STRUCT IF ELSE WHILE FOR RETURN INCLUDE
 %token SHARP DOT SEMI COLON COMMA ASSIGN LT LE GT GE NE EQ PLUS MINUS MUL DIV
 %token AND OR NOT
 %token LP RP LB RB LC RC
-%token ABSTR ID UINT FLOAT CHAR STRING INVALID_CHAR INVALID_ID INVALID_NUMBER
+%token ABSTR ID UINT FLOAT CHAR STRING
 %token SINGLE_LINE_COMMENT MULTI_LINE_COMMENT
-
-%left INVALID_NUMBER
 
 %right ASSIGN
 %left OR
@@ -179,10 +178,6 @@ Exp : Exp ASSIGN Exp    { addn($$, "Exp", 3, $1, $2, $3); }
 Args : Exp COMMA Args   { addn($$, "Args", 3, $1, $2, $3); }
     | Exp               { add1($$, "Args", 1, $1); }
     ;
-
-INVALID: INVALID_CHAR   {add0($$, "invalid");}
-    | INVALID_ID        {add0($$, "invalid");}
-    | INVALID_NUMBER    {add0($$, "invalid");}
 
 INT: UINT           {$$ = $1;}
     | PLUS UINT     {$$ = $1;}
