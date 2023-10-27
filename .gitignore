@@ -5,3 +5,4 @@ bin/
 syntax.tab.*
 lex.yy.c
 tmp*
+./*.spl
