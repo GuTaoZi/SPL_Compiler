@@ -22,7 +22,7 @@ hex_digit [0-9a-fA-F]
 
 decimal (0|{pos_digit}{digit}*)
 hexadecimal (0x)({hex_digit}+)
-invalid_hexadecimal [+-]?(0x)(({letter}|{digit})+)
+invalid_hexadecimal (0x)(({letter}|{digit})+)
 FLOAT ({digit}+\.{digit}+)
 
 new_line \n|(\r\n)

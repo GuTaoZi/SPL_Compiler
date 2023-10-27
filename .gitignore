@@ -4,4 +4,4 @@ bin/
 **/*.out
 syntax.tab.*
 lex.yy.c
-test.c
+tmp*
