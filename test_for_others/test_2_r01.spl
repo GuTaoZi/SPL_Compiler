@@ -1,8 +1,8 @@
 int test_2_r01(int a, int b)
 {
   int c='c';
-  int x=+1;
-  int y=-1;
+  int x=+1...1;
+  int $y=-123;
   x = x-5;
   y=y+-5;
 }

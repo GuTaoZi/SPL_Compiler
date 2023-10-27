@@ -94,7 +94,7 @@ VarDec : ID                 { add1($$, "VarDec", 1, $1); }
 
 FunDec : ID LP VarList RP   { addn($$, "FunDec", 4, $1, $2, $3, $4); }
     | ID LP RP              { addn($$, "FunDec", 3, $1, $2, $3); }
-    | ID error VarList RP   { add0($$, "FunDec"); has_error = 1; print_B_error("FunDec", $3->lineno, "Missing closing parenthesis \'(\'"); }
+    // | ID error VarList RP   { add0($$, "FunDec"); has_error = 1; print_B_error("FunDec", $3->lineno, "Missing closing parenthesis \'(\'"); }
     | ID LP VarList error   { add0($$, "FunDec"); has_error = 1; print_B_error("FunDec", $2->lineno, "Missing closing parenthesis \')\'"); }
     | ID RP                 { add0($$, "FunDec"); has_error = 1; print_B_error("FunDec", $2->lineno, "Missing closing parenthesis \'(\'"); }
     | ID LP error           { add0($$, "FunDec"); has_error = 1; print_B_error("FunDec", $2->lineno, "Missing closing parenthesis \')\'"); }
@@ -186,15 +186,15 @@ Exp : Exp ASSIGN Exp    { addn($$, "Exp", 3, $1, $2, $3); }
     | Exp DOT ID        { addn($$, "Exp", 3, $1, $2, $3); }
     | Var               { add1($$, "Exp", 1, $1); }
     | STRING            { add1($$, "Exp", 1, $1); }
-    | INVALID           { add0($$, "Exp"); has_error = 1; }
+    // | INVALID           { add0($$, "Exp"); has_error = 1; }
     | Exp INVALID Exp   { add0($$, "Exp"); has_error = 1; }
     //| error Exp RP      { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing closing parenthesis \'(\'"); }
     | LP Exp error      { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing closing parenthesis \')\'"); }
-    | MINUS error Exp RP{ add0($$, "Exp"); has_error = 1; print_B_error("Exp", $2->lineno, "Missing closing parenthesis \'(\'"); }
+    // | MINUS error Exp RP{ add0($$, "Exp"); has_error = 1; print_B_error("Exp", $2->lineno, "Missing closing parenthesis \'(\'"); }
     | MINUS LP Exp error{ add0($$, "Exp"); has_error = 1; print_B_error("Exp", $2->lineno, "Missing closing parenthesis \')\'"); }
-    | ID error Args RP  { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $2->lineno, "Missing closing parenthesis \'(\'"); }
+    // | ID error Args RP  { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $2->lineno, "Missing closing parenthesis \'(\'"); }
     | ID LP Args error  { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $2->lineno, "Missing closing parenthesis \')\'"); }
-    | ID error RP       { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $2->lineno, "Missing closing parenthesis \'(\'"); }
+    // | ID error RP       { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $2->lineno, "Missing closing parenthesis \'(\'"); }
     | ID LP error       { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $2->lineno, "Missing closing parenthesis \')\'"); }
     // | Exp error Exp RB  { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $2->lineno, "Missing closing braces \'[\'"); }
     | Exp LB Exp error  { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $2->lineno, "Missing closing braces \']\'"); }
@@ -204,10 +204,10 @@ Args : Exp COMMA Args   { addn($$, "Args", 3, $1, $2, $3); }
     | Exp               { add1($$, "Args", 1, $1); }
     ;
 
-Var : UINT          {$$ = $1;}
-    | PLUS UINT     {$$ = $1;}
+Var : UINT          { $$ = $1; }
+    | PLUS UINT     { $$ = $2; }
     | MINUS UINT    {
-                        $$ = $1;
+                        $$ = $2;
                         int ll = strlen($$->val);
                         $$->val = (char *)realloc($$->val, (ll + 2) * sizeof(char));
                         for(int i=ll;i>=1;i--){
@@ -215,10 +215,10 @@ Var : UINT          {$$ = $1;}
                         }
                         $$->val[0]='-';
                     }
-    | ID            {$$ = $1;}
-    | PLUS ID       {$$ = $1;}
+    | ID            { $$ = $1; }
+    | PLUS ID       { $$ = $2; }
     | MINUS ID      {
-                        $$ = $1;
+                        $$ = $2;
                         int ll = strlen($$->val);
                         $$->val = (char *)realloc($$->val, (ll + 2) * sizeof(char));
                         for(int i=ll;i>=1;i--){
@@ -226,10 +226,10 @@ Var : UINT          {$$ = $1;}
                         }
                         $$->val[0]='-';
                     }
-    | FLOAT         {$$ = $1;}
-    | PLUS FLOAT    {$$ = $1;}
+    | FLOAT         { $$ = $1; }
+    | PLUS FLOAT    { $$ = $2; }
     | MINUS FLOAT   {
-                        $$ = $1;
+                        $$ = $2;
                         int ll = strlen($$->val);
                         $$->val = (char *)realloc($$->val, (ll + 2) * sizeof(char));
                         for(int i=ll;i>=1;i--){
@@ -237,10 +237,10 @@ Var : UINT          {$$ = $1;}
                         }
                         $$->val[0]='-';
                     }
-    | CHAR          {$$ = $1;}
-    | PLUS CHAR     {$$ = $1;}
+    | CHAR          { $$ = $1; }
+    | PLUS CHAR     { $$ = $2; }
     | MINUS CHAR    {
-                        $$ = $1;
+                        $$ = $2;
                         int ll = strlen($$->val);
                         $$->val = (char *)realloc($$->val, (ll + 2) * sizeof(char));
                         for(int i=ll;i>=1;i--){
@@ -248,6 +248,9 @@ Var : UINT          {$$ = $1;}
                         }
                         $$->val[0]='-';
                     }
+    | INVALID       { $$ = $1; }
+    | PLUS INVALID  { $$ = $2; }
+    | MINUS INVALID { $$ = $2; }
 
 
 %%
