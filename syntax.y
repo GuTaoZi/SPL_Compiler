@@ -4,7 +4,7 @@
     #include "treeNode.h"
     #include "string.h"
 
-    treeNode* root;
+    treeNode* root = NULL;
 
     void yyerror(const char *s);
     
@@ -237,8 +237,13 @@ int main(int argc, char **argv)
     yyin = file_in;
     yyout = file_out;
     yyparse();
-    if (!has_error)
-        output_tree(root, 0);
+    if (!has_error){
+        if (root != NULL)
+            output_tree(root, 0);
+        else{
+            print_B_error("root", -1, "There is error somewhere...");
+        }
+    }
     fclose(file_in);
     fclose(file_out);
     return 0;
