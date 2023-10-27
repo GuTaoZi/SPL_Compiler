@@ -2,11 +2,11 @@ A parser for SUSTech Programming Language(SPL) that generates parse trees and re
 
 ## Contributors
 
-| SID      | Name                                            | Contributions | Contribution Rate |
-| -------- | ----------------------------------------------- | ------------- | ----------------- |
-| 12111624 | [GuTaoZi](https://github.com/GuTaoZi)           |               | A (significant)   |
-| 12110524 | [Artanisax](https://github.com/Artanisax)       |               | A (significant)   |
-| 12112012 | [ShadowStorm](https://github.com/Jayfeather233) |               | A (significant)   |
+| SID      | Name                                            | Contributions                  | Contribution Rate |
+| -------- | ----------------------------------------------- | ------------------------------ | ----------------- |
+| 12111624 | [GuTaoZi](https://github.com/GuTaoZi)           | Error Handling, Comment        | A (significant)   |
+| 12110524 | [Artanisax](https://github.com/Artanisax)       | String, Samples, Debugging     | A (significant)   |
+| 12112012 | [ShadowStorm](https://github.com/Jayfeather233) | Tree Structure, Bonus Features | A (significant)   |
 
 ## Environment
 
