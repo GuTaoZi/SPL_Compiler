@@ -1,8 +1,8 @@
 int test_for_r01(){
-  for(int a=0; a > -12345; a=a-1){
+  for(a=0, b=1; a > -12345; a=a-1){
     i =i+1;
   }
-  for(int a : 123456){
+  for(a : 123456){
     i =i+1;
   }
 }

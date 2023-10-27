@@ -5,9 +5,11 @@
     #define YYSTYPE treeNode*
     int has_error = 0;
     char str[256];
+    size_t last_error_lineno = -1;
 
     void print_A_error(size_t lineno, char *text)
     {
+        last_error_lineno = lineno;
         fprintf(yyout,"Error type A at Line %zu: unknown lexeme %s\n", lineno, text);
     }
 

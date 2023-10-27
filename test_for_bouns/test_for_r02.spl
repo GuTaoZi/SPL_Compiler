@@ -1,0 +1,5 @@
+int test_for_r02(){
+    for(int a=0;i<n;a=a+1){
+        ;
+    }
+}
