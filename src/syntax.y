@@ -117,20 +117,16 @@ ParamDec : Specifier VarDec { addn($$, "ParamDec", 2, $1, $2); }
     ;
 
 /* statement */
-CompSt : LC DefList TrueStmtList RC { addn($$, "CompSt", 4, $1, $2, $3, $4); }
-    | LC DefList TrueStmtList error { add0($$, "CompSt"); has_error = 1; print_B_error("CompSt", $1->lineno, "Missing closing curly bracket \'}\'"); }
-    //| error DefList TrueStmtList RC { add0($$, "CompSt"); has_error = 1; print_B_error("CompSt", $1->lineno, "Missing closing curly bracket \'{\'"); }
+CompSt : LC DefList StmtList RC { addn($$, "CompSt", 4, $1, $2, $3, $4); }
+    | LC DefList StmtList error { add0($$, "CompSt"); has_error = 1; print_B_error("CompSt", $1->lineno, "Missing closing curly bracket \'}\'"); }
+    //| error DefList StmtList RC { add0($$, "CompSt"); has_error = 1; print_B_error("CompSt", $1->lineno, "Missing closing curly bracket \'{\'"); }
     ;
 
-TrueStmtList: StmtList  { $$=$1; }
-    | WrongStmtList     { $$=$1; }
-    ;
 
 StmtList :                      { add0($$, "StmtList"); }
     | Stmt StmtList             { addn($$, "StmtList", 2, $1, $2); }
+    | Stmt Def DefList StmtList { add0($$, "WrongStmt"); has_error = 1; print_B_error("StmtList", $1->lineno, "Missing specifier"); }
     ;
-
-WrongStmtList: Stmt StmtList Def DefList StmtList { add0($$, "StmtList"); has_error = 1; print_B_error("StmtList", $1->lineno, "Missing specifier"); }
 
 Stmt : SEMI                                     { add1($$, "Stmt", 1, $1); }
     | Exp SEMI                                  { addn($$, "Stmt", 2, $1, $2); }
