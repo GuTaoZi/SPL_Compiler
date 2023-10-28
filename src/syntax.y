@@ -269,50 +269,66 @@ void yyerror(const char *s)
 
 int main(int argc, char **argv)
 {
-    FILE* file_in;
-    FILE* file_out;
-    if(argc == 2 || argc == 3) {
+    FILE *file_in;
+    FILE *file_out;
+    if (argc == 2 || argc == 3)
+    {
         file_in = fopen(argv[1], "r");
-        if (file_in == NULL) {
+        if (file_in == NULL)
+        {
             perror("Error opening input file");
             return 1;
         }
-        if(argc == 2) {
-            int la = strlen(argv[1]);
-            while(argv[1][la-1] != '.') la--;
-            char* lll = (char*)malloc((la+4) * sizeof(char));
-            for(int i=0;i<la;i++) lll[i] = argv[1][i];
-            lll[la] = 'o';
-            lll[la+1] = 'u';
-            lll[la+2] = 't';
-            lll[la+3] = 0;
-            file_out = fopen(lll, "w");
-            free(lll);
-        } else if(argc == 3) {
+        if (argc == 2)
+        {
+            int len = strlen(argv[1]);
+            while (argv[1][len - 1] != '.')
+                len--;
+            char *ofname = (char *)malloc((len + 4) * sizeof(char));
+            for (int i = 0; i < len; i++)
+                ofname[i] = argv[1][i];
+            ofname[len] = 'o';
+            ofname[len + 1] = 'u';
+            ofname[len + 2] = 't';
+            ofname[len + 3] = 0;
+            file_out = fopen(ofname, "w");
+            free(ofname);
+        }
+        else if (argc == 3)
+        {
             file_out = fopen(argv[2], "w");
         }
-        if (file_out == NULL) {
+        if (file_out == NULL)
+        {
             perror("Error opening output file");
             return 1;
         }
         // Redirect Flex to read from file
-    } else if(argc == 1) {
+    }
+    else if (argc == 1)
+    {
         file_in = stdin;
         file_out = stdout;
-    } else {
+    }
+    else
+    {
         fprintf(stderr, "Parameters Error!\nShould be %s [input_file] [output_file]\n", argv[0]);
         return -1;
     }
     yyin = file_in;
     yyout = file_out;
     yyparse();
-    if (!has_error){
+    if (!has_error)
+    {
         if (root != NULL)
             output_tree(root, 0);
-        else{
+        else
+        {
             print_B_error("root", -1, "There is error somewhere...");
         }
-    } else if(last_error_lineno == -1){
+    }
+    else if (last_error_lineno == -1)
+    {
         print_B_error("root", -1, "There is error somewhere...");
     }
     fclose(file_in);
