@@ -9,3 +9,11 @@ test for empty Stmt: `;`
 #### test_2_r03.spl
 
 test for unclosed `(){}[]` and no `if` before `else`.
+
+#### test_2_r04.spl
+
+test for unclosed `{}[]`
+
+#### test_2_r05.spl
+
+test for A-type errors

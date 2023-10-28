@@ -98,6 +98,12 @@ FunDec : ID LP VarList RP   { addn($$, "FunDec", 4, $1, $2, $3, $4); }
     | ID LP VarList error   { add0($$, "FunDec"); has_error = 1; print_B_error("FunDec", $2->lineno, "Missing closing parenthesis \')\'"); }
     | ID RP                 { add0($$, "FunDec"); has_error = 1; print_B_error("FunDec", $2->lineno, "Missing closing parenthesis \'(\'"); }
     | ID LP error           { add0($$, "FunDec"); has_error = 1; print_B_error("FunDec", $2->lineno, "Missing closing parenthesis \')\'"); }
+    | INVALID LP VarList RP   { add0($$, "FunDec"); has_error = 1; }
+    | INVALID LP RP             { add0($$, "FunDec"); has_error = 1; }
+    // | ID error VarList RP   { add0($$, "FunDec"); has_error = 1; print_B_error("FunDec", $3->lineno, "Missing closing parenthesis \'(\'"); }
+    | INVALID LP VarList error   { add0($$, "FunDec"); has_error = 1; }
+    | INVALID RP                 { add0($$, "FunDec"); has_error = 1; }
+    | INVALID LP error           { add0($$, "FunDec"); has_error = 1; }
     ;
 
 VarList : ParamDec COMMA VarList    { addn($$, "VarList", 3, $1, $2, $3); }
