@@ -12,9 +12,7 @@ Test for `for(;;)` and `for(:)`
 
 #### test_4.spl
 
-Test for `for(int a;;)` error.
-
-(C89 don't allow definition in `for`)
+Test for missing closing curly bracket`for(;;){`
 
 #### test_5.spl
 
