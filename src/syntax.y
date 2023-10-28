@@ -52,11 +52,14 @@ Program : HeaderDefList ExtDefList { addn($$, "Program", 2, $1, $2); root = $$;}
 
 HeaderDefList :             { add0($$, "HeaderDefList"); }
     | Headers HeaderDefList { addn($$, "HeaderDefList", 2, $1, $2);}
+    ;
 
 Headers : IncDef { add1($$, "Headers", 1, $1); }
+    ;
 
 IncDef : SHARP INCLUDE ABSTR { addn($$, "IncDef", 3, $1, $2, $3); }
     | SHARP INCLUDE error    { add0($$, "IncDef"); has_error = 1; print_B_error("IncDef", $2->lineno, "#include expects <FILENAME>"); }
+    ;
 
 ExtDefList :            { add0($$, "ExtDefList"); }
     | ExtDef ExtDefList { addn($$, "ExtDefList", 2, $1, $2); }
@@ -121,6 +124,7 @@ CompSt : LC DefList TrueStmtList RC { addn($$, "CompSt", 4, $1, $2, $3, $4); }
 
 TrueStmtList: StmtList  { $$=$1; }
     | WrongStmtList     { $$=$1; }
+    ;
 
 StmtList :                      { add0($$, "StmtList"); }
     | Stmt StmtList             { addn($$, "StmtList", 2, $1, $2); }
@@ -257,7 +261,7 @@ Var : UINT          { $$ = $1; }
     | INVALID       { $$ = $1; }
     | PLUS INVALID  { $$ = $2; }
     | MINUS INVALID { $$ = $2; }
-
+    ;
 
 %%
 

@@ -14,7 +14,7 @@ Test for `for(;;)` and `for(:)`
 
 Test for `for(int a;;)` error.
 
-(C99 don't allow definition in `for`)
+(C89 don't allow definition in `for`)
 
 #### test_5.spl
 
