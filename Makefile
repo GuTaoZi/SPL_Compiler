@@ -1,29 +1,25 @@
 CC=gcc
 FLEX=flex
 BISON=bison
+SRC_DIR = ./src
 splc:
-	cd ./src
-	$(BISON) -d syntax.y
-	$(FLEX) lex.l
-	$(CC) syntax.tab.c treeNode.c -lfl -ly -o ../bin/splc
-	@rm -f lex.yy.c syntax.tab.c syntax.tab.h *.out
+	cd $(SRC_DIR) && $(BISON) -d syntax.y
+	cd $(SRC_DIR) && $(FLEX) lex.l
+	cd $(SRC_DIR) && $(CC) syntax.tab.c treeNode.c -lfl -ly -o ../bin/splc
+	cd $(SRC_DIR) && rm -f lex.yy.c syntax.tab.c syntax.tab.h *.out
 splcb:
-	cd ./src
-	$(BISON) -d syntax.y
-	$(FLEX) lex.l
-	$(CC) syntax.tab.c treeNode.c -lfl -o ../bin/splc
-	@rm -f lex.yy.c syntax.tab.c syntax.tab.h *.out
+	cd $(SRC_DIR) && $(BISON) -d syntax.y
+	cd $(SRC_DIR) && $(FLEX) lex.l
+	cd $(SRC_DIR) && $(CC) syntax.tab.c treeNode.c -lfl -o ../bin/splc
+	cd $(SRC_DIR) && rm -f lex.yy.c syntax.tab.c syntax.tab.h *.out
 splcc:
-	cd ./src
-	$(BISON) -d syntax.y
-	$(FLEX) lex.l
-	$(CC) syntax.tab.c treeNode.c -lfl -o ../bin/splc
+	cd $(SRC_DIR) && $(BISON) -d syntax.y
+	cd $(SRC_DIR) && $(FLEX) lex.l
+	cd $(SRC_DIR) && $(CC) syntax.tab.c treeNode.c -lfl -o ../bin/splc
 splcd:
-	cd ./src
-	$(BISON) -d -Wcounterexamples syntax.y 
-	$(FLEX) lex.l
-	$(CC) syntax.tab.c treeNode.c -lfl -o ../bin/splc
+	cd $(SRC_DIR) && $(BISON) -d -Wcounterexamples syntax.y 
+	cd $(SRC_DIR) && $(FLEX) lex.l
+	cd $(SRC_DIR) && $(CC) syntax.tab.c treeNode.c -lfl -o ../bin/splc
 clean:
-	cd ./src
-	@rm -f lex.yy.c syntax.tab.c syntax.tab.h *.out
-	@rm -f ../bin/splc
+	cd $(SRC_DIR) && rm -f lex.yy.c syntax.tab.c syntax.tab.h *.out
+	cd $(SRC_DIR) && rm -f ../bin/splc

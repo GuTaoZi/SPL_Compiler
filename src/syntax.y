@@ -12,7 +12,7 @@
     void print_B_error(char* node_name, size_t lineno, char *msg)
     {
         //if (lineno != last_error_lineno){
-            fprintf(yyout, "Error type B at Line %zu: %s\n", lineno, msg, node_name);
+            fprintf(yyout, "Error type B at Line %zu: %s\n", lineno, msg);
             last_error_lineno = lineno;
         //}
     }
