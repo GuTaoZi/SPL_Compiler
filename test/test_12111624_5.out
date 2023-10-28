@@ -1,2 +1,3 @@
 Error type A at Line 1: unknown lexeme 1test_r05
-Error type B at Line 1: Missing semicolon ';'
+Error type A at Line 2: unknown lexeme @
+Error type A at Line 3: unknown lexeme 998244353.2147483647.19260817
