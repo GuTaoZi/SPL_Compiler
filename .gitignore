@@ -6,3 +6,5 @@ syntax.tab.*
 lex.yy.c
 tmp*
 ./*.spl
+test.out
+test.spl

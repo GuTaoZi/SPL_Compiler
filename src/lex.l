@@ -22,7 +22,7 @@ digit [0-9]
 pos_digit [1-9]
 hex_digit [0-9a-fA-F]
 
-decimal (0|{pos_digit}{digit}*)
+decimal (0|{digit}+)
 hexadecimal (0x)({hex_digit}+)
 invalid_hexadecimal (0x)(({letter}|{digit})+)
 FLOAT ({digit}*\.{digit}+)|({digit}+\.{digit}*)
@@ -35,7 +35,7 @@ STRING \"({VALID_STRING_LINE}\\{new_line})*{VALID_STRING_LINE}\"
 ID {letter_}+({letter_}|{digit})*
 INT {decimal}|{hexadecimal}
 INVALID_CHAR \'.*\'
-INVALID_NUMBER (0{digit}*)|(({FLOAT}\.({digit}|\.)*))|({hexadecimal}\.({digit}|\.)*)|({invalid_hexadecimal})
+INVALID_NUMBER ({digit}*)|(({FLOAT}\.({digit}|\.)*))|({hexadecimal}\.({digit}|\.)*)|({invalid_hexadecimal})
 
 abstr <.+>
 
