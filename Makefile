@@ -2,6 +2,9 @@ CC=gcc
 FLEX=flex
 BISON=bison
 SRC_DIR = ./src
+
+.PHONY: splc splcb splcc splcd clean
+
 splc:
 	cd $(SRC_DIR) && $(BISON) -d syntax.y
 	cd $(SRC_DIR) && $(FLEX) lex.l
@@ -22,4 +25,4 @@ splcd:
 	cd $(SRC_DIR) && $(CC) syntax.tab.c treeNode.c -lfl -o ../bin/splc
 clean:
 	cd $(SRC_DIR) && rm -f lex.yy.c syntax.tab.c syntax.tab.h *.out
-	cd $(SRC_DIR) && rm -f ../bin/splc
+	rm -f ./bin/splc
