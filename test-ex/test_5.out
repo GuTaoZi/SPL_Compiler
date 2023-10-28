@@ -1,22 +1,13 @@
 Program (1)
   HeaderDefList (1)
     Headers (1)
-      IncDef (1)
-        SHARP
-        INCLUDE
-        ABSTR: <hi>
+      INCLUDE: <hi>
     HeaderDefList (2)
       Headers (2)
-        IncDef (2)
-          SHARP
-          INCLUDE
-          ABSTR: <hello>
+        INCLUDE: <hello>
       HeaderDefList (3)
         Headers (3)
-          IncDef (3)
-            SHARP
-            INCLUDE
-            ABSTR: <wwqq>
+          INCLUDE: <wwqq>
   ExtDefList (4)
     ExtDef (4)
       Specifier (4)

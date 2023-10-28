@@ -1,2 +1,1 @@
-Error type B at Line 1: #include expects <FILENAME>
-Error type B at Line 1: Missing semicolon ';'
+Error type A at Line 1: unknown lexeme #

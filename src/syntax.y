@@ -21,10 +21,10 @@
 %token INVALID
 %token TYPE 
 %token STRUCT IF ELSE WHILE FOR RETURN INCLUDE
-%token SHARP DOT SEMI COLON COMMA ASSIGN LT LE GT GE NE EQ PLUS MINUS MUL DIV
+%token DOT SEMI COLON COMMA ASSIGN LT LE GT GE NE EQ PLUS MINUS MUL DIV
 %token AND OR NOT
 %token LP RP LB RB LC RC
-%token ABSTR ID UINT FLOAT CHAR STRING
+%token ID UINT FLOAT CHAR STRING
 %token SINGLE_LINE_COMMENT MULTI_LINE_COMMENT
 
 %left INVALID
@@ -54,11 +54,7 @@ HeaderDefList :             { add0($$, "HeaderDefList"); }
     | Headers HeaderDefList { addn($$, "HeaderDefList", 2, $1, $2);}
     ;
 
-Headers : IncDef { add1($$, "Headers", 1, $1); }
-    ;
-
-IncDef : SHARP INCLUDE ABSTR { addn($$, "IncDef", 3, $1, $2, $3); }
-    | SHARP INCLUDE error    { add0($$, "IncDef"); has_error = 1; print_B_error("IncDef", $2->lineno, "#include expects <FILENAME>"); }
+Headers : INCLUDE { add1($$, "Headers", 1, $1); }
     ;
 
 ExtDefList :            { add0($$, "ExtDefList"); }
@@ -146,6 +142,7 @@ Stmt : SEMI                                     { add1($$, "Stmt", 1, $1); }
     | WHILE error Exp RP Stmt                   { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $2->lineno, "Expected \'(\' after \'while\'"); }
     | WHILE LP Exp error Stmt                   { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $2->lineno, "Missing closing parenthesis \')\'"); }
     | FOR DecList SEMI Exp SEMI Exp RP Stmt %prec UPPER_FOR         { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $2->lineno, "Expected \'(\' after \'for\'"); }
+    | FOR error %prec UPPER_FOR                                     { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $2->lineno, "Expected \'(\' after \'for\'"); }
     | FOR LP DecList SEMI Exp SEMI Exp error Stmt %prec UPPER_FOR   { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $2->lineno, "Missing closing parenthesis \')\'"); }
     | FOR VarDec COLON Exp RP Stmt  %prec LOWER_FOR                 { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $2->lineno, "Expected \'(\' after \'for\'"); }
     | FOR LP VarDec COLON Exp error Stmt  %prec LOWER_FOR           { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $2->lineno, "Missing closing parenthesis \')\'"); }

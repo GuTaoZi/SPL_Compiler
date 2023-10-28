@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 
-const char *need_output[] = {"INT", "FLOAT", "CHAR", "STRING", "TYPE", "ID", "ABSTR"};
+const char *need_output[] = {"INT", "FLOAT", "CHAR", "STRING", "TYPE", "ID", "INCLUDE"};
 const int lno = 7;
 
 treeNode *new_node(char *name, const char *val, const size_t lino)

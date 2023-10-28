@@ -14,6 +14,7 @@
     }
 
     char* my_toint(const char* s);
+    char* my_include(char* s);
 %}
 
 letter [a-zA-Z]
@@ -37,7 +38,6 @@ INT {decimal}|{hexadecimal}
 INVALID_CHAR \'.*\'
 INVALID_NUMBER ({digit}*)|(({FLOAT}\.({digit}|\.)*))|({hexadecimal}\.({digit}|\.)*)|({invalid_hexadecimal})
 
-abstr <.+>
 
 %%
 
@@ -49,9 +49,9 @@ abstr <.+>
 "while"                                   { yylval = new_node("WHILE", yytext, yylineno); return WHILE; }
 "for"                                       { yylval = new_node("FOR", yytext, yylineno); return FOR; }
 "return"                                 { yylval = new_node("RETURN", yytext, yylineno); return RETURN; }
-"include"                               { yylval = new_node("INCLUDE", yytext, yylineno); return INCLUDE; }
+"\#include"[\t ]*<[^>]+>                 { yylval = new_node("INCLUDE", my_include(yytext), yylineno); return INCLUDE; }
+"\#include"[\t ]*\"[^\"]+\"                 { yylval = new_node("INCLUDE", my_include(yytext), yylineno); return INCLUDE; }
 
-"#"                                       { yylval = new_node("SHARP", yytext, yylineno); return SHARP; }
 "."                                         { yylval = new_node("DOT", yytext, yylineno); return DOT; }
 ";"                                        { yylval = new_node("SEMI", yytext, yylineno); return SEMI; }
 ":"                                       { yylval = new_node("COLON", yytext, yylineno); return COLON; }
@@ -79,16 +79,15 @@ abstr <.+>
 "{"                                          { yylval = new_node("LC", yytext, yylineno); return LC; }
 "}"                                          { yylval = new_node("RC", yytext, yylineno); return RC; }
 
-{abstr}                                   { yylval = new_node("ABSTR", yytext, yylineno); return ABSTR; }
 {ID}                                         { yylval = new_node("ID", yytext, yylineno); return ID; }
 {INT}                                       { yylval = new_node("INT", my_toint(yytext), yylineno); return UINT; }
 {FLOAT}                                   { yylval = new_node("FLOAT", yytext, yylineno); return FLOAT; }
-\'(\\x{hex_digit}{2}|.)\'                  { yylval = new_node("CHAR", yytext, yylineno); return CHAR; }
+\'(\\x{hex_digit}{2}|[^\'\"]|\\.)\'        { yylval = new_node("CHAR", yytext, yylineno); return CHAR; }
 {STRING}                                 { yylval = new_node("STRING", yytext, yylineno); return STRING; }
-{INVALID_CHAR}                     { yylval = new_node("INVALID", yytext, yylineno); has_error = 1; print_A_error(yylineno, yytext); return INVALID; }
-{INVALID_NUMBER}                   { yylval = new_node("INVALID",yytext,yylineno); has_error = 1; print_A_error(yylineno, yytext); return INVALID; }
-({INT}{ID})|{INVALID_CHAR}           { yylval = new_node("INVALID", yytext, yylineno); has_error = 1; print_A_error(yylineno, yytext); return INVALID; }
-"//".*$                      { fprintf(yyout,"Single LINE COMMENT at Line %d\n", yylineno); }
+{INVALID_CHAR}                          { yylval = new_node("INVALID", yytext, yylineno); has_error = 1; print_A_error(yylineno, yytext); return INVALID; }
+{INVALID_NUMBER}                        { yylval = new_node("INVALID", yytext, yylineno); has_error = 1; print_A_error(yylineno, yytext); return INVALID; }
+({INT}{ID})|{INVALID_CHAR}              { yylval = new_node("INVALID", yytext, yylineno); has_error = 1; print_A_error(yylineno, yytext); return INVALID; }
+"//".*$                       { fprintf(yyout,"Single LINE COMMENT at Line %d\n", yylineno); }
 "/*"((("*"[^/])?)|[^*])*"*/"  { fprintf(yyout,"MULTI LINE COMMENT at Line %d\n", yylineno); }
 {ws}|{new_line} {;}
 . { yylval = new_node("INVALID_ID", yytext, yylineno); has_error = 1; print_A_error(yylineno, yytext); return INVALID; }
@@ -124,4 +123,12 @@ char* my_toint(const char* s){
     }
     sprintf(str, "%lld", ans);
     return str;
+}
+
+char* my_include(char* s){
+    while((*s) != '<' && (*s) != '\"') {
+        s++;
+        if((*s) == 0) break;
+    }
+    return s;
 }
