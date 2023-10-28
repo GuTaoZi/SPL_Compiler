@@ -1,9 +1,16 @@
 float test_2_r03(int a, int b){
-    if ( a==b {
+    if ( a==b) {
         b=5;
     }
     
     while(0) a=1;
     else {
-        a[3 =5;
+        a[3] =5;
     }
+
+    {
+        if (a != 0)
+            a[0] = a[1];
+    }
+    else a[0] = a[2];
+}
