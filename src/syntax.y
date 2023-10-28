@@ -279,10 +279,15 @@ int main(int argc, char **argv)
         }
         if(argc == 2) {
             int la = strlen(argv[1]);
-            argv[1][la-3] = 'o';
-            argv[1][la-2] = 'u';
-            argv[1][la-1] = 't';
-            file_out = fopen(argv[1], "w");
+            while(argv[1][la-1] != '.') la--;
+            char* lll = (char*)malloc((la+4) * sizeof(char));
+            for(int i=0;i<la;i++) lll[i] = argv[1][i];
+            lll[la] = 'o';
+            lll[la+1] = 'u';
+            lll[la+2] = 't';
+            lll[la+3] = 0;
+            file_out = fopen(lll, "w");
+            free(lll);
         } else if(argc == 3) {
             file_out = fopen(argv[2], "w");
         }
