@@ -1,0 +1,91 @@
+Program (1)
+  ExtDefList (1)
+    ExtDef (1)
+      Specifier (1)
+        TYPE: int
+      FunDec (1)
+        ID: test_2_r01
+        LP
+        VarList (1)
+          ParamDec (1)
+            Specifier (1)
+              TYPE: int
+            VarDec (1)
+              ID: a
+          COMMA
+          VarList (1)
+            ParamDec (1)
+              Specifier (1)
+                TYPE: int
+              VarDec (1)
+                ID: b
+        RP
+      CompSt (2)
+        LC
+        DefList (3)
+          Def (3)
+            Specifier (3)
+              TYPE: int
+            DecList (3)
+              Dec (3)
+                VarDec (3)
+                  ID: c
+                ASSIGN
+                Exp (3)
+                  CHAR: 'c'
+            SEMI
+          DefList (4)
+            Def (4)
+              Specifier (4)
+                TYPE: int
+              DecList (4)
+                Dec (4)
+                  VarDec (4)
+                    ID: x
+                  ASSIGN
+                  Exp (4)
+                    Exp (4)
+                      FLOAT: -1.1
+                    PLUS
+                    Exp (4)
+                      FLOAT: 2.2
+              SEMI
+            DefList (5)
+              Def (5)
+                Specifier (5)
+                  TYPE: int
+                DecList (5)
+                  Dec (5)
+                    VarDec (5)
+                      ID: y
+                    ASSIGN
+                    Exp (5)
+                      INT: -123
+                SEMI
+        StmtList (6)
+          Stmt (6)
+            Exp (6)
+              Exp (6)
+                ID: x
+              ASSIGN
+              Exp (6)
+                Exp (6)
+                  ID: x
+                MINUS
+                Exp (6)
+                  INT: 5
+            SEMI
+          StmtList (7)
+            Stmt (7)
+              Exp (7)
+                Exp (7)
+                  ID: y
+                ASSIGN
+                Exp (7)
+                  Exp (7)
+                    ID: y
+                  PLUS
+                  Exp (7)
+                    INT: -5
+              SEMI
+        RC

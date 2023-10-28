@@ -1,7 +1,7 @@
 .vscode/
 a.out
 bin/
-**/*.out
+# **/*.out
 syntax.tab.*
 lex.yy.c
 tmp*

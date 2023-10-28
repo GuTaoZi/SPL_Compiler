@@ -1,5 +1,5 @@
 #!/bin/bash
 
-for i in {01..05}; do
-    ./bin/splc ./test/test_2_r$i.spl ./test_for_others/test_2_r$i.out
+for i in {1..5}; do
+    ./bin/splc ./test/test_12111624_$i.spl ./test/test_12111624_$i.out
 done
