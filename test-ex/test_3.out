@@ -34,7 +34,9 @@ Program (1)
                 ID: a
               GT
               Exp (2)
-                INT: -12345
+                MINUS
+                Exp (2)
+                  INT: 12345
             SEMI
             Exp (2)
               Exp (2)

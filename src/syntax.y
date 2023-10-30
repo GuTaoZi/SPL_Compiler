@@ -181,7 +181,8 @@ Exp : Exp ASSIGN Exp    { addn($$, "Exp", 3, $1, $2, $3); }
     | Exp MUL Exp       { addn($$, "Exp", 3, $1, $2, $3); }
     | Exp DIV Exp       { addn($$, "Exp", 3, $1, $2, $3); }
     | LP Exp RP         { addn($$, "Exp", 3, $1, $2, $3); }
-    | MINUS LP Exp RP   { addn($$, "Exp", 4, $1, $2, $3, $4); }
+    | PLUS Exp          { addn($$, "Exp", 2, $1, $2); }
+    | MINUS Exp         { addn($$, "Exp", 2, $1, $2); }
     | NOT Exp           { addn($$, "Exp", 2, $1, $2); }
     | ID LP Args RP     { addn($$, "Exp", 4, $1, $2, $3, $4); }
     | ID LP RP          { addn($$, "Exp", 3, $1, $2, $3); }
@@ -189,12 +190,25 @@ Exp : Exp ASSIGN Exp    { addn($$, "Exp", 3, $1, $2, $3); }
     | Exp DOT ID        { addn($$, "Exp", 3, $1, $2, $3); }
     | Var               { add1($$, "Exp", 1, $1); }
     | STRING            { add1($$, "Exp", 1, $1); }
+    | Exp ASSIGN error    { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); }
+    | Exp AND error       { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); }
+    | Exp OR error        { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); }
+    | Exp LT error        { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); }
+    | Exp LE error        { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); }
+    | Exp GT error        { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); }
+    | Exp GE error        { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); }
+    | Exp NE error        { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); }
+    | Exp EQ error        { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); }
+    | Exp PLUS error      { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); }
+    | Exp MINUS error     { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); }
+    | Exp MUL error       { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); }
+    | Exp DIV error       { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); }
     // | INVALID           { add0($$, "Exp"); has_error = 1; }
     | Exp INVALID Exp   { add0($$, "Exp"); has_error = 1; }
     //| error Exp RP      { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing closing parenthesis \'(\'"); }
     | LP Exp error      { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing closing parenthesis \')\'"); }
     // | MINUS error Exp RP{ add0($$, "Exp"); has_error = 1; print_B_error("Exp", $2->lineno, "Missing closing parenthesis \'(\'"); }
-    | MINUS LP Exp error{ add0($$, "Exp"); has_error = 1; print_B_error("Exp", $2->lineno, "Missing closing parenthesis \')\'"); }
+    // | MINUS LP Exp error{ add0($$, "Exp"); has_error = 1; print_B_error("Exp", $2->lineno, "Missing closing parenthesis \')\'"); }
     // | ID error Args RP  { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $2->lineno, "Missing closing parenthesis \'(\'"); }
     | ID LP Args error  { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $2->lineno, "Missing closing parenthesis \')\'"); }
     // | ID error RP       { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $2->lineno, "Missing closing parenthesis \'(\'"); }
@@ -208,52 +222,52 @@ Args : Exp COMMA Args   { addn($$, "Args", 3, $1, $2, $3); }
     ;
 
 Var : UINT          { $$ = $1; }
-    | PLUS UINT     { $$ = $2; }
-    | MINUS UINT    {
-                        $$ = $2;
-                        int ll = strlen($$->val);
-                        $$->val = (char *)realloc($$->val, (ll + 2) * sizeof(char));
-                        for(int i=ll;i>=1;i--){
-                            $$->val[i] = $$->val[i-1];
-                        }
-                        $$->val[0]='-';
-                    }
+    // | PLUS UINT     { $$ = $2; }
+    // | MINUS UINT    {
+    //                     $$ = $2;
+    //                     int ll = strlen($$->val);
+    //                     $$->val = (char *)realloc($$->val, (ll + 2) * sizeof(char));
+    //                     for(int i=ll;i>=1;i--){
+    //                         $$->val[i] = $$->val[i-1];
+    //                     }
+    //                     $$->val[0]='-';
+    //                 }
     | ID            { $$ = $1; }
-    | PLUS ID       { $$ = $2; }
-    | MINUS ID      {
-                        $$ = $2;
-                        int ll = strlen($$->val);
-                        $$->val = (char *)realloc($$->val, (ll + 2) * sizeof(char));
-                        for(int i=ll;i>=1;i--){
-                            $$->val[i] = $$->val[i-1];
-                        }
-                        $$->val[0]='-';
-                    }
+    // | PLUS ID       { $$ = $2; }
+    // | MINUS ID      {
+    //                     $$ = $2;
+    //                     int ll = strlen($$->val);
+    //                     $$->val = (char *)realloc($$->val, (ll + 2) * sizeof(char));
+    //                     for(int i=ll;i>=1;i--){
+    //                         $$->val[i] = $$->val[i-1];
+    //                     }
+    //                     $$->val[0]='-';
+    //                 }
     | FLOAT         { $$ = $1; }
-    | PLUS FLOAT    { $$ = $2; }
-    | MINUS FLOAT   {
-                        $$ = $2;
-                        int ll = strlen($$->val);
-                        $$->val = (char *)realloc($$->val, (ll + 2) * sizeof(char));
-                        for(int i=ll;i>=1;i--){
-                            $$->val[i] = $$->val[i-1];
-                        }
-                        $$->val[0]='-';
-                    }
+    // | PLUS FLOAT    { $$ = $2; }
+    // | MINUS FLOAT   {
+    //                     $$ = $2;
+    //                     int ll = strlen($$->val);
+    //                     $$->val = (char *)realloc($$->val, (ll + 2) * sizeof(char));
+    //                     for(int i=ll;i>=1;i--){
+    //                         $$->val[i] = $$->val[i-1];
+    //                     }
+    //                     $$->val[0]='-';
+    //                 }
     | CHAR          { $$ = $1; }
-    | PLUS CHAR     { $$ = $2; }
-    | MINUS CHAR    {
-                        $$ = $2;
-                        int ll = strlen($$->val);
-                        $$->val = (char *)realloc($$->val, (ll + 2) * sizeof(char));
-                        for(int i=ll;i>=1;i--){
-                            $$->val[i] = $$->val[i-1];
-                        }
-                        $$->val[0]='-';
-                    }
+    // | PLUS CHAR     { $$ = $2; }
+    // | MINUS CHAR    {
+    //                     $$ = $2;
+    //                     int ll = strlen($$->val);
+    //                     $$->val = (char *)realloc($$->val, (ll + 2) * sizeof(char));
+    //                     for(int i=ll;i>=1;i--){
+    //                         $$->val[i] = $$->val[i-1];
+    //                     }
+    //                     $$->val[0]='-';
+    //                 }
     | INVALID       { $$ = $1; }
-    | PLUS INVALID  { $$ = $2; }
-    | MINUS INVALID { $$ = $2; }
+    // | PLUS INVALID  { $$ = $2; }
+    // | MINUS INVALID { $$ = $2; }
     ;
 
 %%

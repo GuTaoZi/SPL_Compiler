@@ -45,10 +45,14 @@ Program (1)
                   ASSIGN
                   Exp (4)
                     Exp (4)
-                      FLOAT: -1.1
+                      MINUS
+                      Exp (4)
+                        FLOAT: 1.1
                     PLUS
                     Exp (4)
-                      FLOAT: 2.2
+                      PLUS
+                      Exp (4)
+                        FLOAT: 2.2
               SEMI
             DefList (5)
               Def (5)
@@ -60,7 +64,9 @@ Program (1)
                       ID: y
                     ASSIGN
                     Exp (5)
-                      INT: -123
+                      MINUS
+                      Exp (5)
+                        INT: 123
                 SEMI
         StmtList (6)
           Stmt (6)
@@ -86,6 +92,8 @@ Program (1)
                     ID: y
                   PLUS
                   Exp (7)
-                    INT: -5
+                    MINUS
+                    Exp (7)
+                      INT: 5
               SEMI
         RC

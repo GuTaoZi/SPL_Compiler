@@ -1,0 +1,4 @@
+Error type A at Line 4: unknown lexeme 1_digit
+Error type B at Line 5: Expected '(' after 'if'
+Error type A at Line 9: unknown lexeme 1_digit
+Error type B at Line 3: Expected '(' after 'while'
