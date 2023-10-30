@@ -66,7 +66,7 @@ ExtDef : Specifier ExtDecList SEMI  { addn($$, "ExtDef", 3, $1, $2, $3); }
     | Specifier FunDec CompSt       { addn($$, "ExtDef", 3, $1, $2, $3); }
     | Specifier ExtDecList error    { add0($$, "ExtDef"); has_error = 1; print_B_error("ExtDef", $1->lineno, "Missing semicolon \';\'"); }
     | Specifier error               { add0($$, "ExtDef"); has_error = 1; print_B_error("ExtDef", $1->lineno, "Missing semicolon \';\'"); }
-    //| error ExtDecList SEMI         { add0($$, "ExtDef"); has_error = 1; print_B_error("ExtDef", $1->lineno, "Missing specifier"); }
+    | ExtDecList SEMI         { add0($$, "ExtDef"); has_error = 1; print_B_error("ExtDef", $1->lineno, "Missing specifier"); }
     ;
 
 ExtDecList : VarDec             { add1($$, "ExtDecList", 1, $1); }
@@ -136,17 +136,21 @@ Stmt : SEMI                                     { add1($$, "Stmt", 1, $1); }
     | FOR LP VarDec COLON Exp RP Stmt      %prec LOWER_FOR      { addn($$, "Stmt", 7, $1, $2, $3, $4, $5, $6, $7); }
     | Exp error                                 { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Missing semicolon \';\'"); }
     | RETURN Exp error                          { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $2->lineno, "Missing semicolon \';\'"); }
-    | IF error Exp RP Stmt %prec LOWER_ELSE     { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $2->lineno, "Expected \'(\' after \'if\'"); }
-    | IF error Exp RP Stmt ELSE Stmt %prec ELSE { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $2->lineno, "Expected \'(\' after \'if\'"); }
-    | IF LP Exp error Stmt %prec LOWER_ELSE     { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $2->lineno, "Missing closing parenthesis \')\'"); }
-    | IF LP Exp error Stmt ELSE Stmt %prec ELSE { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $2->lineno, "Missing closing parenthesis \')\'"); }
-    | WHILE error Exp RP Stmt                   { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $2->lineno, "Expected \'(\' after \'while\'"); }
-    | WHILE LP Exp error Stmt                   { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $2->lineno, "Missing closing parenthesis \')\'"); }
-    | FOR DecList SEMI Exp SEMI Exp RP Stmt %prec UPPER_FOR         { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $2->lineno, "Expected \'(\' after \'for\'"); }
-    | FOR error %prec UPPER_FOR                                     { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $2->lineno, "Expected \'(\' after \'for\'"); }
-    | FOR LP DecList SEMI Exp SEMI Exp error Stmt %prec UPPER_FOR   { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $2->lineno, "Missing closing parenthesis \')\'"); }
-    | FOR VarDec COLON Exp RP Stmt  %prec LOWER_FOR                 { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $2->lineno, "Expected \'(\' after \'for\'"); }
-    | FOR LP VarDec COLON Exp error Stmt  %prec LOWER_FOR           { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $2->lineno, "Missing closing parenthesis \')\'"); }
+    | IF LP RP  %prec LOWER_ELSE                { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Missing condition"); }
+    | IF LP RP ELSE                             { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Missing condition"); }
+    | IF LP Exp RP error  %prec LOWER_ELSE      { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Expect Stmt after if"); }
+    | IF LP Exp RP error ELSE Stmt              { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Expect Stmt after if"); }
+    | IF error Exp RP Stmt %prec LOWER_ELSE     { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Expected \'(\' after \'if\'"); }
+    | IF error Exp RP Stmt ELSE Stmt %prec ELSE { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Expected \'(\' after \'if\'"); }
+    | IF LP Exp error Stmt %prec LOWER_ELSE     { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Missing closing parenthesis \')\'"); }
+    | IF LP Exp error Stmt ELSE Stmt %prec ELSE { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Missing closing parenthesis \')\'"); }
+    | WHILE error Exp RP Stmt                   { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Expected \'(\' after \'while\'"); }
+    | WHILE LP Exp error Stmt                   { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Missing closing parenthesis \')\'"); }
+    | FOR DecList SEMI Exp SEMI Exp RP Stmt %prec UPPER_FOR         { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Expected \'(\' after \'for\'"); }
+    | FOR error %prec UPPER_FOR                                     { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Expected \'(\' after \'for\'"); }
+    | FOR LP DecList SEMI Exp SEMI Exp error Stmt %prec UPPER_FOR   { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Missing closing parenthesis \')\'"); }
+    | FOR VarDec COLON Exp RP Stmt  %prec LOWER_FOR                 { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Expected \'(\' after \'for\'"); }
+    | FOR LP VarDec COLON Exp error Stmt  %prec LOWER_FOR           { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Missing closing parenthesis \')\'"); }
     | ELSE Stmt { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Expected \'if\' before \'else\'"); }
     ;
 

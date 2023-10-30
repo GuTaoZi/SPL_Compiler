@@ -8,3 +8,8 @@ Error type B at Line 23: Missing semicolon ';'
 Error type B at Line 31: Missing semicolon ';'
 Error type B at Line 32: Missing semicolon ';'
 Error type B at Line 42: Missing semicolon ';'
+Error type B at Line 46: Missing condition.
+Error type B at Line 47: Missing specifier
+Error type B at Line 53: Missing semicolon ';'
+Error type B at Line 55: Missing semicolon ';'
+Error type B at Line 59: Missing semicolon ';'

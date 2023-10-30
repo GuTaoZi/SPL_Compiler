@@ -1,1 +1,2 @@
-Error type B at Line 18446744073709551615: There is error somewhere...
+Error type B at Line 1: Missing specifier
+Error type B at Line 2: Missing semicolon ';'
