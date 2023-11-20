@@ -1,14 +1,16 @@
-A parser for SUSTech Programming Language(SPL) that generates parse trees and reports lexical/syntax errors. Project for CS323 Compilers.
+A compiler for SUSTech Programming Language(SPL), a C-like custom programming language.
 
-For more details, please check [the report](https://github.com/GuTaoZi/SPL_Parser/blob/main/report/12110524-12111624-12112012-phase1.pdf).
+Project for CS323 Compilers, SUSTech.
 
-## Contributors
+This project is developed in 4 phases. For more details, please check the reports:
 
-| SID      | Name                                            | Contributions                  |
-| -------- | ----------------------------------------------- | ------------------------------ |
-| 12111624 | [GuTaoZi](https://github.com/GuTaoZi)           | Error Handling, Comment, Doc   |
-| 12110524 | [Artanisax](https://github.com/Artanisax)       | String, Samples, Debugging     |
-| 12112012 | [ShadowStorm](https://github.com/Jayfeather233) | Tree Structure, For, Inclusion |
+- [Phase 1: Lexical and Syntax Analyzer](https://github.com/GuTaoZi/SPL_Parser/blob/main/Phase_1/report/12110524-12111624-12112012-phase1.pdf)
+
+  A parser for SPL that generates parse trees and reports lexical/syntax errors. 
+
+- [Phase 2: Semantic Analyzer](https://github.com/GuTaoZi/SPL_Parser/blob/main/Phase_2/report/12110524-12111624-12112012-phase2.pdf)
+
+  A semantic analyzer for SPL, introducing the symbol table and features including type checking.
 
 ## Environment
 
@@ -20,6 +22,7 @@ For more details, please check [the report](https://github.com/GuTaoZi/SPL_Parse
 
 ## Usage Guide
 
-1. Run `make splc` in the root directory to generate a parser executable `bin/splc`.
-2. Run the parser by `splc test/filename.spl`, the output of the parser will be saved in `test/filename.out`.
+1. Move to the directory of one of the phases.
+2. Run `make splc` in the root directory to generate a parser executable `bin/splc`.
+3. Run the parser by `splc test/filename.spl`, the output of the parser will be saved in `test/filename.out`.
 
