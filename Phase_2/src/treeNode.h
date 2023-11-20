@@ -1,13 +1,20 @@
 #ifndef __TREENODE_H__
 #define __TREENODE_H__
 #include <stdio.h>
-#include "stdlib.h"
+#include <stdlib.h>
+#include "uthash.h"
 
 extern FILE* yyout;
 
 // These TOKENs need to output its value
 extern const char *need_output[];
 extern const int lno;
+
+typedef struct _hash_node {
+    char *key;             /* key */
+    int val;
+    UT_hash_handle hh;  /* makes this structure hashable */
+};
 
 //// add a tree node with its children ////
 #define add0(self, name)                       \
