@@ -46,12 +46,12 @@
 %%
 
 /* high-level definition */
-Program : HeaderDefList ExtDefList { addn($$, "Program", 2, $1, $2); root = $$;}
+Program : HeaderDefList ExtDefList { addn($$, "Program", 2, $1, $2); root = $$; }
     //| error { add0($$, "Program"); root = $$; if(!has_error) print_B_error("root", -1, "There is error somewhere..."); has_error = 1;}
     ;
 
 HeaderDefList :             { add0($$, "HeaderDefList"); }
-    | Headers HeaderDefList { addn($$, "HeaderDefList", 2, $1, $2);}
+    | Headers HeaderDefList { addn($$, "HeaderDefList", 2, $1, $2); }
     ;
 
 Headers : INCLUDE { add1($$, "Headers", 1, $1); }
