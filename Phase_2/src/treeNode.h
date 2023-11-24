@@ -2,7 +2,7 @@
 #define __TREENODE_H__
 #include <stdio.h>
 #include <stdlib.h>
-#include "uthash.h"
+// #include "uthash.h"
 
 extern FILE* yyout;
 
@@ -10,11 +10,11 @@ extern FILE* yyout;
 extern const char *need_output[];
 extern const int lno;
 
-typedef struct _hash_node {
-    char *key;             /* key */
-    int val;
-    UT_hash_handle hh;  /* makes this structure hashable */
-};
+// typedef struct _hash_node {
+//     char *key;             /* key */
+//     int val;
+//     UT_hash_handle hh;  /* makes this structure hashable */
+// };
 
 //// add a tree node with its children ////
 #define add0(self, name)                       \
