@@ -39,6 +39,10 @@ extern const int lno;
     } while (0)
 //////// tree node add ends here /////////
 
+#ifndef treeInheri
+#define treeInheri char
+#endif
+
 typedef struct _treeNode
 {
     char *name;
@@ -47,6 +51,7 @@ typedef struct _treeNode
     struct _treeNode *child;
     struct _treeNode *next;
     struct _treeNode *prev;
+    treeInheri inheridata;
 } treeNode;
 
 /**
@@ -68,5 +73,7 @@ void output_tree(treeNode *u, size_t spaceno);
  * Set a list of nodes as `head`'s children
  */
 void make_list(int cnt, treeNode *head, ...);
+
+const char *getVarDecName(const treeNode *u);
 
 #endif

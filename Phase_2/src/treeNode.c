@@ -86,3 +86,8 @@ void make_list(int cnt, treeNode *head, ...)
 
     va_end(args);
 }
+
+const char *getVarDecName(const treeNode *u){
+    while(u->child != NULL) u=u->child;
+    return u->val;
+}

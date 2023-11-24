@@ -1,5 +1,6 @@
 %{
     #define YYSTYPE treeNode*
+    #define treeInheri void*
     #include "lex.yy.c"
     #include "treeNode.h"
     #include "string.h"
@@ -18,8 +19,7 @@
         //}
     }
 
-    Type *nowType = NULL;
-    FieldList *nowFieldList = NULL;
+    Type *nowType;
 %}
 
 %token INVALID
@@ -78,15 +78,21 @@ ExtDecList : VarDec             { add1($$, "ExtDecList", 1, $1); }
     ;
 
 /* specifier */
-Specifier : TYPE        { add1($$, "Specifier", 1, $1); makePrimType($1);}
-    | StructSpecifier   { add1($$, "Specifier", 1, $1);}
+Specifier : TYPE        { add1($$, "Specifier", 1, $1); $$->inheridata = $1->inheridata;}
+    | StructSpecifier   { add1($$, "Specifier", 1, $1); $$->inheridata = $1->inheridata;}
     ;
 
 StructSpecifier :
-      STRUCT ID {makeStructType();addStructName($2);} LC {makeFiledList();} DefList {addStructField();} RC    { addn($$, "StructSpecifier", 5, $1, $2, $3, $4, $5); }
-    | STRUCT ID {makeStructType();addStructName($2); addn($$, "StructSpecifier", 2, $1, $2); }
-    | STRUCT ID {makeStructType();addStructName($2);} LC {makeFiledList();} DefList {addStructField();} error { add0($$, "StructSpecifier"); has_error = 1; print_B_error("StructSpecifier", $3->lineno, "Missing closing curly braces \'}\'"); }
-    | STRUCT ID {makeStructType();addStructName($2);} DefList {addStructField();} RC                  { add0($$, "StructSpecifier"); has_error = 1; print_B_error("StructSpecifier", $3->lineno, "Missing closing curly braces \'{\'"); }
+      STRUCT ID {$1->inheridata = makeStructType();addStructName($1->inheridata, $2->val);}
+      LC DefList {addStructField($1->inheridata, $4->inheridata);}
+      RC { addn($$, "StructSpecifier", 5, $1, $2, $3, $4, $5); $$->inheridata = $1->inheridata;}
+    | STRUCT ID {$1->inheridata = makeStructType();addStructName($1->inheridata, $2->val); addn($$, "StructSpecifier", 2, $1, $2);  $$->inheridata = $1->inheridata;}
+    | STRUCT ID {$1->inheridata = makeStructType();addStructName($1->inheridata, $2->val);}
+      LC DefList {addStructField();}
+      error { add0($$, "StructSpecifier"); $$->inheridata = $1->inheridata; has_error = 1; print_B_error("StructSpecifier", $3->lineno, "Missing closing curly braces \'}\'"); }
+    | STRUCT ID {$1->inheridata = makeStructType();addStructName($1->inheridata, $2->val);}
+      DefList {addStructField();}
+      RC { add0($$, "StructSpecifier"); $$->inheridata = $1->inheridata; has_error = 1; print_B_error("StructSpecifier", $3->lineno, "Missing closing curly braces \'{\'"); }
     ;
 
 /* declarator */
@@ -164,16 +170,19 @@ DefList :           { add0($$, "DefList"); }
     | Def DefList   { addn($$, "DefList", 2, $1, $2); }
     ;
 
-Def : Specifier DecList SEMI    { addn($$, "Def", 3, $1, $2, $3); }
-    | Specifier DecList error   { addn($$, "Def", 2, $1, $2); has_error = 1;  print_B_error("Def", $2->lineno, "Missing semicolon \';\'"); }
+Def : Specifier {nowType = (Type*)$1->inheridata;}
+      DecList SEMI    { addn($$, "Def", 3, $1, $2, $3); }
+    | Specifier {nowType = (Type*)$1->inheridata;}
+      DecList error   { addn($$, "Def", 2, $1, $2); has_error = 1;  print_B_error("Def", $2->lineno, "Missing semicolon \';\'"); }
     ;
 
 DecList : Dec           { add1($$, "DecList", 1, $1); }
     | Dec COMMA DecList { addn($$, "DecList", 3, $1, $2, $3); }
     ;
 
-Dec : VarDec            { add1($$, "Dec", 1, $1); }
-    | VarDec ASSIGN Exp { addn($$, "Dec", 3, $1, $2, $3); }
+Dec : VarDec { add_ortho_node(getVarDecName($1), $1->inheridata); add1($$, "Dec", 1, $1); }
+    | VarDec { add_ortho_node(getVarDecName($1), $1->inheridata); }
+      ASSIGN Exp { addn($$, "Dec", 3, $1, $2, $3); }
     ;
 
 /* Expression */
@@ -213,17 +222,10 @@ Exp : Exp ASSIGN Exp    { addn($$, "Exp", 3, $1, $2, $3); }
     | Exp MINUS error     { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); }
     | Exp MUL error       { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); }
     | Exp DIV error       { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); }
-    // | INVALID           { add0($$, "Exp"); has_error = 1; }
     | Exp INVALID Exp   { add0($$, "Exp"); has_error = 1; }
-    //| error Exp RP      { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing closing parenthesis \'(\'"); }
     | LP Exp error      { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing closing parenthesis \')\'"); }
-    // | MINUS error Exp RP{ add0($$, "Exp"); has_error = 1; print_B_error("Exp", $2->lineno, "Missing closing parenthesis \'(\'"); }
-    // | MINUS LP Exp error{ add0($$, "Exp"); has_error = 1; print_B_error("Exp", $2->lineno, "Missing closing parenthesis \')\'"); }
-    // | ID error Args RP  { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $2->lineno, "Missing closing parenthesis \'(\'"); }
     | ID LP Args error  { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $2->lineno, "Missing closing parenthesis \')\'"); }
-    // | ID error RP       { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $2->lineno, "Missing closing parenthesis \'(\'"); }
     | ID LP error       { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $2->lineno, "Missing closing parenthesis \')\'"); }
-    // | Exp error Exp RB  { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $2->lineno, "Missing closing braces \'[\'"); }
     | Exp LB Exp error  { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $2->lineno, "Missing closing braces \']\'"); }
     ;
 
@@ -232,52 +234,10 @@ Args : Exp COMMA Args   { addn($$, "Args", 3, $1, $2, $3); }
     ;
 
 Var : UINT          { $$ = $1; }
-    // | PLUS UINT     { $$ = $2; }
-    // | MINUS UINT    {
-    //                     $$ = $2;
-    //                     int ll = strlen($$->val);
-    //                     $$->val = (char *)realloc($$->val, (ll + 2) * sizeof(char));
-    //                     for(int i=ll;i>=1;i--){
-    //                         $$->val[i] = $$->val[i-1];
-    //                     }
-    //                     $$->val[0]='-';
-    //                 }
     | ID            { $$ = $1; }
-    // | PLUS ID       { $$ = $2; }
-    // | MINUS ID      {
-    //                     $$ = $2;
-    //                     int ll = strlen($$->val);
-    //                     $$->val = (char *)realloc($$->val, (ll + 2) * sizeof(char));
-    //                     for(int i=ll;i>=1;i--){
-    //                         $$->val[i] = $$->val[i-1];
-    //                     }
-    //                     $$->val[0]='-';
-    //                 }
     | FLOAT         { $$ = $1; }
-    // | PLUS FLOAT    { $$ = $2; }
-    // | MINUS FLOAT   {
-    //                     $$ = $2;
-    //                     int ll = strlen($$->val);
-    //                     $$->val = (char *)realloc($$->val, (ll + 2) * sizeof(char));
-    //                     for(int i=ll;i>=1;i--){
-    //                         $$->val[i] = $$->val[i-1];
-    //                     }
-    //                     $$->val[0]='-';
-    //                 }
     | CHAR          { $$ = $1; }
-    // | PLUS CHAR     { $$ = $2; }
-    // | MINUS CHAR    {
-    //                     $$ = $2;
-    //                     int ll = strlen($$->val);
-    //                     $$->val = (char *)realloc($$->val, (ll + 2) * sizeof(char));
-    //                     for(int i=ll;i>=1;i--){
-    //                         $$->val[i] = $$->val[i-1];
-    //                     }
-    //                     $$->val[0]='-';
-    //                 }
     | INVALID       { $$ = $1; }
-    // | PLUS INVALID  { $$ = $2; }
-    // | MINUS INVALID { $$ = $2; }
     ;
 
 %%
