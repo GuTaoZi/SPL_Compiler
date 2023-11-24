@@ -97,6 +97,7 @@ orthoStack *pop_stack()
     {
         HASH_FIND_STR(H, it->name, hash_head);
         HASH_DEL(H, hash_head);
+        deleteType(it->val);
         if (it->next[0])
         {
             hashNode *hn = (hashNode *)malloc(sizeof(hashNode));
