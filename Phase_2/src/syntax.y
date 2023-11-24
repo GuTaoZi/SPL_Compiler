@@ -51,7 +51,6 @@
 
 /* high-level definition */
 Program : HeaderDefList ExtDefList { addn($$, "Program", 2, $1, $2); root = $$; }
-    //| error { add0($$, "Program"); root = $$; if(!has_error) print_B_error("root", -1, "There is error somewhere..."); has_error = 1;}
     ;
 
 HeaderDefList :             { add0($$, "HeaderDefList"); }
@@ -83,35 +82,33 @@ Specifier : TYPE        { add1($$, "Specifier", 1, $1); $$->inheridata = $1->inh
     ;
 
 StructSpecifier :
-      STRUCT ID {$1->inheridata = makeStructType();addStructName($1->inheridata, $2->val);}
-      LC DefList {addStructField($1->inheridata, $4->inheridata);}
-      RC { addn($$, "StructSpecifier", 5, $1, $2, $3, $4, $5); $$->inheridata = $1->inheridata;}
-    | STRUCT ID {$1->inheridata = makeStructType();addStructName($1->inheridata, $2->val); addn($$, "StructSpecifier", 2, $1, $2);  $$->inheridata = $1->inheridata;}
-    | STRUCT ID {$1->inheridata = makeStructType();addStructName($1->inheridata, $2->val);}
-      LC DefList {addStructField();}
-      error { add0($$, "StructSpecifier"); $$->inheridata = $1->inheridata; has_error = 1; print_B_error("StructSpecifier", $3->lineno, "Missing closing curly braces \'}\'"); }
-    | STRUCT ID {$1->inheridata = makeStructType();addStructName($1->inheridata, $2->val);}
-      DefList {addStructField();}
-      RC { add0($$, "StructSpecifier"); $$->inheridata = $1->inheridata; has_error = 1; print_B_error("StructSpecifier", $3->lineno, "Missing closing curly braces \'{\'"); }
+      STRUCT ID     { $1->inheridata = makeStructType(); addStructName($1->inheridata, $2->val); }
+      LC DefList    { addStructField($1->inheridata, $4->inheridata); }
+      RC            { addn($$, "StructSpecifier", 5, $1, $2, $3, $4, $5); $$->inheridata = $1->inheridata; }
+    | STRUCT ID     { $1->inheridata = makeStructType(); addStructName($1->inheridata, $2->val); addn($$, "StructSpecifier", 2, $1, $2); $$->inheridata = $1->inheridata; }
+    | STRUCT ID     { $1->inheridata = makeStructType(); addStructName($1->inheridata, $2->val); }
+      LC DefList    { addStructField(); }
+      error         { add0($$, "StructSpecifier"); $$->inheridata = $1->inheridata; has_error = 1; print_B_error("StructSpecifier", $3->lineno, "Missing closing curly braces \'}\'"); }
+    | STRUCT ID     { $1->inheridata = makeStructType(); addStructName($1->inheridata, $2->val); }
+      DefList       { addStructField(); }
+      RC            { add0($$, "StructSpecifier"); $$->inheridata = $1->inheridata; has_error = 1; print_B_error("StructSpecifier", $3->lineno, "Missing closing curly braces \'{\'"); }
     ;
 
 /* declarator */
 VarDec : ID                 { add1($$, "VarDec", 1, $1); }
-    | VarDec LB UINT RB     { addn($$, "VarDec", 4, $1, $2, $3, $4); }
+    | VarDec LB UINT RB     { addn($$, "VarDec", 4, $1, $2, $3, $4); $$->inheridata = makeArrayTypr($1, $3); }
     | VarDec LB UINT error  { add0($$, "VarDec"); has_error = 1; print_B_error("VarDec", $2->lineno, "Missing closing braces \']\'"); }
-    | VarDec UINT RB        { add0($$, "VarDec"); has_error = 1; print_B_error("VarDec", $2->lineno, "Missing closing braces \']\'"); }
+    // | VarDec UINT RB        { add0($$, "VarDec"); has_error = 1; print_B_error("VarDec", $2->lineno, "Missing closing braces \']\'"); }
     | INVALID               { add0($$, "VarDec"); has_error = 1;}
     ;
 
 FunDec : ID LP VarList RP   { addn($$, "FunDec", 4, $1, $2, $3, $4); }
     | ID LP RP              { addn($$, "FunDec", 3, $1, $2, $3); }
-    // | ID error VarList RP   { add0($$, "FunDec"); has_error = 1; print_B_error("FunDec", $3->lineno, "Missing closing parenthesis \'(\'"); }
     | ID LP VarList error   { add0($$, "FunDec"); has_error = 1; print_B_error("FunDec", $2->lineno, "Missing closing parenthesis \')\'"); }
     | ID RP                 { add0($$, "FunDec"); has_error = 1; print_B_error("FunDec", $2->lineno, "Missing closing parenthesis \'(\'"); }
     | ID LP error           { add0($$, "FunDec"); has_error = 1; print_B_error("FunDec", $2->lineno, "Missing closing parenthesis \')\'"); }
     | INVALID LP VarList RP   { add0($$, "FunDec"); has_error = 1; }
     | INVALID LP RP             { add0($$, "FunDec"); has_error = 1; }
-    // | ID error VarList RP   { add0($$, "FunDec"); has_error = 1; print_B_error("FunDec", $3->lineno, "Missing closing parenthesis \'(\'"); }
     | INVALID LP VarList error   { add0($$, "FunDec"); has_error = 1; }
     | INVALID RP                 { add0($$, "FunDec"); has_error = 1; }
     | INVALID LP error           { add0($$, "FunDec"); has_error = 1; }
@@ -170,10 +167,10 @@ DefList :           { add0($$, "DefList"); }
     | Def DefList   { addn($$, "DefList", 2, $1, $2); }
     ;
 
-Def : Specifier {nowType = (Type*)$1->inheridata;}
+Def : Specifier { nowType = (Type*)$1->inheridata; }
       DecList SEMI    { addn($$, "Def", 3, $1, $2, $3); }
-    | Specifier {nowType = (Type*)$1->inheridata;}
-      DecList error   { addn($$, "Def", 2, $1, $2); has_error = 1;  print_B_error("Def", $2->lineno, "Missing semicolon \';\'"); }
+    | Specifier { nowType = (Type*)$1->inheridata; }
+      DecList error   { addn($$, "Def", 2, $1, $2); has_error = 1; print_B_error("Def", $2->lineno, "Missing semicolon \';\'"); }
     ;
 
 DecList : Dec           { add1($$, "DecList", 1, $1); }
