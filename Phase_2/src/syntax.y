@@ -3,6 +3,7 @@
     #include "lex.yy.c"
     #include "treeNode.h"
     #include "string.h"
+    #include "type.h"
 
     treeNode* root = NULL;
     extern size_t last_error_lineno;
@@ -16,6 +17,9 @@
             last_error_lineno = lineno;
         //}
     }
+
+    Type *nowType = NULL;
+    FieldList *nowFieldList = NULL;
 %}
 
 %token INVALID
@@ -74,14 +78,15 @@ ExtDecList : VarDec             { add1($$, "ExtDecList", 1, $1); }
     ;
 
 /* specifier */
-Specifier : TYPE        { add1($$, "Specifier", 1, $1); }
-    | StructSpecifier   { add1($$, "Specifier", 1, $1); }
+Specifier : TYPE        { add1($$, "Specifier", 1, $1); makePrimType($1);}
+    | StructSpecifier   { add1($$, "Specifier", 1, $1);}
     ;
 
-StructSpecifier : STRUCT ID LC DefList RC   { addn($$, "StructSpecifier", 5, $1, $2, $3, $4, $5); }
-    | STRUCT ID                             { addn($$, "StructSpecifier", 2, $1, $2); }
-    | STRUCT ID LC DefList error            { add0($$, "StructSpecifier"); has_error = 1; print_B_error("StructSpecifier", $3->lineno, "Missing closing curly braces \'}\'"); }
-    | STRUCT ID DefList RC                  { add0($$, "StructSpecifier"); has_error = 1; print_B_error("StructSpecifier", $3->lineno, "Missing closing curly braces \'{\'"); }
+StructSpecifier :
+      STRUCT ID {makeStructType();addStructName($2);} LC {makeFiledList();} DefList {addStructField();} RC    { addn($$, "StructSpecifier", 5, $1, $2, $3, $4, $5); }
+    | STRUCT ID {makeStructType();addStructName($2); addn($$, "StructSpecifier", 2, $1, $2); }
+    | STRUCT ID {makeStructType();addStructName($2);} LC {makeFiledList();} DefList {addStructField();} error { add0($$, "StructSpecifier"); has_error = 1; print_B_error("StructSpecifier", $3->lineno, "Missing closing curly braces \'}\'"); }
+    | STRUCT ID {makeStructType();addStructName($2);} DefList {addStructField();} RC                  { add0($$, "StructSpecifier"); has_error = 1; print_B_error("StructSpecifier", $3->lineno, "Missing closing curly braces \'{\'"); }
     ;
 
 /* declarator */

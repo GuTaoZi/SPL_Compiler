@@ -19,7 +19,7 @@ treeNode *new_node(char *name, const char *val, const size_t lino)
         strcpy(p->val, val);
     }
     p->lineno = lino;
-    p->child = p->next = NULL;
+    p->child = p->next = p->prev = NULL;
     return p;
 }
 
@@ -80,6 +80,7 @@ void make_list(int cnt, treeNode *head, ...)
     {
         nxt = va_arg(args, treeNode *);
         value->next = nxt;
+        nxt->prev = value;
         value = nxt;
     }
 

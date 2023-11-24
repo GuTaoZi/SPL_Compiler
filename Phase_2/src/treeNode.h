@@ -46,6 +46,7 @@ typedef struct _treeNode
     size_t lineno;
     struct _treeNode *child;
     struct _treeNode *next;
+    struct _treeNode *prev;
 } treeNode;
 
 /**
