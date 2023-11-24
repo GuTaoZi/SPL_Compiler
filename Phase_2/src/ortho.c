@@ -1,33 +1,8 @@
-#include "type.h"
-#include "uthash.h"
+#include "ortho.h"
 #include <stdio.h>
 #include <string.h>
-extern FILE *yyout;
-
-typedef struct _orthoNode
-{
-    char name[32];
-    orthoNode *next[2];
-    // next[0]: ptr to next node with same name(hash)
-    // next[1]: ptr to next node within same scope(stack)
-    // NULL for tail of the list
-    Type *val;
-} orthoNode;
-
-typedef struct _hashNode
-{
-    char name[32];
-    orthoNode *head;
-    UT_hash_handle hh;
-} hashNode;
 
 static hashNode *H = NULL;
-
-typedef struct _orthoStack
-{
-    orthoNode *top;
-    orthoStack *next;
-} orthoStack;
 
 static orthoStack *S = NULL;
 
@@ -116,17 +91,6 @@ orthoStack *pop_stack()
     free(S);
     S = S->next;
     return S;
-}
-
-orthoNode *get_head_by_name(char *name)
-{
-    hashNode *p;
-    HASH_FIND_STR(H, name, p);
-    if (p)
-    {
-        return p->head;
-    }
-    return NULL;
 }
 
 orthoNode *stack_top()
