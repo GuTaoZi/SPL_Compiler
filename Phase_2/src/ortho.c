@@ -25,6 +25,7 @@ orthoStack *new_stack_node()
     return S;
 }
 
+//TODO: check if redefinition here, or maybe outside?
 orthoNode *add_ortho_node(char *name, Type *val)
 {
     if (!S)
