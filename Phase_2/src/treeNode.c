@@ -87,7 +87,24 @@ void make_list(int cnt, treeNode *head, ...)
     va_end(args);
 }
 
-const char *getVarDecName(const treeNode *u){
-    while(u->child != NULL) u=u->child;
+const char *getVarDecName(const treeNode *u)
+{
+    while (u->child != NULL)
+        u = u->child;
     return u->val;
+}
+
+treeNode *get_child(treeNode *u, size_t id)
+{
+    treeNode *v = u->child;
+    while (id--)
+        v = v->next;
+    return v;
+}
+
+bool is_lvalue(treeNode *u)
+{
+    return (u->child_cnt == 1 && !strcmp(u->child->child->name, "ID")) ||
+        (u->child_cnt == 3 && get_child(u, 1)->name == "DOT") ||
+        (u->child_cnt == 4 && get_child(u, 1)->name == "LB");
 }
