@@ -84,7 +84,7 @@ Specifier : TYPE        { add1($$, "Specifier", 1, $1); $$->inheridata = $1->inh
 
 StructSpecifier :
       STRUCT ID     { $1->inheridata = makeStructType(); addStructName($1->inheridata, $2->val); }
-      LC            { push_stack(); }
+      LC            { new_stack_node(); }
       DefList       { addStructField($1->inheridata, $4->inheridata); }
       RC            { addn($$, "StructSpecifier", 5, $1, $2, $3, $4, $5); $$->inheridata = $1->inheridata; pop_stack(); }
     | STRUCT ID     { $1->inheridata = makeStructType(); addStructName($1->inheridata, $2->val); addn($$, "StructSpecifier", 2, $1, $2); $$->inheridata = $1->inheridata; }
@@ -92,14 +92,18 @@ StructSpecifier :
       LC DefList    { addStructField(); }
       error         { add0($$, "StructSpecifier"); $$->inheridata = $1->inheridata; has_error = 1; print_B_error("StructSpecifier", $3->lineno, "Missing closing curly braces \'}\'"); }
     | STRUCT ID     { $1->inheridata = makeStructType(); addStructName($1->inheridata, $2->val); }
-      DefList       { addStructField(); }
-      RC            { add0($$, "StructSpecifier"); $$->inheridata = $1->inheridata; has_error = 1; print_B_error("StructSpecifier", $3->lineno, "Missing closing curly braces \'{\'"); }
+      DefList       { new_stack_node(); addStructField($1->inheridata, $4->inheridata); }
+      RC            { add0($$, "StructSpecifier"); $$->inheridata = $1->inheridata; has_error = 1; print_B_error("StructSpecifier", $3->lineno, "Missing closing curly braces \'{\'"); pop_stack(); addStructStack($1->inheridata);}
+    | STRUCT INVALID LC DefList RC      {add0($$, "StructSpecifier"); has_error = 1; }
+    | STRUCT INVALID                    {add0($$, "StructSpecifier"); has_error = 1; }
+    | STRUCT INVALID LC DefList error   {add0($$, "StructSpecifier"); has_error = 1; }
+    | STRUCT INVALID DefList RC         {add0($$, "StructSpecifier"); has_error = 1; }
     ;
 
 /* declarator */
-VarDec : ID                 { add1($$, "VarDec", 1, $1); }
-    | VarDec LB UINT RB     { addn($$, "VarDec", 4, $1, $2, $3, $4); $$->inheridata = makeArrayType($1, $3); }
-    | VarDec LB UINT error  { add0($$, "VarDec"); has_error = 1; print_B_error("VarDec", $2->lineno, "Missing closing braces \']\'"); }
+VarDec : ID                 { add1($$, "VarDec", 1, $1); $$->inheridata = nowType;}
+    | VarDec LB UINT RB     { addn($$, "VarDec", 4, $1, $2, $3, $4); $$->inheridata = addArrayType($1->inheridata, my_toint($3->val)); }
+    | VarDec LB UINT error  { add0($$, "VarDec"); $$->inheridata = makeArrayType($1->inheridata, my_toint($3->val)); has_error = 1; print_B_error("VarDec", $2->lineno, "Missing closing braces \']\'"); }
     // | VarDec UINT RB        { add0($$, "VarDec"); has_error = 1; print_B_error("VarDec", $2->lineno, "Missing closing braces \']\'"); }
     | INVALID               { add0($$, "VarDec"); has_error = 1;}
     ;

@@ -13,7 +13,8 @@
         fprintf(yyout,"Error type A at Line %zu: unknown lexeme %s\n", lineno, text);
     }
 
-    char* my_toint(const char* s);
+    long long my_toint(const char* s);
+    char* my_toint_str(const char* s);
     char* my_include(char* s);
 %}
 
@@ -82,7 +83,7 @@ INVALID_NUMBER (0{digit}*)|(({FLOAT}\.({digit}|\.)*))|({hexadecimal}\.({digit}|\
 "}"                                          { yylval = new_node("RC", yytext, yylineno); return RC; }
 
 {ID}                                         { yylval = new_node("ID", yytext, yylineno); return ID; }
-{INT}                                       { yylval = new_node("INT", my_toint(yytext), yylineno); return UINT; }
+{INT}                                       { yylval = new_node("INT", my_toint_str(yytext), yylineno); return UINT; }
 {FLOAT}                                   { yylval = new_node("FLOAT", yytext, yylineno); return FLOAT; }
 \'(\\x{hex_digit}{2}|[^\'\"]|\\.)\'        { yylval = new_node("CHAR", yytext, yylineno); return CHAR; }
 {STRING}                                 { yylval = new_node("STRING", yytext, yylineno); return STRING; }
@@ -96,7 +97,7 @@ INVALID_NUMBER (0{digit}*)|(({FLOAT}\.({digit}|\.)*))|({hexadecimal}\.({digit}|\
 
 %%
 
-char* my_toint(const char* s){
+long long my_toint(const char* s){
     int u = 0, k;
     int f = 1;
     long long ans = 0;
@@ -123,7 +124,11 @@ char* my_toint(const char* s){
             u ++;
         }
     }
-    sprintf(str, "%lld", ans);
+
+    return ans;
+}
+char* my_toint_str(const char* s){
+    sprintf(str, "%lld", my_toint(s));
     return str;
 }
 

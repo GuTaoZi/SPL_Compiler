@@ -3,6 +3,7 @@
 
 typedef struct Type
 {
+    size_t typesize;
     enum
     {
         PRIMITIVE,
@@ -27,12 +28,14 @@ typedef struct Type
 
 typedef struct Array
 {
+    size_t typesize;
     struct Type *base;
     int size;
 } Array;
 
 typedef struct FieldList
 {
+    size_t typesize;
     struct Type *type;
     char varname[32];
     struct FieldList *next;
@@ -40,6 +43,7 @@ typedef struct FieldList
 
 typedef struct Structure
 {
+    size_t typesize;
     char struct_name[32];
     struct FieldList *data;
 } Structure;
