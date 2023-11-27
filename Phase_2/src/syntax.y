@@ -1,10 +1,11 @@
 %{
     #define YYSTYPE treeNode*
     #define treeInheri void*
+    #include <string.h>
     #include "lex.yy.c"
     #include "treeNode.h"
-    #include "string.h"
     #include "type.h"
+    #include "ortho.h"
 
     treeNode* root = NULL;
     extern size_t last_error_lineno;
@@ -83,8 +84,9 @@ Specifier : TYPE        { add1($$, "Specifier", 1, $1); $$->inheridata = $1->inh
 
 StructSpecifier :
       STRUCT ID     { $1->inheridata = makeStructType(); addStructName($1->inheridata, $2->val); }
-      LC DefList    { addStructField($1->inheridata, $4->inheridata); }
-      RC            { addn($$, "StructSpecifier", 5, $1, $2, $3, $4, $5); $$->inheridata = $1->inheridata; }
+      LC            { new_stack_node(); }
+      DefList       { addStructField($1->inheridata, $4->inheridata); }
+      RC            { addn($$, "StructSpecifier", 5, $1, $2, $3, $4, $5); $$->inheridata = $1->inheridata; pop_stack(); }
     | STRUCT ID     { $1->inheridata = makeStructType(); addStructName($1->inheridata, $2->val); addn($$, "StructSpecifier", 2, $1, $2); $$->inheridata = $1->inheridata; }
     | STRUCT ID     { $1->inheridata = makeStructType(); addStructName($1->inheridata, $2->val); }
       LC DefList    { addStructField(); }
@@ -122,7 +124,8 @@ ParamDec : Specifier VarDec { addn($$, "ParamDec", 2, $1, $2); }
     ;
 
 /* statement */
-CompSt : LC DefList StmtList RC { addn($$, "CompSt", 4, $1, $2, $3, $4); }
+CompSt : LC                 { new_stack_node(); }
+      DefList StmtList RC   { addn($$, "CompSt", 4, $1, $2, $3, $4); pop_stack(); }
     | LC DefList StmtList error { add0($$, "CompSt"); has_error = 1; print_B_error("CompSt", $1->lineno, "Missing closing curly bracket \'}\'"); }
     //| error DefList StmtList RC { add0($$, "CompSt"); has_error = 1; print_B_error("CompSt", $1->lineno, "Missing closing curly bracket \'{\'"); }
     ;
