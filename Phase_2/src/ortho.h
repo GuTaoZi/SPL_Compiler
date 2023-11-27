@@ -30,7 +30,7 @@ typedef struct _orthoStack
  * @description: Append a new stack node to the top of the stack list, invoked when opening a new scope.
  * @return {*} The current stack top orthoStack
  */
-orthoStack *new_stack_node();
+orthoStack *push_stack();
 
 /**
  * @description: Clear all orthoNodes in the stack-top scope, then pop the stack top, invoked when leaving a scope.

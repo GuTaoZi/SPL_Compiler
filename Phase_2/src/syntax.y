@@ -84,7 +84,7 @@ Specifier : TYPE        { add1($$, "Specifier", 1, $1); $$->inheridata = $1->inh
 
 StructSpecifier :
       STRUCT ID     { $1->inheridata = makeStructType(); addStructName($1->inheridata, $2->val); }
-      LC            { new_stack_node(); }
+      LC            { push_stack(); }
       DefList       { addStructField($1->inheridata, $4->inheridata); }
       RC            { addn($$, "StructSpecifier", 5, $1, $2, $3, $4, $5); $$->inheridata = $1->inheridata; pop_stack(); }
     | STRUCT ID     { $1->inheridata = makeStructType(); addStructName($1->inheridata, $2->val); addn($$, "StructSpecifier", 2, $1, $2); $$->inheridata = $1->inheridata; }
@@ -98,7 +98,7 @@ StructSpecifier :
 
 /* declarator */
 VarDec : ID                 { add1($$, "VarDec", 1, $1); }
-    | VarDec LB UINT RB     { addn($$, "VarDec", 4, $1, $2, $3, $4); $$->inheridata = makeArrayTypr($1, $3); }
+    | VarDec LB UINT RB     { addn($$, "VarDec", 4, $1, $2, $3, $4); $$->inheridata = makeArrayType($1, $3); }
     | VarDec LB UINT error  { add0($$, "VarDec"); has_error = 1; print_B_error("VarDec", $2->lineno, "Missing closing braces \']\'"); }
     // | VarDec UINT RB        { add0($$, "VarDec"); has_error = 1; print_B_error("VarDec", $2->lineno, "Missing closing braces \']\'"); }
     | INVALID               { add0($$, "VarDec"); has_error = 1;}
@@ -109,11 +109,11 @@ FunDec : ID LP VarList RP   { addn($$, "FunDec", 4, $1, $2, $3, $4); }
     | ID LP VarList error   { add0($$, "FunDec"); has_error = 1; print_B_error("FunDec", $2->lineno, "Missing closing parenthesis \')\'"); }
     | ID RP                 { add0($$, "FunDec"); has_error = 1; print_B_error("FunDec", $2->lineno, "Missing closing parenthesis \'(\'"); }
     | ID LP error           { add0($$, "FunDec"); has_error = 1; print_B_error("FunDec", $2->lineno, "Missing closing parenthesis \')\'"); }
-    | INVALID LP VarList RP   { add0($$, "FunDec"); has_error = 1; }
+    | INVALID LP VarList RP     { add0($$, "FunDec"); has_error = 1; }
     | INVALID LP RP             { add0($$, "FunDec"); has_error = 1; }
-    | INVALID LP VarList error   { add0($$, "FunDec"); has_error = 1; }
-    | INVALID RP                 { add0($$, "FunDec"); has_error = 1; }
-    | INVALID LP error           { add0($$, "FunDec"); has_error = 1; }
+    | INVALID LP VarList error  { add0($$, "FunDec"); has_error = 1; }
+    | INVALID RP                { add0($$, "FunDec"); has_error = 1; }
+    | INVALID LP error          { add0($$, "FunDec"); has_error = 1; }
     ;
 
 VarList : ParamDec COMMA VarList    { addn($$, "VarList", 3, $1, $2, $3); }
@@ -124,8 +124,8 @@ ParamDec : Specifier VarDec { addn($$, "ParamDec", 2, $1, $2); }
     ;
 
 /* statement */
-CompSt : LC                 { new_stack_node(); }
-      DefList StmtList RC   { addn($$, "CompSt", 4, $1, $2, $3, $4); pop_stack(); }
+CompSt : LC                     { push_stack(); }
+      DefList StmtList RC       { addn($$, "CompSt", 4, $1, $2, $3, $4); pop_stack(); }
     | LC DefList StmtList error { add0($$, "CompSt"); has_error = 1; print_B_error("CompSt", $1->lineno, "Missing closing curly bracket \'}\'"); }
     //| error DefList StmtList RC { add0($$, "CompSt"); has_error = 1; print_B_error("CompSt", $1->lineno, "Missing closing curly bracket \'{\'"); }
     ;
@@ -170,18 +170,18 @@ DefList :           { add0($$, "DefList"); }
     | Def DefList   { addn($$, "DefList", 2, $1, $2); }
     ;
 
-Def : Specifier { nowType = (Type*)$1->inheridata; }
-      DecList SEMI    { addn($$, "Def", 3, $1, $2, $3); }
-    | Specifier { nowType = (Type*)$1->inheridata; }
-      DecList error   { addn($$, "Def", 2, $1, $2); has_error = 1; print_B_error("Def", $2->lineno, "Missing semicolon \';\'"); }
+Def : Specifier     { nowType = (Type*)$1->inheridata; }
+      DecList SEMI  { addn($$, "Def", 3, $1, $2, $3); }
+    | Specifier     { nowType = (Type*)$1->inheridata; }
+      DecList error { addn($$, "Def", 2, $1, $2); has_error = 1; print_B_error("Def", $2->lineno, "Missing semicolon \';\'"); }
     ;
 
 DecList : Dec           { add1($$, "DecList", 1, $1); }
     | Dec COMMA DecList { addn($$, "DecList", 3, $1, $2, $3); }
     ;
 
-Dec : VarDec { add_ortho_node(getVarDecName($1), $1->inheridata); add1($$, "Dec", 1, $1); }
-    | VarDec { add_ortho_node(getVarDecName($1), $1->inheridata); }
+Dec : VarDec    { add_ortho_node(getVarDecName($1), $1->inheridata); add1($$, "Dec", 1, $1); }
+    | VarDec    { add_ortho_node(getVarDecName($1), $1->inheridata); }
       ASSIGN Exp { addn($$, "Dec", 3, $1, $2, $3); }
     ;
 
@@ -209,19 +209,19 @@ Exp : Exp ASSIGN Exp    { addn($$, "Exp", 3, $1, $2, $3); }
     | Exp DOT ID        { addn($$, "Exp", 3, $1, $2, $3); }
     | Var               { add1($$, "Exp", 1, $1); }
     | STRING            { add1($$, "Exp", 1, $1); }
-    | Exp ASSIGN error    { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); }
-    | Exp AND error       { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); }
-    | Exp OR error        { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); }
-    | Exp LT error        { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); }
-    | Exp LE error        { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); }
-    | Exp GT error        { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); }
-    | Exp GE error        { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); }
-    | Exp NE error        { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); }
-    | Exp EQ error        { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); }
-    | Exp PLUS error      { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); }
-    | Exp MINUS error     { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); }
-    | Exp MUL error       { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); }
-    | Exp DIV error       { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); }
+    | Exp ASSIGN error  { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); }
+    | Exp AND error     { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); }
+    | Exp OR error      { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); }
+    | Exp LT error      { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); }
+    | Exp LE error      { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); }
+    | Exp GT error      { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); }
+    | Exp GE error      { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); }
+    | Exp NE error      { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); }
+    | Exp EQ error      { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); }
+    | Exp PLUS error    { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); }
+    | Exp MINUS error   { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); }
+    | Exp MUL error     { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); }
+    | Exp DIV error     { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); }
     | Exp INVALID Exp   { add0($$, "Exp"); has_error = 1; }
     | LP Exp error      { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing closing parenthesis \')\'"); }
     | ID LP Args error  { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $2->lineno, "Missing closing parenthesis \')\'"); }
