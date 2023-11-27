@@ -1,6 +1,8 @@
 #ifndef TYPE_H
 #define TYPE_H
 
+#include <stddef.h>
+
 typedef struct Type
 {
     size_t typesize;
@@ -62,6 +64,12 @@ void addStructName(Type *nowType, const char *u);
 
 FieldList *makeFieldList(Type *nowType, const char *name);
 
+Type *makeArrayType(Type *b, size_t sz);
+
+Type *addArrayTypeRec(Type *nowType, size_t sz);
+
+Type *addArrayType(Type *nowType, size_t sz);
+
 FieldList *addFieldList(FieldList *fl, Type *nowType, const char *name);
 
 void addStructField(Type *nowType, FieldList *fl);
@@ -74,6 +82,9 @@ void deleteStructure(Structure *stru);
 
 void deleteFunction(Function *func);
 
+/**
+ * So... Please do not use me
+*/
 void deleteType(Type *type);
 
 #endif

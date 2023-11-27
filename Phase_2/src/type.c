@@ -1,7 +1,5 @@
 #include "type.h"
 
-#include <stddef.h>
-
 Type *makeStructType(){
     Type *nowType = (Type*)malloc(sizeof(Type));
     nowType->category = STRUCTURE;
