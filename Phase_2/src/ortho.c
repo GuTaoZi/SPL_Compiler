@@ -6,7 +6,7 @@ static hashNode *H = NULL;
 
 static orthoStack *S = NULL;
 
-static orthoNode *new_ortho_node(char *name, Type *val)
+static orthoNode *new_ortho_node(const char *name, Type *val)
 {
     orthoNode *p = (orthoNode *)malloc(sizeof(orthoNode));
     strncpy(p->name, name, 31);
@@ -69,7 +69,7 @@ orthoNode *stack_top()
 }
 
 //TODO: check if redefinition here, or maybe outside?
-orthoNode *add_ortho_node(char *name, Type *val)
+orthoNode *add_ortho_node(const char *name, Type *val)
 {
     if (!S)
     {
@@ -99,7 +99,7 @@ orthoNode *add_ortho_node(char *name, Type *val)
     // add the new map <name, hashNode(containing orthoNode)>
 }
 
-orthoNode *current_scope_seek(char *name)
+orthoNode *current_scope_seek(const char *name)
 {
     orthoNode *it = S->top;
     while (it)
@@ -113,7 +113,7 @@ orthoNode *current_scope_seek(char *name)
     return NULL;
 }
 
-orthoNode *global_scope_seek(char *name)
+orthoNode *global_scope_seek(const char *name)
 {
     orthoStack *sit = S;
     while (sit)

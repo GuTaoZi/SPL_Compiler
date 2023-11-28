@@ -6,7 +6,7 @@ extern FILE *yyout;
 typedef struct _orthoNode
 {
     char name[32];
-    orthoNode *next[2];
+    struct _orthoNode *next[2];
     // next[0]: ptr to next node with same name(hash)
     // next[1]: ptr to next node within same scope(stack)
     // NULL for tail of the list
@@ -23,7 +23,7 @@ typedef struct _hashNode
 typedef struct _orthoStack
 {
     orthoNode *top;
-    orthoStack *next;
+    struct _orthoStack *next;
 } orthoStack;
 
 /**
@@ -50,18 +50,18 @@ orthoNode *stack_top();
  * @param {Type} *val type of the orthoNode
  * @return {*}
  */
-orthoNode *add_ortho_node(char *name, Type *val);
+orthoNode *add_ortho_node(const char *name, Type *val);
 
 /**
  * @description: Look for orthoNode with given name within the current scope.
  * @param {char} *name
  * @return {*} An orthoNode with given name, NULL for 404
  */
-orthoNode *current_scope_seek(char *name);
+orthoNode *current_scope_seek(const char *name);
 
 /**
  * @description: Look for the "nearest" orthoNode with given name in all valid scopes.
  * @param {char} *name
  * @return {*} An orthoNode with given name, NULL for 404
  */
-orthoNode *global_scope_seek(char *name);
+orthoNode *global_scope_seek(const char *name);

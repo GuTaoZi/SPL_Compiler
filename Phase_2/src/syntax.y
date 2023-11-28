@@ -102,7 +102,7 @@ StructSpecifier :
     
     | STRUCT ID     { addn($$, "StructSpecifier", 2, $1, $2);
                         $$->inheridata = findStruct($2->val);
-                        addStructStack($$->inheridata); }
+                        }
     
     | STRUCT ID LC  { push_stack(); }
       DefList error { add0($$, "StructSpecifier");

@@ -67,6 +67,8 @@ Type *makeArrayType(Type *b, size_t sz);
 
 Type *makeFuncType(const char *name, FieldList *fl);
 
+Type *makeErrorType();
+
 void addFuncRet(Type *p, Type *ret);
 
 Type *addArrayType(Type *nowType, size_t sz);
@@ -80,10 +82,23 @@ void deleteFieldList(FieldList *fl);
 void deleteStructure(Structure *stru);
 
 void deleteFunction(Function *func);
-
 /**
  * So... Please do not use me
  */
 void deleteType(Type *type);
+
+char checkTypeEqual(const Type *a, const Type *b);
+
+char checkPrimEqual(const int pr1, const int pr2);
+
+char checkStructEqual(const Structure *a, const Structure *b);
+
+char checkFieldEqual(const FieldList *a, const FieldList *b);
+
+char checkArrayEqual(const Array *a, const Array *b);
+
+char checkFunctionEqual(const Function *a, const Function *b);
+
+Type *getTypeAfterOp(const Type *a, const Type *b, const int op);
 
 #endif

@@ -15,7 +15,7 @@ extern const int lno;
     do                                          \
     {                                           \
         self = new_node(name, NULL, yylineno);  \
-        self.child_cnt = 0;                     \
+        self->child_cnt = 0;                    \
     } while (0)
 
 #define addn(self, name, n, v1, ...)                \

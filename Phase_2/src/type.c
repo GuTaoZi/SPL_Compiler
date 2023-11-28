@@ -6,7 +6,8 @@ Type *makeStructType(const char *name, FieldList *fl)
     nowType->category = STRUCTURE;
     nowType->structure = (Structure *)malloc(sizeof(Structure));
     nowType->structure->data = fl;
-    memset(nowType->structure->struct_name, 0, sizeof(nowType->structure->struct_name));
+    memset(nowType->structure->struct_name, 0,
+           sizeof(nowType->structure->struct_name));
     strncpy(nowType->structure->struct_name, name, 31);
     nowType->structure->typesize = fl->typesize;
     return nowType;
@@ -71,6 +72,15 @@ Type *makeFuncType(const char *name, FieldList *fl)
     return p;
 }
 
+Type *makeErrorType()
+{
+    Type *p = (Type *)malloc(sizeof(Type));
+    p->category = ERRORTYPE;
+    p->array = NULL;
+    p->typesize = 0;
+    return p;
+}
+
 void addFuncRet(Type *p, Type *ret)
 {
     if (p->category != FUNCTION)
@@ -110,7 +120,8 @@ Type *addArrayType(Type *nowType, size_t sz)
 
 FieldList *addFieldList(FieldList *fl, Type *nowType, const char *name)
 {
-    if(fl->type == NULL){
+    if (fl->type == NULL)
+    {
         fl->type = nowType;
         fl->typesize = nowType->typesize;
         strncpy(fl->varname, name, 31);
@@ -170,4 +181,78 @@ void deleteType(Type *type)
         deleteFunction(type->func);
     }
     free(type);
+}
+
+char checkTypeEqual(const Type *a, const Type *b)
+{
+    if (a == b)
+        return 1;
+    if (a == NULL || b == NULL)
+        return 0;
+    if (a->typesize != b->typesize)
+        return 0;
+    if (a->category != b->category)
+        return 0;
+    if (a->category == PRIMITIVE)
+        return a->primitive == b->primitive;
+    if (a->category == ARRAY)
+        return checkArrayEqual(a->array, b->array);
+    if (a->category == STRUCTURE)
+        return checkStructEqual(a->structure, b->structure);
+    if (a->category == FUNCTION)
+        return checkFunctionEqual(a->func, b->func);
+    if (a->category == ERRORTYPE)
+        return 1;
+}
+
+char checkPrimEqual(const int pr1, const int pr2){
+    if(pr1==pr2) return 1;
+    if(pr1==PCHAR || pr2==PCHAR) return 0;
+    return 1;
+}
+
+char checkStructEqual(const Structure *a, const Structure *b)
+{
+    return checkFieldEqual(a->data, b->data);
+}
+
+char checkFieldEqual(const FieldList *a, const FieldList *b)
+{
+    if (a == NULL && b == NULL)
+        return 1;
+    if (a == NULL || b == NULL)
+        return 0;
+    if (!checkTypeEqual(a->type, b->type))
+        return 0;
+    return checkFieldEqual(a->next, b->next);
+}
+
+char checkArrayEqual(const Array *a, const Array *b)
+{
+    if (a->size != b->size)
+        return 0;
+    return checkTypeEqual(a->base, b->base);
+}
+
+char checkFunctionEqual(const Function *a, const Function *b)
+{
+    if (strcmp(a->name, b->name) != 0)
+        return 0;
+    if (!checkTypeEqual(a->return_type, b->return_type))
+        return 0;
+    return checkFieldEqual(a->params, b->params);
+}
+
+Type *getTypeAfterOp(const Type *a, const Type *b, const int op)
+{
+    if (checkTypeEqual(a, b))
+    {
+        if (a->category == ERRORTYPE)
+            return a;
+        return b;
+    }
+    else
+    {
+        return makeErrorType();
+    }
 }
