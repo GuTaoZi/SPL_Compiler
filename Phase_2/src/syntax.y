@@ -14,10 +14,20 @@
     
     void print_B_error(char* node_name, size_t lineno, char *msg)
     {
-        //if (lineno != last_error_lineno){
-            fprintf(yyout, "Error type B at Line %zu: %s\n", lineno, msg);
-            last_error_lineno = lineno;
-        //}
+        fprintf(yyout, "Error type B at Line %zu: %s\n", lineno, msg);
+        last_error_lineno = lineno;
+    }
+
+    void print_scope_error(char* name, size_t lineno)
+    { fprintf(yyout, "Redefination of %s at Line %zu\n", name, lineno); }
+
+    void try_define(treeNode *u)
+    {
+        char *name = getVarDecName(u);
+        if (current_scope_seek(name))
+            print_scope_error(name, u->lineno);
+        else
+            add_ortho_node(name, u->inheridata);
     }
 
     Type *nowType = NULL;
@@ -150,7 +160,8 @@ ParamDec :
 /* statement */
 CompSt : LC                     { push_stack(); }
       DefList StmtList RC       { addn($$, "CompSt", 4, $1, $2, $3, $4); pop_stack(); }
-    | LC { push_stack(); } DefList StmtList error { add0($$, "CompSt"); has_error = 1; print_B_error("CompSt", $1->lineno, "Missing closing curly bracket \'}\'"); pop_stack(); }
+    | LC { push_stack(); }
+      DefList StmtList error { add0($$, "CompSt"); has_error = 1; print_B_error("CompSt", $1->lineno, "Missing closing curly bracket \'}\'"); pop_stack(); }
     //| error DefList StmtList RC { add0($$, "CompSt"); has_error = 1; print_B_error("CompSt", $1->lineno, "Missing closing curly bracket \'{\'"); }
     ;
 
@@ -202,7 +213,7 @@ DecList : Dec           { add1($$, "DecList", 1, $1); }
     | Dec COMMA DecList { addn($$, "DecList", 3, $1, $2, $3); }
     ;
 
-Dec : VarDec    { add_ortho_node(getVarDecName($1), $1->inheridata); add1($$, "Dec", 1, $1); }
+Dec : VarDec    { try_define($1); add1($$, "Dec", 1, $1); }
     | VarDec    { add_ortho_node(getVarDecName($1), $1->inheridata); }
       ASSIGN Exp { addn($$, "Dec", 3, $1, $2, $3); }
     ;

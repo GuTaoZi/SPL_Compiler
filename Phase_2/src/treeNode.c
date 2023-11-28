@@ -1,7 +1,7 @@
-#include "treeNode.h"
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
+#include "treeNode.h"
 
 const char *need_output[] = {"INT", "FLOAT", "CHAR", "STRING", "TYPE", "ID", "INCLUDE"};
 const int lno = 7;
