@@ -257,10 +257,10 @@ Args : Exp COMMA Args   { addn($$, "Args", 3, $1, $2, $3); }
     | Exp               { add1($$, "Args", 1, $1); }
     ;
 
-Var : UINT          { $$ = $1; }
+Var : UINT          { $$ = $1; $$->inheridata = makePrimType("int"); }
     | ID            { $$ = $1; check_ID($1); }
-    | FLOAT         { $$ = $1; }
-    | CHAR          { $$ = $1; }
+    | FLOAT         { $$ = $1; $$->inheridata = makePrimType("float"); }
+    | CHAR          { $$ = $1; $$->inheridata = makePrimType("char"); }
     | INVALID       { $$ = $1; }
     ;
 
