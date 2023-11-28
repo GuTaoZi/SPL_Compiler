@@ -54,25 +54,24 @@ typedef struct Function
 {
     char name[32];
     struct FieldList *params;
+    Type *return_type;
 } Function;
 
-Type *makeStructType();
+Type *makeStructType(const char *name, FieldList *fl);
 
 Type *makePrimType(const char *u);
-
-void addStructName(Type *nowType, const char *u);
 
 FieldList *makeFieldList(Type *nowType, const char *name);
 
 Type *makeArrayType(Type *b, size_t sz);
 
-Type *addArrayTypeRec(Type *nowType, size_t sz);
+Type *makeFuncType(const char *name, FieldList *fl);
+
+void addFuncRet(Type *p, Type *ret);
 
 Type *addArrayType(Type *nowType, size_t sz);
 
 FieldList *addFieldList(FieldList *fl, Type *nowType, const char *name);
-
-void addStructField(Type *nowType, FieldList *fl);
 
 void deleteArray(Array *arr);
 
@@ -84,7 +83,7 @@ void deleteFunction(Function *func);
 
 /**
  * So... Please do not use me
-*/
+ */
 void deleteType(Type *type);
 
 #endif
