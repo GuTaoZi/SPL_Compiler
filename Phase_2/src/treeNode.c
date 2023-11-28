@@ -6,7 +6,7 @@
 const char *need_output[] = {"INT", "FLOAT", "CHAR", "STRING", "TYPE", "ID", "INCLUDE"};
 const int lno = 7;
 
-treeNode *new_node(char *name, const char *val, const size_t lino)
+treeNode *new_node(const char *name, const char *val, size_t lino)
 {
     // fprintf(yyout, "NODE GET:%s - %s\n", name, val);
     treeNode *p = (treeNode *)malloc(sizeof(treeNode));
@@ -87,7 +87,7 @@ void make_list(int cnt, treeNode *head, ...)
     va_end(args);
 }
 
-const char *getVarDecName(const treeNode *u)
+const char *getVarDecName(treeNode *u)
 {
     while (u->child != NULL)
         u = u->child;
@@ -107,4 +107,48 @@ bool is_lvalue(treeNode *u)
     return (u->child_cnt == 1 && !strcmp(u->child->child->name, "ID")) ||
         (u->child_cnt == 3 && get_child(u, 1)->name == "DOT") ||
         (u->child_cnt == 4 && get_child(u, 1)->name == "LB");
+}
+
+void try_define(treeNode *u)
+{
+    char *name = getVarDecName(u);
+    if (current_scope_seek(name))
+        print_scope_error(name, u->lineno);
+    else
+        add_ortho_node(name, u->inheridata);
+}
+
+bool try_cast(treeNode *u, treeNode *v)
+{
+    // TODO
+}
+
+void try_assign(treeNode *u, treeNode *v)
+{
+    if (!is_lvalue(u))
+    {
+        fprintf(yyout, "Line %zu: expression must be a modifiable lvalue", u->lineno);
+        return;
+    }
+    if (!try_cast(u, v))
+        return;
+    u->val = v->val;
+}
+
+void check_ID(treeNode *u)
+{
+    char *name = u->val;
+    if (!global_scope_seek(name))
+        fprintf("Line: %zu: identifier \"%s\" is undefined\n", u->lineno, name);
+}
+
+void check_array(treeNode *u)
+{
+    
+}
+
+void check_struct(treeNode *u, treeNode *v)
+{
+    char *struct_name = u->val, attribute_name = v->val;
+    // TODO
 }

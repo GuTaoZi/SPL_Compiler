@@ -54,7 +54,7 @@ typedef struct _treeNode
 /**
  * create a new node pointer.
  */
-treeNode *new_node(char *name, const char *val, const size_t lino);
+treeNode *new_node(const char *name, const char *val, size_t lino);
 
 /**
  * free a node
@@ -71,10 +71,22 @@ void output_tree(treeNode *u, size_t spaceno);
  */
 void make_list(int cnt, treeNode *head, ...);
 
-const char *getVarDecName(const treeNode *u);
+const char *getVarDecName(treeNode *u);
 
 treeNode *get_child(treeNode *u, size_t id);
 
 bool is_lvalue(treeNode *u);
+
+void try_define(treeNode *u);
+
+bool try_cast(treeNode *u, treeNode *v);
+
+void try_assign(treeNode *u, treeNode *v);
+
+void check_ID(treeNode *u);
+
+void check_array(treeNode *u);
+
+void check_struct(treeNode *u, treeNode *v);
 
 #endif

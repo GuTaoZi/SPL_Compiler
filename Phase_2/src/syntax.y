@@ -12,23 +12,14 @@
 
     void yyerror(const char *s);
     
-    void print_B_error(char* node_name, size_t lineno, char *msg)
+    void print_B_error(const char* node_name, size_t lineno, const char *msg)
     {
         fprintf(yyout, "Error type B at Line %zu: %s\n", lineno, msg);
         last_error_lineno = lineno;
     }
 
-    void print_scope_error(char* name, size_t lineno)
-    { fprintf(yyout, "Redefination of %s at Line %zu\n", name, lineno); }
-
-    void try_define(treeNode *u)
-    {
-        char *name = getVarDecName(u);
-        if (current_scope_seek(name))
-            print_scope_error(name, u->lineno);
-        else
-            add_ortho_node(name, u->inheridata);
-    }
+    void print_scope_error(const char* name, size_t lineno)
+    { fprintf(yyout, "Line %zu: Redefination of %s\n", lineno, name); }
 
     Type *nowType = NULL;
     FieldList *nowFL = NULL;
@@ -89,8 +80,8 @@ ExtDecList : VarDec             { add_ortho_node(getVarDecName($1), $1->inherida
     ;
 
 /* specifier */
-Specifier : TYPE        { add1($$, "Specifier", 1, $1); $$->inheridata = makePrimType($1->val); nowType = (Type*)$$->inheridata;}
-    | StructSpecifier   { add1($$, "Specifier", 1, $1); $$->inheridata = $1->inheridata; nowType = (Type*)$$->inheridata;}
+Specifier : TYPE        { add1($$, "Specifier", 1, $1); $$->inheridata = makePrimType($1->val); nowType = (Type*)$$->inheridata; }
+    | StructSpecifier   { add1($$, "Specifier", 1, $1); $$->inheridata = $1->inheridata; nowType = (Type*)$$->inheridata; }
     ;
 
 StructSpecifier :
@@ -101,8 +92,7 @@ StructSpecifier :
                         addStructStack($$->inheridata); }
     
     | STRUCT ID     { addn($$, "StructSpecifier", 2, $1, $2);
-                        $$->inheridata = findStruct($2->val);
-                        }
+                        $$->inheridata = findStruct($2->val); }
     
     | STRUCT ID LC  { push_stack(); }
       DefList error { add0($$, "StructSpecifier");
@@ -112,21 +102,21 @@ StructSpecifier :
                         has_error = 1;
                         print_B_error("StructSpecifier", $3->lineno, "Missing closing curly braces \'}\'"); }
     
-    | STRUCT ID DefList { push_stack(); }
-      RC            { add0($$, "StructSpecifier");
+    | STRUCT ID     { push_stack(); }
+      DefList RC    { add0($$, "StructSpecifier");
                         pop_stack();
                         $$->inheridata = makeStructType($2->val, $4->inheridata);
                         addStructStack($$->inheridata);
                         has_error = 1;
                         print_B_error("StructSpecifier", $3->lineno, "Missing closing curly braces \'{\'"); }
-    | STRUCT INVALID LC DefList RC      {add0($$, "StructSpecifier"); has_error = 1; }
-    | STRUCT INVALID                    {add0($$, "StructSpecifier"); has_error = 1; }
-    | STRUCT INVALID LC DefList error   {add0($$, "StructSpecifier"); has_error = 1; }
-    | STRUCT INVALID DefList RC         {add0($$, "StructSpecifier"); has_error = 1; }
+    | STRUCT INVALID LC DefList RC      { add0($$, "StructSpecifier"); has_error = 1; }
+    | STRUCT INVALID                    { add0($$, "StructSpecifier"); has_error = 1; }
+    | STRUCT INVALID LC DefList error   { add0($$, "StructSpecifier"); has_error = 1; }
+    | STRUCT INVALID DefList RC         { add0($$, "StructSpecifier"); has_error = 1; }
     ;
 
 /* declarator */
-VarDec : ID                 { add1($$, "VarDec", 1, $1); $$->inheridata = nowType;}
+VarDec : ID                 { add1($$, "VarDec", 1, $1); $$->inheridata = nowType; }
     | VarDec LB UINT RB     { addn($$, "VarDec", 4, $1, $2, $3, $4); $$->inheridata = addArrayType($1->inheridata, my_toint($3->val)); }
     | VarDec LB UINT error  { add0($$, "VarDec"); $$->inheridata = makeArrayType($1->inheridata, my_toint($3->val)); has_error = 1; print_B_error("VarDec", $2->lineno, "Missing closing braces \']\'"); }
     // | VarDec UINT RB        { add0($$, "VarDec"); has_error = 1; print_B_error("VarDec", $2->lineno, "Missing closing braces \']\'"); }
@@ -142,11 +132,13 @@ FunDec :
     | ID RP         { add0($$, "FunDec"); $$->inheridata = makeFuncType($1->val, NULL); has_error = 1; print_B_error("FunDec", $2->lineno, "Missing closing parenthesis \'(\'"); }
     | ID LP error   { add0($$, "FunDec"); $$->inheridata = makeFuncType($1->val, NULL); has_error = 1; print_B_error("FunDec", $2->lineno, "Missing closing parenthesis \')\'"); }
 
-    | INVALID LP {nowFL = makeFieldList(NULL, "");} VarList RP     { add0($$, "FunDec"); has_error = 1; }
-    | INVALID LP RP             { add0($$, "FunDec"); has_error = 1; }
-    | INVALID LP {nowFL = makeFieldList(NULL, "");} VarList error  { add0($$, "FunDec"); has_error = 1; }
-    | INVALID RP                { add0($$, "FunDec"); has_error = 1; }
-    | INVALID LP error          { add0($$, "FunDec"); has_error = 1; }
+    | INVALID LP        { nowFL = makeFieldList(NULL, ""); }
+      VarList RP        { add0($$, "FunDec"); has_error = 1; }
+    | INVALID LP RP     { add0($$, "FunDec"); has_error = 1; }
+    | INVALID LP        { nowFL = makeFieldList(NULL, ""); }
+      VarList error     { add0($$, "FunDec"); has_error = 1; }
+    | INVALID RP        { add0($$, "FunDec"); has_error = 1; }
+    | INVALID LP error  { add0($$, "FunDec"); has_error = 1; }
     ;
 
 VarList : ParamDec COMMA VarList    { addn($$, "VarList", 3, $1, $2, $3); }
@@ -213,13 +205,12 @@ DecList : Dec           { add1($$, "DecList", 1, $1); }
     | Dec COMMA DecList { addn($$, "DecList", 3, $1, $2, $3); }
     ;
 
-Dec : VarDec    { try_define($1); add1($$, "Dec", 1, $1); }
-    | VarDec    { add_ortho_node(getVarDecName($1), $1->inheridata); }
-      ASSIGN Exp { addn($$, "Dec", 3, $1, $2, $3); }
+Dec : VarDec            { add1($$, "Dec", 1, $1); try_define($1); }
+    | VarDec ASSIGN Exp { addn($$, "Dec", 3, $1, $2, $3); try_define($1); }
     ;
 
 /* Expression */
-Exp : Exp ASSIGN Exp    { addn($$, "Exp", 3, $1, $2, $3); }
+Exp : Exp ASSIGN Exp    { addn($$, "Exp", 3, $1, $2, $3); try_assign($1, $3); }
     | Exp AND Exp       { addn($$, "Exp", 3, $1, $2, $3); }
     | Exp OR Exp        { addn($$, "Exp", 3, $1, $2, $3); }
     | Exp LT Exp        { addn($$, "Exp", 3, $1, $2, $3); }
@@ -236,11 +227,11 @@ Exp : Exp ASSIGN Exp    { addn($$, "Exp", 3, $1, $2, $3); }
     | PLUS Exp          { addn($$, "Exp", 2, $1, $2); }
     | MINUS Exp         { addn($$, "Exp", 2, $1, $2); }
     | NOT Exp           { addn($$, "Exp", 2, $1, $2); }
-    | ID LP Args RP     { addn($$, "Exp", 4, $1, $2, $3, $4); }
-    | ID LP RP          { addn($$, "Exp", 3, $1, $2, $3); }
-    | Exp LB Exp RB     { addn($$, "Exp", 4, $1, $2, $3, $4); }
-    | Exp DOT ID        { addn($$, "Exp", 3, $1, $2, $3); }
-    | Var               { add1($$, "Exp", 1, $1); }
+    | ID LP Args RP     { addn($$, "Exp", 4, $1, $2, $3, $4); check_function($1); }     // function call with args
+    | ID LP RP          { addn($$, "Exp", 3, $1, $2, $3); check_function($1); }         // function call with no args
+    | Exp LB Exp RB     { addn($$, "Exp", 4, $1, $2, $3, $4); check_array($1); }        // array
+    | Exp DOT ID        { addn($$, "Exp", 3, $1, $2, $3); check_struct($1, $3); }       // attribute of structure
+    | Var               { add1($$, "Exp", 1, $1); }                                     // ID or constant
     | STRING            { add1($$, "Exp", 1, $1); }
     | Exp ASSIGN error  { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); }
     | Exp AND error     { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); }
@@ -267,7 +258,7 @@ Args : Exp COMMA Args   { addn($$, "Args", 3, $1, $2, $3); }
     ;
 
 Var : UINT          { $$ = $1; }
-    | ID            { $$ = $1; }
+    | ID            { $$ = $1; check_ID($1); }
     | FLOAT         { $$ = $1; }
     | CHAR          { $$ = $1; }
     | INVALID       { $$ = $1; }
