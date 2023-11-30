@@ -44,10 +44,7 @@ INVALID_NUMBER (0{digit}*)|(({FLOAT}\.({digit}|\.)*))|({hexadecimal}\.({digit}|\
 
 %%
 
-"int"                                       { yylval = new_node("int", yytext, yylineno); return TYPE; }
-"float"                                   { yylval = new_node("float", yytext, yylineno); return TYPE; }
-"char"                                     { yylval = new_node("char", yytext, yylineno); return TYPE; }
-
+"int"|"float"|"char"                       { yylval = new_node("TYPE", yytext, yylineno); return TYPE; }
 "struct"                                 { yylval = new_node("STRUCT", yytext, yylineno); return STRUCT; }
 "if"                                         { yylval = new_node("IF", yytext, yylineno); return IF; }
 "else"                                     { yylval = new_node("ELSE", yytext, yylineno); return ELSE; }
