@@ -99,6 +99,6 @@ char checkArrayEqual(const Array *a, const Array *b);
 
 char checkFunctionEqual(const Function *a, const Function *b);
 
-Type *getTypeAfterOp(const Type *a, const Type *b, const int op);
+Type *getTypeAfterOp(const Type *a, const Type *b, const char *op);
 
 #endif

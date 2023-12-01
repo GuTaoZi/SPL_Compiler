@@ -1,4 +1,5 @@
 #include "type.h"
+#include <string.h>
 
 Type *makeStructType(const char *name, FieldList *fl)
 {
@@ -193,21 +194,24 @@ char checkTypeEqual(const Type *a, const Type *b)
         return 0;
     if (a->category != b->category)
         return 0;
+    if (a->category == ERRORTYPE || b->category == ERRORTYPE)
+        return 1;
     if (a->category == PRIMITIVE)
-        return a->primitive == b->primitive;
+        return checkPrimEqual(a->primitive, b->primitive);
     if (a->category == ARRAY)
         return checkArrayEqual(a->array, b->array);
     if (a->category == STRUCTURE)
         return checkStructEqual(a->structure, b->structure);
     if (a->category == FUNCTION)
         return checkFunctionEqual(a->func, b->func);
-    if (a->category == ERRORTYPE)
-        return 1;
 }
 
-char checkPrimEqual(const int pr1, const int pr2){
-    if(pr1==pr2) return 1;
-    if(pr1==PCHAR || pr2==PCHAR) return 0;
+char checkPrimEqual(const int pr1, const int pr2)
+{
+    if (pr1 == pr2)
+        return 1;
+    if (pr1 == PCHAR || pr2 == PCHAR)
+        return 0;
     return 1;
 }
 
@@ -243,16 +247,59 @@ char checkFunctionEqual(const Function *a, const Function *b)
     return checkFieldEqual(a->params, b->params);
 }
 
-Type *getTypeAfterOp(const Type *a, const Type *b, const int op)
+Type *getTypeAfterOp(const Type *a, const Type *b, const char *op)
 {
-    if (checkTypeEqual(a, b))
+    if (a->category == FUNCTION)
+        return getTypeAfterOp(a->func->return_type, b, op);
+    if (b->category == FUNCTION)
+        return getTypeAfterOp(a, b->func->return_type, op);
+
+    if (strcmp(op, "ass") == 0)
     {
-        if (a->category == ERRORTYPE)
+        if (checkTypeEqual(a, b))
+        {
             return a;
-        return b;
+        }
+        else
+        {
+            return makeErrorType();
+        }
     }
-    else
+    if (strcmp(op, "alg") == 0)
     {
-        return makeErrorType();
+        if (checkTypeEqual(a, b))
+        {
+            if (a->category == ERRORTYPE)
+                return a;
+            if (a->category == PRIMITIVE)
+            {
+                if (a->primitive == b->primitive)
+                    return a;
+                else if (a->primitive == PFLOAT)
+                {
+                    return a;
+                }
+                else
+                {
+                    return b;
+                }
+            }
+            return b;
+        }
+        else
+        {
+            return makeErrorType();
+        }
+    }
+    if (strcmp(op, "bin") == 0)
+    {
+        if (a->category == PRIMITIVE && a->primitive == PINT && b->category == PRIMITIVE && b->primitive == PINT)
+        {
+            return a;
+        }
+        else
+        {
+            return makeErrorType();
+        }
     }
 }
