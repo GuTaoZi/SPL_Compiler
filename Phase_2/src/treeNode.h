@@ -77,16 +77,4 @@ treeNode *get_child(treeNode *u, size_t id);
 
 bool is_lvalue(treeNode *u);
 
-void try_define(treeNode *u);
-
-bool try_cast(treeNode *u, treeNode *v);
-
-void try_assign(treeNode *u, treeNode *v);
-
-void check_ID(treeNode *u);
-
-void check_array(treeNode *u);
-
-void check_struct(treeNode *u, treeNode *v);
-
 #endif

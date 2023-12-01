@@ -117,38 +117,3 @@ void try_define(treeNode *u)
     else
         add_ortho_node(name, u->inheridata);
 }
-
-bool try_cast(treeNode *u, treeNode *v)
-{
-    // TODO
-}
-
-void try_assign(treeNode *u, treeNode *v)
-{
-    if (!is_lvalue(u))
-    {
-        fprintf(yyout, "Line %zu: expression must be a modifiable lvalue", u->lineno);
-        return;
-    }
-    if (!try_cast(u, v))
-        return;
-    u->val = v->val;
-}
-
-void check_ID(treeNode *u)
-{
-    char *name = u->val;
-    if (!global_scope_seek(name))
-        fprintf("Line: %zu: identifier \"%s\" is undefined\n", u->lineno, name);
-}
-
-void check_array(treeNode *u)
-{
-    
-}
-
-void check_struct(treeNode *u, treeNode *v)
-{
-    char *struct_name = u->val, attribute_name = v->val;
-    // TODO
-}

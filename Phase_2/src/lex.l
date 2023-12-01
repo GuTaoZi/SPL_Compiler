@@ -52,7 +52,7 @@ INVALID_NUMBER (0{digit}*)|(({FLOAT}\.({digit}|\.)*))|({hexadecimal}\.({digit}|\
 "for"                                       { yylval = new_node("FOR", yytext, yylineno); return FOR; }
 "return"                                 { yylval = new_node("RETURN", yytext, yylineno); return RETURN; }
 "break"                                   { yylval = new_node("BREAK", yytext, yylineno); return BREAK; }
-"continue"                              { yylval = new_node("CONTINE", yytext, yylineno); return CONTINE; }
+"continue"                              { yylval = new_node("CONTINUE", yytext, yylineno); return CONTINUE; }
 "\#include"[\t ]*<[^>]+>                 { yylval = new_node("INCLUDE", my_include(yytext), yylineno); return INCLUDE; }
 "\#include"[\t ]*\"[^\"]+\"                 { yylval = new_node("INCLUDE", my_include(yytext), yylineno); return INCLUDE; }
 

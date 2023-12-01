@@ -23,6 +23,12 @@
         fprintf(yyout, "Error type %d at Line %zu: %s\n", typeID, lineno, msg);
     }
 
+    Type *find_type(char *name)
+    {
+        orthoNode *node = global_scope_seek(name);
+        return node ? node->val : makeErrorType();
+    }
+
     void inherit_type(treeNode *u, const treeNode *v, const treeNode *w, const char *op)
     {
         Type *tu, *tv = v->inheridata, *tw = w->inheridata;
@@ -32,9 +38,54 @@
         u->inheridata = tu;
     }
 
-    void invoke_function(treeNode *u, FieldList *fl)
+    void inherit_function(treeNode *u, const treeNode *v, const FieldList *fl)
     {
-        
+        Type *t = find_type(v->val);
+        if (t->category == ERRORTYPE)
+            u->inheridata = t;
+        else if (!checkFieldEqual(t->func->params, fl))
+        {
+            u->inheridata = makeErrorType();
+            print_type_error(NULL, u->lineno, "parameters missmatch");
+            return;
+        }
+        else
+            u->inheridata = t->func->return_type;
+    }
+
+    void inherit_array(treeNode *u, const treeNode *v, const treeNode *w)
+    {
+        Type *tv = v->inheridata, *tw = w->inheridata;
+        if (tv->category != ARRAY)
+        {
+            u->inheridata = makeErrorType();
+            print_type_error(NULL, u->lineno, "not an array");
+        }
+        else if (tw->category != PRIMITIVE || tw->primitive != PINT)
+        {
+            u->inheridata = makeErrorType();
+            print_type_error(NULL, u->lineno, "index should be an integer");
+        }
+        else
+            u->inheridata = tv->array->base;
+    }
+
+    void inherit_struct(treeNode *u, const treeNode *v, const treeNode *w)
+    {
+        Type *tv = v->inheridata;
+        Type *tw = findNameInStructure(tv, w->val);
+        if (tv->category != STRUCT)
+        {
+            u->inheridata = makeErrorType();
+            print_type_error(NULL, u->lineno, "not a structure");
+        }
+        else if (tw == NULL)
+        {
+            u->inheridata = makeErrorType();
+            print_type_error(NULL, u->lineno, "attribute not found");
+        }
+        else
+            u->inheridata = tw;
     }
 
     void add_something(const Type *p, const char *name, const int errorID, const size_t lineno, const char *error_msg){
@@ -293,35 +344,35 @@ Exp : Exp ASSIGN Exp    { addn($$, "Exp", 3, $1, $2, $3); inherit_type($$, $1, $
     | Exp MINUS Exp     { addn($$, "Exp", 3, $1, $2, $3); inherit_type($$, $1, $3, "alg"); }
     | Exp MUL Exp       { addn($$, "Exp", 3, $1, $2, $3); inherit_type($$, $1, $3, "alg"); }
     | Exp DIV Exp       { addn($$, "Exp", 3, $1, $2, $3); inherit_type($$, $1, $3, "alg"); }
-    | LP Exp RP         { addn($$, "Exp", 3, $1, $2, $3); $$->inheridata = $2->inheridata}
+    | LP Exp RP         { addn($$, "Exp", 3, $1, $2, $3); $$->inheridata = $2->inheridata; }
     | PLUS Exp          { addn($$, "Exp", 2, $1, $2); inherit_type($$, $2, $2, "alg"); }
     | MINUS Exp         { addn($$, "Exp", 2, $1, $2); inherit_type($$, $2, $2, "alg"); }
     | NOT Exp           { addn($$, "Exp", 2, $1, $2); inherit_type($$, $2, $2, "bin"); }
     | ID LP             { nowFL = makeFieldList(NULL, ""); }
-      Args RP           { addn($$, "Exp", 4, $1, $2, $3, $4); invoke_function($$, nowFL); }     // function call with args
-    | ID LP RP          { addn($$, "Exp", 3, $1, $2, $3); check_function($1); }         // function call with no args
-    | Exp LB Exp RB     { addn($$, "Exp", 4, $1, $2, $3, $4); check_array($1); }        // array
-    | Exp DOT ID        { addn($$, "Exp", 3, $1, $2, $3); check_struct($1, $3); }       // attribute of structure
-    | Var               { add1($$, "Exp", 1, $1); }                                     // ID or constant
-    | STRING            { add1($$, "Exp", 1, $1); }
-    | Exp ASSIGN error  { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); }
-    | Exp AND error     { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); }
-    | Exp OR error      { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); }
-    | Exp LT error      { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); }
-    | Exp LE error      { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); }
-    | Exp GT error      { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); }
-    | Exp GE error      { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); }
-    | Exp NE error      { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); }
-    | Exp EQ error      { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); }
-    | Exp PLUS error    { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); }
-    | Exp MINUS error   { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); }
-    | Exp MUL error     { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); }
-    | Exp DIV error     { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); }
-    | Exp INVALID Exp   { add0($$, "Exp"); has_error = 1; }
-    | LP Exp error      { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing closing parenthesis \')\'"); }
-    | ID LP Args error  { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $2->lineno, "Missing closing parenthesis \')\'"); }
-    | ID LP error       { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $2->lineno, "Missing closing parenthesis \')\'"); }
-    | Exp LB Exp error  { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $2->lineno, "Missing closing braces \']\'"); }
+      Args RP           { addn($$, "Exp", 4, $1, $2, $3, $4); inherit_function($$, $1, nowFL); }                // function call with args
+    | ID LP RP          { addn($$, "Exp", 3, $1, $2, $3); inherit_function($$, $1, makeFieldList(NULL, "")); }  // function call with no args
+    | Exp LB Exp RB     { addn($$, "Exp", 4, $1, $2, $3, $4); inherit_array($$, $1, $3); }                      // array
+    | Exp DOT ID        { addn($$, "Exp", 3, $1, $2, $3); inherit_struct($$, $1, $3); }                            // attribute of structure
+    | Var               { add1($$, "Exp", 1, $1); $$->inheridata = $1->inheridata; }
+    | STRING            { add1($$, "Exp", 1, $1); $$->inheridata = makeErrorType(); }
+    | Exp ASSIGN error  { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); $$->inheridata = makeErrorType(); }
+    | Exp AND error     { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); $$->inheridata = makeErrorType(); }
+    | Exp OR error      { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); $$->inheridata = makeErrorType(); }
+    | Exp LT error      { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); $$->inheridata = makeErrorType(); }
+    | Exp LE error      { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); $$->inheridata = makeErrorType(); }
+    | Exp GT error      { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); $$->inheridata = makeErrorType(); }
+    | Exp GE error      { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); $$->inheridata = makeErrorType(); }
+    | Exp NE error      { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); $$->inheridata = makeErrorType(); }
+    | Exp EQ error      { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); $$->inheridata = makeErrorType(); }
+    | Exp PLUS error    { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); $$->inheridata = makeErrorType(); }
+    | Exp MINUS error   { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); $$->inheridata = makeErrorType(); }
+    | Exp MUL error     { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); $$->inheridata = makeErrorType(); }
+    | Exp DIV error     { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); $$->inheridata = makeErrorType(); }
+    | Exp INVALID Exp   { add0($$, "Exp"); has_error = 1; $$->inheridata = makeErrorType(); }
+    | LP Exp error      { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing closing parenthesis \')\'"); $$->inheridata = makeErrorType(); }
+    | ID LP Args error  { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $2->lineno, "Missing closing parenthesis \')\'"); $$->inheridata = makeErrorType(); }
+    | ID LP error       { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $2->lineno, "Missing closing parenthesis \')\'"); $$->inheridata = makeErrorType(); }
+    | Exp LB Exp error  { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $2->lineno, "Missing closing braces \']\'"); $$->inheridata = makeErrorType(); }
     ;
 
 Args : Exp COMMA Args   { addn($$, "Args", 3, $1, $2, $3); }
@@ -329,7 +380,12 @@ Args : Exp COMMA Args   { addn($$, "Args", 3, $1, $2, $3); }
     ;
 
 Var : UINT          { $$ = $1; $$->inheridata = makePrimType("int"); }
-    | ID            { $$ = $1; check_ID($1); }
+    | ID            {
+          $$ = $1;
+          $$->inheridata = find_type($1->val);
+          if (((Type *)($$->inheridata))->category == ERRORTYPE)
+            print_type_error(NULL, $$->lineno, "speficier not defined");
+      }
     | FLOAT         { $$ = $1; $$->inheridata = makePrimType("float"); }
     | CHAR          { $$ = $1; $$->inheridata = makePrimType("char"); }
     | INVALID       { $$ = $1; }
