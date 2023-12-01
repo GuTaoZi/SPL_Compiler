@@ -10,6 +10,7 @@ const int lno = 7;
 treeNode *new_node(const char *name, const char *val, size_t lino)
 {
     // fprintf(yyout, "NODE GET:%s - %s\n", name, val);
+    // fflush(yyout);
     treeNode *p = (treeNode *)malloc(sizeof(treeNode));
     p->name = name;
     if (val == NULL)

@@ -18,6 +18,7 @@ static orthoNode *new_ortho_node(const char *name, const Type *val)
 
 orthoStack *push_stack()
 {
+    // printf("push_stack\n");
     orthoStack *p = (orthoStack *)malloc(sizeof(orthoStack));
     p->top = NULL;
     p->next = S;
@@ -27,6 +28,7 @@ orthoStack *push_stack()
 
 orthoStack *pop_stack()
 {
+    // printf("pop_stack\n");
     if (!S)
     {
         fprintf(yyout, "Trying to pop an empty stack.\n");
@@ -34,7 +36,7 @@ orthoStack *pop_stack()
     orthoNode *it = S->top;
     if (!it)
     {
-        fprintf(yyout, "Trying to del a NULL node.\n");
+        // fprintf(yyout, "Trying to del a NULL node.\n");
         return NULL;
     }
     hashNode *hash_head; // the hashNode containing it.
@@ -58,8 +60,9 @@ orthoStack *pop_stack()
         }
         it = it->next[1];
     }
-    free(S);
+    orthoStack *ttmp = S;
     S = S->next;
+    free(ttmp);
     return S;
 }
 
@@ -104,7 +107,7 @@ orthoNode *current_scope_seek(const char *name)
     orthoNode *it = S->top;
     while (it)
     {
-        if (strncmp(name, it->name, 31) == 0)
+        if (strncmp(name, it->name, 32) == 0)
         {
             return it;
         }

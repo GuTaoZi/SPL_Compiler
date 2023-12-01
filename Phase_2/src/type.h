@@ -105,4 +105,12 @@ Type *findNameInStructure(const Type *a, const char *name);
 
 Type *findNameInField(const FieldList *a, const char *name);
 
+void outputType(const Type *t);
+
+void outputFieldList(const FieldList *fl);
+
+void outputPrime(const int p);
+
+void outputStruct(const Structure *s);
+
 #endif

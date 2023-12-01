@@ -21,12 +21,14 @@
 
     void print_type_error(const int typeID, const size_t lineno, const char* msg){
         fprintf(yyout, "Error type %d at Line %zu: %s\n", typeID, lineno, msg);
+        last_error_lineno = lineno;
+        has_error = 1;
     }
 
-    Type *find_type(char *name)
+    Type *find_type(const char *name)
     {
         orthoNode *node = global_scope_seek(name);
-        return node ? node->val : makeErrorType();
+        return node ? node->val : NULL;
     }
 
     void inherit_type(treeNode *u, const treeNode *v, const treeNode *w, const char *op)
@@ -46,13 +48,19 @@
     void inherit_function(treeNode *u, const treeNode *v, const FieldList *fl)
     {
         Type *t = find_type(v->val);
-        if (t->category == ERRORTYPE)
-            u->inheridata = t;
+        if (t == NULL){
+            u->inheridata = makeErrorType();
+            print_type_error(2, u->lineno, "Function is invoked without a definition.");
+        }
+        else if (t->category != FUNCTION)
+        {
+            u->inheridata = makeErrorType();
+            print_type_error(11, u->lineno, "applying function invocation operator (foo(...)) on non-function names.");
+        }
         else if (!checkFieldEqual(t->func->params, fl))
         {
             u->inheridata = makeErrorType();
             print_type_error(9, u->lineno, "parameters missmatch");
-            return;
         }
         else
             u->inheridata = t->func->return_type;
@@ -103,54 +111,59 @@
 
     void add_others(const Type *p, const size_t lineno) {
         if(p->category == STRUCTURE){
-            add_something(p, p->structure->struct_name, lineno, 15, "redefine the same structure type.");
+            add_something(p, p->structure->struct_name, 15, lineno, "redefine the same structure type.");
         } else {
-            add_something(p, p->func->name, lineno, 4, "a function is redefined.");
+            add_something(p, p->func->name, 4, lineno, "a function is redefined.");
         }
     }
 
+    // TODO
     void add_identifier(const treeNode *p) {
         if(((Type*)p->inheridata)->category == PRIMITIVE || ((Type*)p->inheridata)->category == ARRAY) {
-            add_something(p->inheridata, getVarDecName(p), p->lineno, 3, "a variable is redefined in the same scope.");
+            add_something(p->inheridata, getVarDecName(p), 3, p->lineno, "a variable is redefined in the same scope.");
         } else if(((Type*)p->inheridata)->category == STRUCTURE || ((Type*)p->inheridata)->category == FUNCTION) {
+            printf("At Line %zu:\n", p->lineno);
+            outputType(p->inheridata);
             add_others(p->inheridata, p->lineno);
         } else {
             print_type_error(-1, 0, "What the hell? At add_identifier.");
         }
     }
 
-    typedef struct rettype_stack {
+    typedef struct type_stack {
         const Type *data;
-        struct rettype_stack *next;
-    } rettype_stack;
-    rettype_stack *funcRetTypeStack = NULL;
+        struct type_stack *next;
+    } type_stack;
+    type_stack *funcRetTypeStack = NULL, *structFieldStack = NULL;
 
-    void rettype_push(const Type *nowType) {
-        rettype_stack *p = (rettype_stack*)malloc(sizeof(rettype_stack));
+    type_stack *utstack_push(type_stack *root, const Type *nowType) {
+        type_stack *p = (type_stack*)malloc(sizeof(type_stack));
         p->data = nowType;
-        STACK_PUSH(funcRetTypeStack, p);
+        STACK_PUSH(root, p);
+        return root;
     }
-    Type *rettype_pop(){
-        rettype_stack *p;
-        STACK_POP(funcRetTypeStack, p);
+    type_stack *utstack_pop(type_stack *root){
+        type_stack *p;
+        STACK_POP(root, p);
+        return root;
     }
     void checkRetType(const Type *ret2, const size_t lineno){
         const Type *ret1 = funcRetTypeStack->data;
         const Type *tu = getTypeAfterOp(ret1, ret2, "ass");
         if (tu->category == ERRORTYPE && ret1->category != ERRORTYPE && ret2->category != ERRORTYPE)
-            print_type_error(8, lineno, "a function's return value type mismatches the declared type.");;
+            print_type_error(8, lineno, "a function's return value type mismatches the declared type.");
     }
-    void try_define(const treeNode *u)
-    {
-        const char *name = getVarDecName(u);
-        if (current_scope_seek(name))
-            print_type_error(3, u->lineno, "a variable is redefined in the same scop.");
-        else
-            add_ortho_node(name, u->inheridata);
-    }
+    // void try_define(const treeNode *u)
+    // {
+    //     const char *name = getVarDecName(u);
+    //     if (current_scope_seek(name))
+    //         print_type_error(3, u->lineno, "a variable is redefined in the same scope.");
+    //     else
+    //         add_ortho_node(name, u->inheridata);
+    // }
     Type *findStruct(const char *name, const size_t lineno) {
         orthoNode *p=global_scope_seek(name);
-        if(p==NULL){
+        if(p == NULL || p->val->category != STRUCTURE){
             print_type_error(17, lineno, "Cannot find structure definition.");
             return makeErrorType();
         } else {
@@ -159,7 +172,8 @@
     }
 
     Type *nowType = NULL;
-    FieldList *nowFL = NULL;
+
+    #define nowFL (structFieldStack->data->structure->data)
 
     int loop_cnt = 0;
 %}
@@ -192,7 +206,7 @@
 %%
 
 /* high-level definition */
-Program : HeaderDefList ExtDefList { addn($$, "Program", 2, $1, $2); root = $$; }
+Program : { push_stack(); structFieldStack = utstack_push(structFieldStack, makeStructType("", makeFieldList(NULL, ""))); } HeaderDefList ExtDefList { addn($$, "Program", 2, $2, $3); root = $$; }
     ;
 
 HeaderDefList :             { add0($$, "HeaderDefList"); }
@@ -208,8 +222,8 @@ ExtDefList :            { add0($$, "ExtDefList"); }
 
 ExtDef : Specifier ExtDecList SEMI  { addn($$, "ExtDef", 3, $1, $2, $3); }
     | Specifier SEMI                { addn($$, "ExtDef", 2, $1, $2); }
-    | Specifier FunDec              { rettype_push($1->inheridata); }
-      CompSt                        { rettype_pop(); addn($$, "ExtDef", 3, $1, $2, $3); addFuncRet($2->inheridata, $1->inheridata); add_identifier($2);}
+    | Specifier FunDec              { funcRetTypeStack = utstack_push(funcRetTypeStack,$1->inheridata); }
+      CompSt                        { addn($$, "ExtDef", 3, $1, $2, $4); pop_stack(); addFuncRet($2->inheridata, $1->inheridata); add_identifier($2); funcRetTypeStack = utstack_pop(funcRetTypeStack); }
     | Specifier ExtDecList error    { add0($$, "ExtDef"); has_error = 1; print_B_error("ExtDef", $1->lineno, "Missing semicolon \';\'"); }
     | Specifier error               { add0($$, "ExtDef"); has_error = 1; print_B_error("ExtDef", $1->lineno, "Missing semicolon \';\'"); }
     | ExtDecList SEMI               { add0($$, "ExtDef"); has_error = 1; print_B_error("ExtDef", $1->lineno, "Missing specifier"); }
@@ -225,27 +239,29 @@ Specifier : TYPE        { add1($$, "Specifier", 1, $1); $$->inheridata = makePri
     ;
 
 StructSpecifier :
-      STRUCT ID LC  { push_stack(); }
-      DefList RC    { addn($$, "StructSpecifier", 5, $1, $2, $3, $4, $5);
+      STRUCT ID LC  { push_stack(); structFieldStack = utstack_push(structFieldStack, makeStructType("", makeFieldList(NULL, "")));}
+      DefList RC    { addn($$, "StructSpecifier", 5, $1, $2, $3, $5, $6);
                         pop_stack();
-                        $$->inheridata = makeStructType($2->val, $4->inheridata);
-                        add_identifier($$); }
+                        $$->inheridata = makeStructType($2->val, nowFL);
+                        add_identifier($$);
+                        structFieldStack = utstack_pop(structFieldStack); }
     
     | STRUCT ID     { addn($$, "StructSpecifier", 2, $1, $2);
                         $$->inheridata = findStruct($2->val, $1->lineno); }
     
-    | STRUCT ID LC  { push_stack(); }
+    | STRUCT ID LC  { push_stack(); structFieldStack = utstack_push(structFieldStack, makeStructType("", makeFieldList(NULL, "")));}
       DefList error { add0($$, "StructSpecifier");
                         pop_stack();
-                        $$->inheridata = makeStructType($2->val, $4->inheridata);
+                        $$->inheridata = makeStructType($2->val, nowFL);
                         add_identifier($$);
+                        structFieldStack = utstack_pop(structFieldStack);
                         has_error = 1;
                         print_B_error("StructSpecifier", $3->lineno, "Missing closing curly braces \'}\'"); }
     
     | STRUCT ID     { push_stack(); }
       DefList RC    { add0($$, "StructSpecifier");
                         pop_stack();
-                        $$->inheridata = makeStructType($2->val, $4->inheridata);
+                        $$->inheridata = makeStructType($2->val, $5->inheridata);
                         add_identifier($$);
                         has_error = 1;
                         print_B_error("StructSpecifier", $3->lineno, "Missing closing curly braces \'{\'"); }
@@ -258,27 +274,27 @@ StructSpecifier :
 /* declarator */
 VarDec : ID                 { add1($$, "VarDec", 1, $1); $$->inheridata = nowType; }
     | VarDec LB UINT RB     { addn($$, "VarDec", 4, $1, $2, $3, $4); $$->inheridata = addArrayType($1->inheridata, my_toint($3->val)); }
-    | VarDec LB UINT error  { add0($$, "VarDec"); $$->inheridata = makeArrayType($1->inheridata, my_toint($3->val)); has_error = 1; print_B_error("VarDec", $2->lineno, "Missing closing braces \']\'"); }
+    | VarDec LB UINT error  { add0($$, "VarDec"); $$->inheridata = addArrayType($1->inheridata, my_toint($3->val)); has_error = 1; print_B_error("VarDec", $2->lineno, "Missing closing braces \']\'"); }
     // | VarDec UINT RB        { add0($$, "VarDec"); has_error = 1; print_B_error("VarDec", $2->lineno, "Missing closing braces \']\'"); }
-    | INVALID               { add0($$, "VarDec"); has_error = 1;}
+    | INVALID               { add0($$, "VarDec"); has_error = 1; $$->inheridata = makeErrorType(); }
     ;
 
 FunDec :
-      ID LP         { nowFL = makeFieldList(NULL, ""); }
-      VarList RP    { addn($$, "FunDec", 4, $1, $2, $3, $4); $$->inheridata = makeFuncType($1->val, nowFL); }
-    | ID LP RP      { addn($$, "FunDec", 3, $1, $2, $3); $$->inheridata = makeFuncType($1->val, NULL); }
-    | ID LP         { nowFL = makeFieldList(NULL, ""); }
-      VarList error { add0($$, "FunDec"); $$->inheridata = makeFuncType($1->val, nowFL); has_error = 1; print_B_error("FunDec", $2->lineno, "Missing closing parenthesis \')\'"); }
-    | ID RP         { add0($$, "FunDec"); $$->inheridata = makeFuncType($1->val, NULL); has_error = 1; print_B_error("FunDec", $2->lineno, "Missing closing parenthesis \'(\'"); }
-    | ID LP error   { add0($$, "FunDec"); $$->inheridata = makeFuncType($1->val, NULL); has_error = 1; print_B_error("FunDec", $2->lineno, "Missing closing parenthesis \')\'"); }
+      ID LP         { structFieldStack = utstack_push(structFieldStack, makeStructType("", makeFieldList(NULL, ""))); push_stack(); }
+      VarList RP    { addn($$, "FunDec", 4, $1, $2, $4, $5); $$->inheridata = makeFuncType($1->val, nowFL); structFieldStack = utstack_pop(structFieldStack); }
+    | ID LP RP      { push_stack(); addn($$, "FunDec", 3, $1, $2, $3); $$->inheridata = makeFuncType($1->val, NULL); }
+    | ID LP         { structFieldStack = utstack_push(structFieldStack, makeStructType("", makeFieldList(NULL, ""))); push_stack(); }
+      VarList error { add0($$, "FunDec"); $$->inheridata = makeFuncType($1->val, nowFL); structFieldStack = utstack_pop(structFieldStack); has_error = 1; print_B_error("FunDec", $2->lineno, "Missing closing parenthesis \')\'"); }
+    | ID RP         { push_stack(); add0($$, "FunDec"); $$->inheridata = makeFuncType($1->val, NULL); has_error = 1; print_B_error("FunDec", $2->lineno, "Missing closing parenthesis \'(\'"); }
+    | ID LP error   { push_stack(); add0($$, "FunDec"); $$->inheridata = makeFuncType($1->val, NULL); has_error = 1; print_B_error("FunDec", $2->lineno, "Missing closing parenthesis \')\'"); }
 
-    | INVALID LP        { nowFL = makeFieldList(NULL, ""); }
-      VarList RP        { add0($$, "FunDec"); has_error = 1; }
-    | INVALID LP RP     { add0($$, "FunDec"); has_error = 1; }
-    | INVALID LP        { nowFL = makeFieldList(NULL, ""); }
-      VarList error     { add0($$, "FunDec"); has_error = 1; }
-    | INVALID RP        { add0($$, "FunDec"); has_error = 1; }
-    | INVALID LP error  { add0($$, "FunDec"); has_error = 1; }
+    | INVALID LP        { structFieldStack = utstack_push(structFieldStack, makeStructType("", makeFieldList(NULL, "")));  push_stack();}
+      VarList RP        { add0($$, "FunDec"); has_error = 1; structFieldStack = utstack_pop(structFieldStack); }
+    | INVALID LP RP     { push_stack(); add0($$, "FunDec"); has_error = 1; }
+    | INVALID LP        { structFieldStack = utstack_push(structFieldStack, makeStructType("", makeFieldList(NULL, ""))); push_stack(); }
+      VarList error     { add0($$, "FunDec"); has_error = 1; structFieldStack = utstack_pop(structFieldStack); }
+    | INVALID RP        { push_stack(); add0($$, "FunDec"); has_error = 1; }
+    | INVALID LP error  { push_stack(); add0($$, "FunDec"); has_error = 1; }
     ;
 
 VarList : ParamDec COMMA VarList    { addn($$, "VarList", 3, $1, $2, $3); }
@@ -286,12 +302,12 @@ VarList : ParamDec COMMA VarList    { addn($$, "VarList", 3, $1, $2, $3); }
     ;
 
 ParamDec :
-    Specifier VarDec { addn($$, "ParamDec", 2, $1, $2); nowFL = addFieldList(nowFL, $2->inheridata, getVarDecName($2)); }
+    Specifier VarDec { addn($$, "ParamDec", 2, $1, $2); nowFL = addFieldList(nowFL, $2->inheridata, getVarDecName($2)); add_identifier($2); }
     ;
 
 /* statement */
 CompSt : LC                     { push_stack(); }
-      DefList StmtList RC       { addn($$, "CompSt", 4, $1, $2, $3, $4); pop_stack(); }
+      DefList StmtList RC       { addn($$, "CompSt", 4, $1, $3, $4, $5); pop_stack(); }
     | LC { push_stack(); }
       DefList StmtList error { add0($$, "CompSt"); has_error = 1; print_B_error("CompSt", $1->lineno, "Missing closing curly bracket \'}\'"); pop_stack(); }
     //| error DefList StmtList RC { add0($$, "CompSt"); has_error = 1; print_B_error("CompSt", $1->lineno, "Missing closing curly bracket \'{\'"); }
@@ -349,8 +365,8 @@ DecList : Dec           { add1($$, "DecList", 1, $1); }
     | Dec COMMA DecList { addn($$, "DecList", 3, $1, $2, $3); }
     ;
 
-Dec : VarDec            { add1($$, "Dec", 1, $1); try_define($1); }
-    | VarDec ASSIGN Exp { addn($$, "Dec", 3, $1, $2, $3); try_define($1); }
+Dec : VarDec            { add1($$, "Dec", 1, $1); add_identifier($1); nowFL = addFieldList(nowFL, $1->inheridata, getVarDecName($1)); }
+    | VarDec ASSIGN Exp { addn($$, "Dec", 3, $1, $2, $3); inherit_type($$, $1, $3, "ass"); add_identifier($1); nowFL = addFieldList(nowFL, $1->inheridata, getVarDecName($1)); }
     ;
 
 /* Expression */
@@ -371,8 +387,8 @@ Exp : Exp ASSIGN Exp    { addn($$, "Exp", 3, $1, $2, $3); inherit_type($$, $1, $
     | PLUS Exp          { addn($$, "Exp", 2, $1, $2); inherit_type($$, $2, $2, "alg"); }
     | MINUS Exp         { addn($$, "Exp", 2, $1, $2); inherit_type($$, $2, $2, "alg"); }
     | NOT Exp           { addn($$, "Exp", 2, $1, $2); inherit_type($$, $2, $2, "bin"); }
-    | ID LP             { nowFL = makeFieldList(NULL, ""); }
-      Args RP           { addn($$, "Exp", 4, $1, $2, $3, $4); inherit_function($$, $1, nowFL); }                // function call with args
+    | ID LP             { structFieldStack = utstack_push(structFieldStack, makeStructType("", makeFieldList(NULL, ""))); }
+      Args RP           { addn($$, "Exp", 4, $1, $2, $4, $5); inherit_function($$, $1, nowFL); structFieldStack = utstack_pop(structFieldStack); }                // function call with args
     | ID LP RP          { addn($$, "Exp", 3, $1, $2, $3); inherit_function($$, $1, makeFieldList(NULL, "")); }  // function call with no args
     | Exp LB Exp RB     { addn($$, "Exp", 4, $1, $2, $3, $4); inherit_array($$, $1, $3); }                      // array
     | Exp DOT ID        { addn($$, "Exp", 3, $1, $2, $3); inherit_struct($$, $1, $3); }                            // attribute of structure
@@ -392,27 +408,30 @@ Exp : Exp ASSIGN Exp    { addn($$, "Exp", 3, $1, $2, $3); inherit_type($$, $1, $
     | Exp MUL error     { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); $$->inheridata = makeErrorType(); }
     | Exp DIV error     { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); $$->inheridata = makeErrorType(); }
     | Exp INVALID Exp   { add0($$, "Exp"); has_error = 1; $$->inheridata = makeErrorType(); }
-    | LP Exp error      { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing closing parenthesis \')\'"); $$->inheridata = makeErrorType(); }
-    | ID LP             { nowFL = makeFieldList(NULL, ""); }
-      Args error        { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $2->lineno, "Missing closing parenthesis \')\'"); $$->inheridata = makeErrorType(); }
-    | ID LP error       { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $2->lineno, "Missing closing parenthesis \')\'"); $$->inheridata = makeErrorType(); }
-    | Exp LB Exp error  { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $2->lineno, "Missing closing braces \']\'"); $$->inheridata = makeErrorType(); }
+    | LP Exp error      { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing closing parenthesis \')\'"); $$->inheridata = $2->inheridata; }
+    | ID LP             { structFieldStack = utstack_push(structFieldStack, makeStructType("", makeFieldList(NULL, ""))); }
+      Args error        { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $2->lineno, "Missing closing parenthesis \')\'"); inherit_function($$, $1, nowFL); structFieldStack = utstack_pop(structFieldStack); }
+    | ID LP error       { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $2->lineno, "Missing closing parenthesis \')\'"); inherit_function($$, $1, makeFieldList(NULL, "")); }
+    | Exp LB Exp error  { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $2->lineno, "Missing closing braces \']\'"); inherit_array($$, $1, $3); }
     ;
 
-Args : Exp COMMA Args   { addn($$, "Args", 3, $1, $2, $3); }
-    | Exp               { add1($$, "Args", 1, $1); }
+Args : Exp COMMA Args   { addn($$, "Args", 3, $1, $2, $3); nowFL = addFieldList(nowFL, $1->inheridata, ""); }
+    | Exp               { add1($$, "Args", 1, $1); nowFL = addFieldList(nowFL, $1->inheridata, ""); }
     ;
 
-Var : UINT          { $$ = $1; $$->inheridata = makePrimType("int"); }
-    | ID            {
-          $$ = $1;
-          $$->inheridata = find_type($1->val);
-          if (((Type *)($$->inheridata))->category == ERRORTYPE)
-            print_type_error(1, $$->lineno, "a variable is used without a definition.");
+Var : UINT      { $$ = $1; $$->inheridata = makePrimType("int"); }
+    | ID        {
+                $$ = $1;
+                $$->inheridata = find_type($1->val);
+                if ($$->inheridata == NULL){
+                    print_type_error(1, $$->lineno, "a variable is used without a definition.");
+                    $$->inheridata=makeErrorType();
+                    // add_something($$->inheridata, $$->val, 0, 0, "");
+                }
       }
-    | FLOAT         { $$ = $1; $$->inheridata = makePrimType("float"); }
-    | CHAR          { $$ = $1; $$->inheridata = makePrimType("char"); }
-    | INVALID       { $$ = $1; }
+    | FLOAT     { $$ = $1; $$->inheridata = makePrimType("float"); }
+    | CHAR      { $$ = $1; $$->inheridata = makePrimType("char"); }
+    | INVALID   { $$ = $1; }
     ;
 
 %%
@@ -474,7 +493,6 @@ int main(int argc, char **argv)
     yyin = file_in;
     yyout = file_out;
     yyparse();
-    output_tree(root, 0);
     if (!has_error)
     {
         if (root != NULL)

@@ -1,6 +1,7 @@
 #include "type.h"
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 Type *makeStructType(const char *name, FieldList *fl)
 {
@@ -44,7 +45,8 @@ FieldList *makeFieldList(Type *nowType, const char *name)
     nowFieldList->type = nowType;
     memset(nowFieldList->varname, 0, sizeof(nowFieldList->varname));
     strncpy(nowFieldList->varname, name, 31);
-    nowFieldList->typesize = nowType->typesize;
+    if(nowType != NULL) nowFieldList->typesize = nowType->typesize;
+    else nowFieldList->typesize = 0;
     return nowFieldList;
 }
 
@@ -193,12 +195,12 @@ char checkTypeEqual(const Type *a, const Type *b)
         return 1;
     if (a == NULL || b == NULL)
         return 0;
+    if (a->category == ERRORTYPE || b->category == ERRORTYPE)
+        return 1;
     if (a->typesize != b->typesize)
         return 0;
     if (a->category != b->category)
         return 0;
-    if (a->category == ERRORTYPE || b->category == ERRORTYPE)
-        return 1;
     if (a->category == ARRAY)
         return checkArrayEqual(a->array, b->array);
     if (a->category == STRUCTURE)
@@ -322,4 +324,47 @@ Type *findNameInStructure(const Type *a, const char *name)
     {
         return NULL;
     }
+}
+
+void outputType(const Type *t) {
+    switch (t->category)
+    {
+        case PRIMITIVE:
+            outputPrime(t->primitive);
+            break;
+        case STRUCTURE:
+            outputStruct(t->structure);
+            break;
+        default:
+            break;
+    }
+}
+
+void outputFieldList(const FieldList *fl) {
+    if (fl == NULL)
+        return;
+    outputType(fl->type);
+    outputFieldList(fl->next);
+}
+
+void outputPrime(const int p) {
+    switch (p)
+    {
+    case PINT:
+        printf("int\n");
+        break;
+    case PFLOAT:
+        printf("float\n");
+        break;
+    case PCHAR:
+        printf("char\n");
+        break;
+    default:
+        break;
+    }
+}
+
+void outputStruct(const Structure *s) {
+    printf("Structure: %s\n", s->struct_name);
+    outputFieldList(s->data);
 }
