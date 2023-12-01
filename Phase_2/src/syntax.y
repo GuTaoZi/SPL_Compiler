@@ -22,6 +22,20 @@
         fprintf(yyout, "Error type %d at Line %zu: %s\n", typeID, lineno, msg);
     }
 
+    void inherit_type(treeNode *u, const treeNode *v, const treeNode *w, const char *op)
+    {
+        Type *tu, *tv = v->inheridata, *tw = w->inheridata;
+        tu = getTypeAfterOp(tv, tw, op);
+        if (tu->category == ERRORTYPE && tv->category != ERRORTYPE && tw->category != ERRORTYPE)
+            print_type_error(NULL, u->lineno, "type missmatch");
+        u->inheridata = tu;
+    }
+
+    void invoke_function(treeNode *u, FieldList *fl)
+    {
+        
+    }
+
     Type *nowType = NULL;
     FieldList *nowFL = NULL;
 
@@ -217,24 +231,25 @@ Dec : VarDec            { add1($$, "Dec", 1, $1); try_define($1); }
     ;
 
 /* Expression */
-Exp : Exp ASSIGN Exp    { addn($$, "Exp", 3, $1, $2, $3); try_assign($1, $3); }
-    | Exp AND Exp       { addn($$, "Exp", 3, $1, $2, $3); }
-    | Exp OR Exp        { addn($$, "Exp", 3, $1, $2, $3); }
-    | Exp LT Exp        { addn($$, "Exp", 3, $1, $2, $3); }
-    | Exp LE Exp        { addn($$, "Exp", 3, $1, $2, $3); }
-    | Exp GT Exp        { addn($$, "Exp", 3, $1, $2, $3); }
-    | Exp GE Exp        { addn($$, "Exp", 3, $1, $2, $3); }
-    | Exp NE Exp        { addn($$, "Exp", 3, $1, $2, $3); }
-    | Exp EQ Exp        { addn($$, "Exp", 3, $1, $2, $3); }
-    | Exp PLUS Exp      { addn($$, "Exp", 3, $1, $2, $3); }
-    | Exp MINUS Exp     { addn($$, "Exp", 3, $1, $2, $3); }
-    | Exp MUL Exp       { addn($$, "Exp", 3, $1, $2, $3); }
-    | Exp DIV Exp       { addn($$, "Exp", 3, $1, $2, $3); }
-    | LP Exp RP         { addn($$, "Exp", 3, $1, $2, $3); }
-    | PLUS Exp          { addn($$, "Exp", 2, $1, $2); }
-    | MINUS Exp         { addn($$, "Exp", 2, $1, $2); }
-    | NOT Exp           { addn($$, "Exp", 2, $1, $2); }
-    | ID LP Args RP     { addn($$, "Exp", 4, $1, $2, $3, $4); check_function($1); }     // function call with args
+Exp : Exp ASSIGN Exp    { addn($$, "Exp", 3, $1, $2, $3); inherit_type($$, $1, $3, "ass"); }
+    | Exp AND Exp       { addn($$, "Exp", 3, $1, $2, $3); inherit_type($$, $1, $3, "bin"); }
+    | Exp OR Exp        { addn($$, "Exp", 3, $1, $2, $3); inherit_type($$, $1, $3, "bin"); }
+    | Exp LT Exp        { addn($$, "Exp", 3, $1, $2, $3); inherit_type($$, $1, $3, "alg"); }
+    | Exp LE Exp        { addn($$, "Exp", 3, $1, $2, $3); inherit_type($$, $1, $3, "alg"); }
+    | Exp GT Exp        { addn($$, "Exp", 3, $1, $2, $3); inherit_type($$, $1, $3, "alg"); }
+    | Exp GE Exp        { addn($$, "Exp", 3, $1, $2, $3); inherit_type($$, $1, $3, "alg"); }
+    | Exp NE Exp        { addn($$, "Exp", 3, $1, $2, $3); inherit_type($$, $1, $3, "alg"); }
+    | Exp EQ Exp        { addn($$, "Exp", 3, $1, $2, $3); inherit_type($$, $1, $3, "alg"); }
+    | Exp PLUS Exp      { addn($$, "Exp", 3, $1, $2, $3); inherit_type($$, $1, $3, "alg"); }
+    | Exp MINUS Exp     { addn($$, "Exp", 3, $1, $2, $3); inherit_type($$, $1, $3, "alg"); }
+    | Exp MUL Exp       { addn($$, "Exp", 3, $1, $2, $3); inherit_type($$, $1, $3, "alg"); }
+    | Exp DIV Exp       { addn($$, "Exp", 3, $1, $2, $3); inherit_type($$, $1, $3, "alg"); }
+    | LP Exp RP         { addn($$, "Exp", 3, $1, $2, $3); $$->inheridata = $2->inheridata}
+    | PLUS Exp          { addn($$, "Exp", 2, $1, $2); inherit_type($$, $2, $2, "alg"); }
+    | MINUS Exp         { addn($$, "Exp", 2, $1, $2); inherit_type($$, $2, $2, "alg"); }
+    | NOT Exp           { addn($$, "Exp", 2, $1, $2); inherit_type($$, $2, $2, "bin"); }
+    | ID LP             { nowFL = makeFieldList(NULL, ""); }
+      Args RP           { addn($$, "Exp", 4, $1, $2, $3, $4); invoke_function($$, nowFL); }     // function call with args
     | ID LP RP          { addn($$, "Exp", 3, $1, $2, $3); check_function($1); }         // function call with no args
     | Exp LB Exp RB     { addn($$, "Exp", 4, $1, $2, $3, $4); check_array($1); }        // array
     | Exp DOT ID        { addn($$, "Exp", 3, $1, $2, $3); check_struct($1, $3); }       // attribute of structure
