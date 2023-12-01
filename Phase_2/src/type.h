@@ -101,4 +101,8 @@ char checkFunctionEqual(const Function *a, const Function *b);
 
 Type *getTypeAfterOp(const Type *a, const Type *b, const char *op);
 
+Type *findNameInStructure(const Type *a, const char *name);
+
+Type *findNameInField(const FieldList *a, const char *name);
+
 #endif

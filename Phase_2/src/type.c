@@ -303,3 +303,24 @@ Type *getTypeAfterOp(const Type *a, const Type *b, const char *op)
         }
     }
 }
+
+Type *findNameInField(const FieldList *a, const char *name)
+{
+    if (a == NULL)
+        return NULL;
+    if (strcmp(a->varname, name) == 0)
+        return a->type;
+    return findNameInField(a->next, name);
+}
+
+Type *findNameInStructure(const Type *a, const char *name)
+{
+    if (a->category == STRUCTURE)
+    {
+        return findNameInField(a->structure->data, name);
+    }
+    else
+    {
+        return NULL;
+    }
+}
