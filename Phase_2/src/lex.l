@@ -51,6 +51,8 @@ INVALID_NUMBER (0{digit}*)|(({FLOAT}\.({digit}|\.)*))|({hexadecimal}\.({digit}|\
 "while"                                   { yylval = new_node("WHILE", yytext, yylineno); return WHILE; }
 "for"                                       { yylval = new_node("FOR", yytext, yylineno); return FOR; }
 "return"                                 { yylval = new_node("RETURN", yytext, yylineno); return RETURN; }
+"break"                                   { yylval = new_node("BREAK", yytext, yylineno); return BREAK; }
+"continue"                              { yylval = new_node("CONTINE", yytext, yylineno); return CONTINE; }
 "\#include"[\t ]*<[^>]+>                 { yylval = new_node("INCLUDE", my_include(yytext), yylineno); return INCLUDE; }
 "\#include"[\t ]*\"[^\"]+\"                 { yylval = new_node("INCLUDE", my_include(yytext), yylineno); return INCLUDE; }
 

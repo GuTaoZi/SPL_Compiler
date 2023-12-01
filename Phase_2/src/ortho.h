@@ -1,6 +1,8 @@
 #include "type.h"
 #include "uthash.h"
 
+#include <stdio.h>
+
 extern FILE *yyout;
 
 typedef struct _orthoNode

@@ -12,22 +12,25 @@
 
     void yyerror(const char *s);
     
-    void print_B_error(const char* node_name, size_t lineno, const char *msg)
+    void print_B_error(const char* node_name, const size_t lineno, const char *msg)
     {
         fprintf(yyout, "Error type B at Line %zu: %s\n", lineno, msg);
         last_error_lineno = lineno;
     }
 
-    void print_scope_error(const char* name, size_t lineno)
-    { fprintf(yyout, "Line %zu: Redefination of %s\n", lineno, name); }
+    void print_type_error(const int typeID, const size_t lineno, const char* msg){
+        fprintf(yyout, "Error type %d at Line %zu: %s\n", typeID, lineno, msg);
+    }
 
     Type *nowType = NULL;
     FieldList *nowFL = NULL;
+
+    int loop_cnt = 0;
 %}
 
 %token INVALID
 %token TYPE 
-%token STRUCT IF ELSE WHILE FOR RETURN INCLUDE
+%token STRUCT IF ELSE WHILE FOR RETURN INCLUDE BREAK CONTINUE
 %token DOT SEMI COLON COMMA ASSIGN LT LE GT GE NE EQ PLUS MINUS MUL DIV
 %token AND OR NOT
 %token LP RP LB RB LC RC
@@ -169,9 +172,11 @@ Stmt : SEMI                                     { add1($$, "Stmt", 1, $1); }
     | RETURN Exp SEMI                           { addn($$, "Stmt", 3, $1, $2, $3); }
     | IF LP Exp RP Stmt  %prec LOWER_ELSE       { addn($$, "Stmt", 5, $1, $2, $3, $4, $5); }
     | IF LP Exp RP Stmt ELSE Stmt               { addn($$, "Stmt", 7, $1, $2, $3, $4, $5, $6, $7); }
-    | WHILE LP Exp RP Stmt                      { addn($$, "Stmt", 5, $1, $2, $3, $4, $5); }
-    | FOR LP DecList SEMI Exp SEMI Exp RP Stmt  %prec UPPER_FOR { addn($$, "Stmt", 9, $1, $2, $3, $4, $5, $6, $7, $8, $9); }
-    | FOR LP VarDec COLON Exp RP Stmt      %prec LOWER_FOR      { addn($$, "Stmt", 7, $1, $2, $3, $4, $5, $6, $7); }
+    | WHILE LP Exp RP {++loop_cnt;} Stmt        { --loop_cnt; addn($$, "Stmt", 5, $1, $2, $3, $4, $5); }
+    | FOR LP DecList SEMI Exp SEMI Exp RP {++loop_cnt;} Stmt  %prec UPPER_FOR { --loop_cnt; addn($$, "Stmt", 9, $1, $2, $3, $4, $5, $6, $7, $8, $9); }
+    | FOR LP VarDec COLON Exp RP {++loop_cnt;} Stmt      %prec LOWER_FOR      { --loop_cnt; addn($$, "Stmt", 7, $1, $2, $3, $4, $5, $6, $7); }
+    | BREAK SEMI                                { addn($$, "Stmt", 2, $1, $2); if(loop_cnt == 0) print_type_error(16, $1->lineno, "\'break\' outside of loop."); }
+    | CONTINUE SEMI                             { addn($$, "Stmt", 2, $1, $2); if(loop_cnt == 0) print_type_error(16, $1->lineno, "\'continue\' outside of loop."); }
     | Exp error                                 { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Missing semicolon \';\'"); }
     | RETURN Exp error                          { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $2->lineno, "Missing semicolon \';\'"); }
     | IF LP RP  %prec LOWER_ELSE                { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Missing condition"); }
@@ -182,14 +187,16 @@ Stmt : SEMI                                     { add1($$, "Stmt", 1, $1); }
     | IF error Exp RP Stmt ELSE Stmt %prec ELSE { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Expected \'(\' after \'if\'"); }
     | IF LP Exp error Stmt %prec LOWER_ELSE     { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Missing closing parenthesis \')\'"); }
     | IF LP Exp error Stmt ELSE Stmt %prec ELSE { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Missing closing parenthesis \')\'"); }
-    | WHILE error Exp RP Stmt                   { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Expected \'(\' after \'while\'"); }
-    | WHILE LP Exp error Stmt                   { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Missing closing parenthesis \')\'"); }
-    | FOR DecList SEMI Exp SEMI Exp RP Stmt %prec UPPER_FOR         { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Expected \'(\' after \'for\'"); }
-    | FOR error %prec UPPER_FOR                                     { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Expected \'(\' after \'for\'"); }
-    | FOR LP DecList SEMI Exp SEMI Exp error Stmt %prec UPPER_FOR   { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Missing closing parenthesis \')\'"); }
-    | FOR VarDec COLON Exp RP Stmt  %prec LOWER_FOR                 { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Expected \'(\' after \'for\'"); }
-    | FOR LP VarDec COLON Exp error Stmt  %prec LOWER_FOR           { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Missing closing parenthesis \')\'"); }
-    | ELSE Stmt { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Expected \'if\' before \'else\'"); }
+    | WHILE error Exp RP {++loop_cnt;} Stmt     { --loop_cnt; add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Expected \'(\' after \'while\'"); }
+    | WHILE LP Exp error {++loop_cnt;} Stmt     { --loop_cnt; add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Missing closing parenthesis \')\'"); }
+    | FOR DecList SEMI Exp SEMI Exp RP {++loop_cnt;} Stmt %prec UPPER_FOR         { --loop_cnt; add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Expected \'(\' after \'for\'"); }
+    | FOR error %prec UPPER_FOR                                                     { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Expected \'(\' after \'for\'"); }
+    | FOR LP DecList SEMI Exp SEMI Exp error {++loop_cnt;} Stmt %prec UPPER_FOR   { --loop_cnt; add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Missing closing parenthesis \')\'"); }
+    | FOR VarDec COLON Exp RP {++loop_cnt;} Stmt  %prec LOWER_FOR                 { --loop_cnt; add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Expected \'(\' after \'for\'"); }
+    | FOR LP VarDec COLON Exp error {++loop_cnt;} Stmt  %prec LOWER_FOR           { --loop_cnt; add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Missing closing parenthesis \')\'"); }
+    | ELSE Stmt                                 { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Expected \'if\' before \'else\'"); }
+    | BREAK error                               { addn($$, "Stmt", 2, $1, $2); has_error = 1; print_B_error("Stmt", $1->lineno, "Missing semicolon \';\'"); }
+    | CONTINUE error                            { addn($$, "Stmt", 2, $1, $2); has_error = 1; print_B_error("Stmt", $1->lineno, "Missing semicolon \';\'"); }
     ;
 
 /* local definition */
