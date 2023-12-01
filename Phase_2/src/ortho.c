@@ -6,7 +6,7 @@ static hashNode *H = NULL;
 
 static orthoStack *S = NULL;
 
-static orthoNode *new_ortho_node(const char *name, Type *val)
+static orthoNode *new_ortho_node(const char *name, const Type *val)
 {
     orthoNode *p = (orthoNode *)malloc(sizeof(orthoNode));
     strncpy(p->name, name, 31);
@@ -42,7 +42,7 @@ orthoStack *pop_stack()
     {
         HASH_FIND_STR(H, it->name, hash_head);
         HASH_DEL(H, hash_head);
-        deleteType(it->val);
+        // deleteType(it->val);
         if (it->next[0])
         {
             hashNode *hn = (hashNode *)malloc(sizeof(hashNode));
@@ -69,7 +69,7 @@ orthoNode *stack_top()
 }
 
 //TODO: check if redefinition here, or maybe outside?
-orthoNode *add_ortho_node(const char *name, Type *val)
+orthoNode *add_ortho_node(const char *name, const Type *val)
 {
     if (!S)
     {

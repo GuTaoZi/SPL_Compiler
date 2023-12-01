@@ -1,5 +1,6 @@
 #include "type.h"
 #include <string.h>
+#include <stdlib.h>
 
 Type *makeStructType(const char *name, FieldList *fl)
 {
@@ -186,6 +187,8 @@ void deleteType(Type *type)
 
 char checkTypeEqual(const Type *a, const Type *b)
 {
+    if (a->category == PRIMITIVE)
+        return checkPrimEqual(a->primitive, b->primitive);
     if (a == b)
         return 1;
     if (a == NULL || b == NULL)
@@ -196,8 +199,6 @@ char checkTypeEqual(const Type *a, const Type *b)
         return 0;
     if (a->category == ERRORTYPE || b->category == ERRORTYPE)
         return 1;
-    if (a->category == PRIMITIVE)
-        return checkPrimEqual(a->primitive, b->primitive);
     if (a->category == ARRAY)
         return checkArrayEqual(a->array, b->array);
     if (a->category == STRUCTURE)
@@ -208,8 +209,6 @@ char checkTypeEqual(const Type *a, const Type *b)
 
 char checkPrimEqual(const int pr1, const int pr2)
 {
-    if (pr1 == pr2)
-        return 1;
     if (pr1 == PCHAR || pr2 == PCHAR)
         return 0;
     return 1;

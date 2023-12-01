@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "treeNode.h"
+#include "ortho.h"
 
 const char *need_output[] = {"INT", "FLOAT", "CHAR", "STRING", "TYPE", "ID", "INCLUDE"};
 const int lno = 7;
@@ -87,14 +88,14 @@ void make_list(int cnt, treeNode *head, ...)
     va_end(args);
 }
 
-const char *getVarDecName(treeNode *u)
+const char *getVarDecName(const treeNode *u)
 {
     while (u->child != NULL)
         u = u->child;
     return u->val;
 }
 
-treeNode *get_child(treeNode *u, size_t id)
+treeNode *get_child(const treeNode *u, size_t id)
 {
     treeNode *v = u->child;
     while (id--)
@@ -107,13 +108,4 @@ bool is_lvalue(treeNode *u)
     return (u->child_cnt == 1 && !strcmp(u->child->child->name, "ID")) ||
         (u->child_cnt == 3 && get_child(u, 1)->name == "DOT") ||
         (u->child_cnt == 4 && get_child(u, 1)->name == "LB");
-}
-
-void try_define(treeNode *u)
-{
-    char *name = getVarDecName(u);
-    if (current_scope_seek(name))
-        print_scope_error(name, u->lineno);
-    else
-        add_ortho_node(name, u->inheridata);
 }

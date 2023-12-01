@@ -1,3 +1,6 @@
+#ifndef ORTHO_H
+#define ORTHO_H
+
 #include "type.h"
 #include "uthash.h"
 
@@ -52,7 +55,7 @@ orthoNode *stack_top();
  * @param {Type} *val type of the orthoNode
  * @return {*}
  */
-orthoNode *add_ortho_node(const char *name, Type *val);
+orthoNode *add_ortho_node(const char *name, const Type *val);
 
 /**
  * @description: Look for orthoNode with given name within the current scope.
@@ -67,3 +70,5 @@ orthoNode *current_scope_seek(const char *name);
  * @return {*} An orthoNode with given name, NULL for 404
  */
 orthoNode *global_scope_seek(const char *name);
+
+#endif

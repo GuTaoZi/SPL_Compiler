@@ -34,7 +34,12 @@
         Type *tu, *tv = v->inheridata, *tw = w->inheridata;
         tu = getTypeAfterOp(tv, tw, op);
         if (tu->category == ERRORTYPE && tv->category != ERRORTYPE && tw->category != ERRORTYPE)
-            print_type_error(NULL, u->lineno, "type missmatch");
+        {
+            if (strcmp(op, "ass") == 0)
+                print_type_error(5, u->lineno, "unmatching types");
+            else
+                print_type_error(7, u->lineno, "unmatching operands");
+        }
         u->inheridata = tu;
     }
 
@@ -46,7 +51,7 @@
         else if (!checkFieldEqual(t->func->params, fl))
         {
             u->inheridata = makeErrorType();
-            print_type_error(NULL, u->lineno, "parameters missmatch");
+            print_type_error(9, u->lineno, "parameters missmatch");
             return;
         }
         else
@@ -59,12 +64,12 @@
         if (tv->category != ARRAY)
         {
             u->inheridata = makeErrorType();
-            print_type_error(NULL, u->lineno, "not an array");
+            print_type_error(10, u->lineno, "not an array");
         }
         else if (tw->category != PRIMITIVE || tw->primitive != PINT)
         {
             u->inheridata = makeErrorType();
-            print_type_error(NULL, u->lineno, "index should be an integer");
+            print_type_error(12, u->lineno, "index should be an integer");
         }
         else
             u->inheridata = tv->array->base;
@@ -77,12 +82,12 @@
         if (tv->category != STRUCT)
         {
             u->inheridata = makeErrorType();
-            print_type_error(NULL, u->lineno, "not a structure");
+            print_type_error(13, u->lineno, "not a structure");
         }
         else if (tw == NULL)
         {
             u->inheridata = makeErrorType();
-            print_type_error(NULL, u->lineno, "attribute not found");
+            print_type_error(14, u->lineno, "attribute not found");
         }
         else
             u->inheridata = tw;
@@ -105,17 +110,17 @@
     }
 
     void add_identifier(const treeNode *p) {
-        if(p->inheridata->category == PRIMITIVE || p->inheridata->category == ARRAY) {
+        if(((Type*)p->inheridata)->category == PRIMITIVE || ((Type*)p->inheridata)->category == ARRAY) {
             add_something(p->inheridata, getVarDecName(p), p->lineno, 3, "a variable is redefined in the same scope.");
-        } else if(p->inheridata->category == STRUCTURE || p->inheridata->category == FUNCTION) {
-            add_others(p->inheridata);
+        } else if(((Type*)p->inheridata)->category == STRUCTURE || ((Type*)p->inheridata)->category == FUNCTION) {
+            add_others(p->inheridata, p->lineno);
         } else {
             print_type_error(-1, 0, "What the hell? At add_identifier.");
         }
     }
 
     typedef struct rettype_stack {
-        Type *data;
+        const Type *data;
         struct rettype_stack *next;
     } rettype_stack;
     rettype_stack *funcRetTypeStack = NULL;
@@ -133,7 +138,24 @@
         const Type *ret1 = funcRetTypeStack->data;
         const Type *tu = getTypeAfterOp(ret1, ret2, "ass");
         if (tu->category == ERRORTYPE && ret1->category != ERRORTYPE && ret2->category != ERRORTYPE)
-            print_type_error(8, lineno, "a function’s return value type mismatches the declared type.");;
+            print_type_error(8, lineno, "a function's return value type mismatches the declared type.");;
+    }
+    void try_define(const treeNode *u)
+    {
+        const char *name = getVarDecName(u);
+        if (current_scope_seek(name))
+            print_type_error(3, u->lineno, "a variable is redefined in the same scop.");
+        else
+            add_ortho_node(name, u->inheridata);
+    }
+    Type *findStruct(const char *name, const size_t lineno) {
+        orthoNode *p=global_scope_seek(name);
+        if(p==NULL){
+            print_type_error(17, lineno, "Cannot find structure definition.");
+            return makeErrorType();
+        } else {
+            return p->val;
+        }
     }
 
     Type *nowType = NULL;
@@ -186,7 +208,8 @@ ExtDefList :            { add0($$, "ExtDefList"); }
 
 ExtDef : Specifier ExtDecList SEMI  { addn($$, "ExtDef", 3, $1, $2, $3); }
     | Specifier SEMI                { addn($$, "ExtDef", 2, $1, $2); }
-    | Specifier FunDec { rettype_push($1->inheridata); } CompSt       { rettype_pop(); addn($$, "ExtDef", 3, $1, $2, $3); addFuncRet($2->inheridata, $1->inheridata); add_identifier($2);}
+    | Specifier FunDec              { rettype_push($1->inheridata); }
+      CompSt                        { rettype_pop(); addn($$, "ExtDef", 3, $1, $2, $3); addFuncRet($2->inheridata, $1->inheridata); add_identifier($2);}
     | Specifier ExtDecList error    { add0($$, "ExtDef"); has_error = 1; print_B_error("ExtDef", $1->lineno, "Missing semicolon \';\'"); }
     | Specifier error               { add0($$, "ExtDef"); has_error = 1; print_B_error("ExtDef", $1->lineno, "Missing semicolon \';\'"); }
     | ExtDecList SEMI               { add0($$, "ExtDef"); has_error = 1; print_B_error("ExtDef", $1->lineno, "Missing specifier"); }
@@ -209,7 +232,7 @@ StructSpecifier :
                         add_identifier($$); }
     
     | STRUCT ID     { addn($$, "StructSpecifier", 2, $1, $2);
-                        $$->inheridata = findStruct($2->val); }
+                        $$->inheridata = findStruct($2->val, $1->lineno); }
     
     | STRUCT ID LC  { push_stack(); }
       DefList error { add0($$, "StructSpecifier");
@@ -309,8 +332,8 @@ Stmt : SEMI                                     { add1($$, "Stmt", 1, $1); }
     | FOR VarDec COLON Exp RP {++loop_cnt;} Stmt  %prec LOWER_FOR                 { --loop_cnt; add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Expected \'(\' after \'for\'"); }
     | FOR LP VarDec COLON Exp error {++loop_cnt;} Stmt  %prec LOWER_FOR           { --loop_cnt; add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Missing closing parenthesis \')\'"); }
     | ELSE Stmt                                 { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Expected \'if\' before \'else\'"); }
-    | BREAK error                               { addn($$, "Stmt", 2, $1, $2); has_error = 1; print_B_error("Stmt", $1->lineno, "Missing semicolon \';\'"); }
-    | CONTINUE error                            { addn($$, "Stmt", 2, $1, $2); has_error = 1; print_B_error("Stmt", $1->lineno, "Missing semicolon \';\'"); }
+    | BREAK error                               { addn($$, "Stmt", 2, $1, $2); if(loop_cnt == 0) print_type_error(16, $1->lineno, "\'break\' outside of loop."); has_error = 1; print_B_error("Stmt", $1->lineno, "Missing semicolon \';\'"); }
+    | CONTINUE error                            { addn($$, "Stmt", 2, $1, $2); if(loop_cnt == 0) print_type_error(16, $1->lineno, "\'continue\' outside of loop."); has_error = 1; print_B_error("Stmt", $1->lineno, "Missing semicolon \';\'"); }
     ;
 
 /* local definition */
@@ -370,7 +393,8 @@ Exp : Exp ASSIGN Exp    { addn($$, "Exp", 3, $1, $2, $3); inherit_type($$, $1, $
     | Exp DIV error     { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing right operand"); $$->inheridata = makeErrorType(); }
     | Exp INVALID Exp   { add0($$, "Exp"); has_error = 1; $$->inheridata = makeErrorType(); }
     | LP Exp error      { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $1->lineno, "Missing closing parenthesis \')\'"); $$->inheridata = makeErrorType(); }
-    | ID LP Args error  { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $2->lineno, "Missing closing parenthesis \')\'"); $$->inheridata = makeErrorType(); }
+    | ID LP             { nowFL = makeFieldList(NULL, ""); }
+      Args error        { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $2->lineno, "Missing closing parenthesis \')\'"); $$->inheridata = makeErrorType(); }
     | ID LP error       { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $2->lineno, "Missing closing parenthesis \')\'"); $$->inheridata = makeErrorType(); }
     | Exp LB Exp error  { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $2->lineno, "Missing closing braces \']\'"); $$->inheridata = makeErrorType(); }
     ;
@@ -384,7 +408,7 @@ Var : UINT          { $$ = $1; $$->inheridata = makePrimType("int"); }
           $$ = $1;
           $$->inheridata = find_type($1->val);
           if (((Type *)($$->inheridata))->category == ERRORTYPE)
-            print_type_error(NULL, $$->lineno, "speficier not defined");
+            print_type_error(1, $$->lineno, "a variable is used without a definition.");
       }
     | FLOAT         { $$ = $1; $$->inheridata = makePrimType("float"); }
     | CHAR          { $$ = $1; $$->inheridata = makePrimType("char"); }
@@ -450,6 +474,7 @@ int main(int argc, char **argv)
     yyin = file_in;
     yyout = file_out;
     yyparse();
+    output_tree(root, 0);
     if (!has_error)
     {
         if (root != NULL)

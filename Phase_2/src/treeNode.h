@@ -42,7 +42,7 @@ extern const int lno;
 
 typedef struct _treeNode
 {
-    char *name;
+    const char *name;
     char *val;
     size_t child_cnt, lineno;
     struct _treeNode *child;
@@ -71,9 +71,9 @@ void output_tree(treeNode *u, size_t spaceno);
  */
 void make_list(int cnt, treeNode *head, ...);
 
-const char *getVarDecName(treeNode *u);
+const char *getVarDecName(const treeNode *u);
 
-treeNode *get_child(treeNode *u, size_t id);
+treeNode *get_child(const treeNode *u, size_t id);
 
 bool is_lvalue(treeNode *u);
 
