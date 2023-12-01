@@ -6,6 +6,7 @@
     #include "treeNode.h"
     #include "type.h"
     #include "ortho.h"
+    #include "utstack.h"
 
     treeNode* root = NULL;
     extern size_t last_error_lineno;
@@ -34,6 +35,54 @@
     void invoke_function(treeNode *u, FieldList *fl)
     {
         
+    }
+
+    void add_something(const Type *p, const char *name, const int errorID, const size_t lineno, const char *error_msg){
+        if(current_scope_seek(name) == NULL){
+            add_ortho_node(name, p);
+        } else {
+            print_type_error(errorID, lineno, error_msg);
+        }
+    }
+
+    void add_others(const Type *p, const size_t lineno) {
+        if(p->category == STRUCTURE){
+            add_something(p, p->structure->struct_name, lineno, 15, "redefine the same structure type.");
+        } else {
+            add_something(p, p->func->name, lineno, 4, "a function is redefined.");
+        }
+    }
+
+    void add_identifier(const treeNode *p) {
+        if(p->inheridata->category == PRIMITIVE || p->inheridata->category == ARRAY) {
+            add_something(p->inheridata, getVarDecName(p), p->lineno, 3, "a variable is redefined in the same scope.");
+        } else if(p->inheridata->category == STRUCTURE || p->inheridata->category == FUNCTION) {
+            add_others(p->inheridata);
+        } else {
+            print_type_error(-1, 0, "What the hell? At add_identifier.");
+        }
+    }
+
+    typedef struct rettype_stack {
+        Type *data;
+        struct rettype_stack *next;
+    } rettype_stack;
+    rettype_stack *funcRetTypeStack = NULL;
+
+    void rettype_push(const Type *nowType) {
+        rettype_stack *p = (rettype_stack*)malloc(sizeof(rettype_stack));
+        p->data = nowType;
+        STACK_PUSH(funcRetTypeStack, p);
+    }
+    Type *rettype_pop(){
+        rettype_stack *p;
+        STACK_POP(funcRetTypeStack, p);
+    }
+    void checkRetType(const Type *ret2, const size_t lineno){
+        const Type *ret1 = funcRetTypeStack->data;
+        const Type *tu = getTypeAfterOp(ret1, ret2, "ass");
+        if (tu->category == ERRORTYPE && ret1->category != ERRORTYPE && ret2->category != ERRORTYPE)
+            print_type_error(8, lineno, "a function’s return value type mismatches the declared type.");;
     }
 
     Type *nowType = NULL;
@@ -86,14 +135,14 @@ ExtDefList :            { add0($$, "ExtDefList"); }
 
 ExtDef : Specifier ExtDecList SEMI  { addn($$, "ExtDef", 3, $1, $2, $3); }
     | Specifier SEMI                { addn($$, "ExtDef", 2, $1, $2); }
-    | Specifier FunDec CompSt       { addn($$, "ExtDef", 3, $1, $2, $3); addFuncRet($2->inheridata, $1->inheridata); addFuncStack($2->inheridata);}
+    | Specifier FunDec { rettype_push($1->inheridata); } CompSt       { rettype_pop(); addn($$, "ExtDef", 3, $1, $2, $3); addFuncRet($2->inheridata, $1->inheridata); add_identifier($2);}
     | Specifier ExtDecList error    { add0($$, "ExtDef"); has_error = 1; print_B_error("ExtDef", $1->lineno, "Missing semicolon \';\'"); }
     | Specifier error               { add0($$, "ExtDef"); has_error = 1; print_B_error("ExtDef", $1->lineno, "Missing semicolon \';\'"); }
     | ExtDecList SEMI               { add0($$, "ExtDef"); has_error = 1; print_B_error("ExtDef", $1->lineno, "Missing specifier"); }
     ;
 
-ExtDecList : VarDec             { add_ortho_node(getVarDecName($1), $1->inheridata); add1($$, "ExtDecList", 1, $1); }
-    | VarDec COMMA ExtDecList   { add_ortho_node(getVarDecName($1), $1->inheridata); addn($$, "ExtDecList", 3, $1, $2, $3); }
+ExtDecList : VarDec             { add_identifier($1); add1($$, "ExtDecList", 1, $1); }
+    | VarDec COMMA ExtDecList   { add_identifier($1); addn($$, "ExtDecList", 3, $1, $2, $3); }
     ;
 
 /* specifier */
@@ -106,7 +155,7 @@ StructSpecifier :
       DefList RC    { addn($$, "StructSpecifier", 5, $1, $2, $3, $4, $5);
                         pop_stack();
                         $$->inheridata = makeStructType($2->val, $4->inheridata);
-                        addStructStack($$->inheridata); }
+                        add_identifier($$); }
     
     | STRUCT ID     { addn($$, "StructSpecifier", 2, $1, $2);
                         $$->inheridata = findStruct($2->val); }
@@ -115,7 +164,7 @@ StructSpecifier :
       DefList error { add0($$, "StructSpecifier");
                         pop_stack();
                         $$->inheridata = makeStructType($2->val, $4->inheridata);
-                        addStructStack($$->inheridata);
+                        add_identifier($$);
                         has_error = 1;
                         print_B_error("StructSpecifier", $3->lineno, "Missing closing curly braces \'}\'"); }
     
@@ -123,7 +172,7 @@ StructSpecifier :
       DefList RC    { add0($$, "StructSpecifier");
                         pop_stack();
                         $$->inheridata = makeStructType($2->val, $4->inheridata);
-                        addStructStack($$->inheridata);
+                        add_identifier($$);
                         has_error = 1;
                         print_B_error("StructSpecifier", $3->lineno, "Missing closing curly braces \'{\'"); }
     | STRUCT INVALID LC DefList RC      { add0($$, "StructSpecifier"); has_error = 1; }
@@ -183,7 +232,7 @@ StmtList :                      { add0($$, "StmtList"); }
 Stmt : SEMI                                     { add1($$, "Stmt", 1, $1); }
     | Exp SEMI                                  { addn($$, "Stmt", 2, $1, $2); }
     | CompSt                                    { add1($$, "Stmt", 1, $1); }
-    | RETURN Exp SEMI                           { addn($$, "Stmt", 3, $1, $2, $3); }
+    | RETURN Exp SEMI                           { checkRetType($2->inheridata, $1->lineno); addn($$, "Stmt", 3, $1, $2, $3); }
     | IF LP Exp RP Stmt  %prec LOWER_ELSE       { addn($$, "Stmt", 5, $1, $2, $3, $4, $5); }
     | IF LP Exp RP Stmt ELSE Stmt               { addn($$, "Stmt", 7, $1, $2, $3, $4, $5, $6, $7); }
     | WHILE LP Exp RP {++loop_cnt;} Stmt        { --loop_cnt; addn($$, "Stmt", 5, $1, $2, $3, $4, $5); }
@@ -192,7 +241,7 @@ Stmt : SEMI                                     { add1($$, "Stmt", 1, $1); }
     | BREAK SEMI                                { addn($$, "Stmt", 2, $1, $2); if(loop_cnt == 0) print_type_error(16, $1->lineno, "\'break\' outside of loop."); }
     | CONTINUE SEMI                             { addn($$, "Stmt", 2, $1, $2); if(loop_cnt == 0) print_type_error(16, $1->lineno, "\'continue\' outside of loop."); }
     | Exp error                                 { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Missing semicolon \';\'"); }
-    | RETURN Exp error                          { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $2->lineno, "Missing semicolon \';\'"); }
+    | RETURN Exp error                          { checkRetType($2->inheridata, $1->lineno); add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $2->lineno, "Missing semicolon \';\'"); }
     | IF LP RP  %prec LOWER_ELSE                { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Missing condition"); }
     | IF LP RP ELSE                             { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Missing condition"); }
     | IF LP Exp RP error  %prec LOWER_ELSE      { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Expect Stmt after if"); }
