@@ -33,16 +33,21 @@
 
     void inherit_type(treeNode *u, const treeNode *v, const treeNode *w, const char *op)
     {
-        Type *tu, *tv = v->inheridata, *tw = w->inheridata;
-        tu = getTypeAfterOp(tv, tw, op);
-        if (tu->category == ERRORTYPE && tv->category != ERRORTYPE && tw->category != ERRORTYPE)
+        Type *tv = v->inheridata, *tw = w->inheridata;
+        u->inheridata = getTypeAfterOp(tv, tw, op);
+        if (tv->category == ERRORTYPE || tw->category == ERRORTYPE)
+            return;
+        if (!is_lvalue(v))
         {
+            print_type_error(6, u->lineno, "rvalue appears on the left-hand side of the assignment operator");
+            u->inheridata = makeErrorType();
+        }
+        else if (u->inheridata->category == ERRORTYPE)
             if (strcmp(op, "ass") == 0)
                 print_type_error(5, u->lineno, "unmatching types");
             else
                 print_type_error(7, u->lineno, "unmatching operands");
-        }
-        u->inheridata = tu;
+        
     }
 
     void inherit_function(treeNode *u, const treeNode *v, const FieldList *fl)
