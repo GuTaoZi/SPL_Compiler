@@ -36,10 +36,6 @@ extern const int lno;
     } while (0)
 //////// tree node add ends here /////////
 
-#ifndef treeInheri
-#define treeInheri char
-#endif
-
 typedef struct _treeNode
 {
     const char *name;
@@ -48,7 +44,7 @@ typedef struct _treeNode
     struct _treeNode *child;
     struct _treeNode *next;
     struct _treeNode *prev;
-    treeInheri inheridata;
+    void *inheridata;
 } treeNode;
 
 /**
