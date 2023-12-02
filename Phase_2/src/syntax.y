@@ -37,7 +37,7 @@
         u->inheridata = getTypeAfterOp(tv, tw, op);
         if (tv->category == ERRORTYPE || tw->category == ERRORTYPE)
             return;
-        if (!is_lvalue(v))
+        if (strcmp(op, "ass") == 0 && !is_lvalue(v))
         {
             print_type_error(6, u->lineno, "rvalue appears on the left-hand side of the assignment operator");
             u->inheridata = makeErrorType();
