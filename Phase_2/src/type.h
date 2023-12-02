@@ -99,7 +99,7 @@ char checkArrayEqual(const Array *a, const Array *b);
 
 char checkFunctionEqual(const Function *a, const Function *b);
 
-Type *getTypeAfterOp(const Type *a, const Type *b, const char *op);
+Type *getTypeAfterOp(Type *a, Type *b, const char *op);
 
 Type *findNameInStructure(const Type *a, const char *name);
 

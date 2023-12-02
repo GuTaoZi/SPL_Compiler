@@ -66,6 +66,8 @@ void del_node(treeNode *p);
  */
 void output_tree(const treeNode *u, size_t spaceno);
 
+char *output_tree_array(const treeNode *u, char *opt);
+
 /**
  * Set a list of nodes as `head`'s children
  */

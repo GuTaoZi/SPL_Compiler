@@ -10,6 +10,7 @@
 
     treeNode* root = NULL;
     extern size_t last_error_lineno;
+    #define MAX_ERROR_LEN 32768
 
     void yyerror(const char *s);
     
@@ -25,6 +26,9 @@
         has_error = 1;
     }
 
+    char type_error_tmp[MAX_ERROR_LEN];
+    char tree_output_tmp[MAX_ERROR_LEN-1024];
+
     Type *find_type(const char *name)
     {
         orthoNode *node = global_scope_seek(name);
@@ -39,14 +43,18 @@
             return;
         if (strcmp(op, "ass") == 0 && !is_lvalue(v))
         {
-            print_type_error(6, u->lineno, "rvalue appears on the left-hand side of the assignment operator");
+            output_tree_array(v, tree_output_tmp);
+            sprintf(type_error_tmp, "rvalue: \'%s\' appears on the left-hand side of the assignment operator.", tree_output_tmp);
+            print_type_error(6, u->lineno, type_error_tmp);
             u->inheridata = makeErrorType();
         }
         else if (((Type*)u->inheridata)->category == ERRORTYPE){
-            if (strcmp(op, "ass") == 0)
-                print_type_error(5, u->lineno, "unmatching types");
-            else
-                print_type_error(7, u->lineno, "unmatching operands");
+            if (strcmp(op, "ass") == 0){
+                print_type_error(5, u->lineno, "unmatching types for assign(=).");
+            }
+            else{
+                print_type_error(7, u->lineno, "unmatching operands.");
+            }
         }
         
     }
@@ -56,17 +64,23 @@
         Type *t = find_type(v->val);
         if (t == NULL){
             u->inheridata = makeErrorType();
-            print_type_error(2, u->lineno, "Function is invoked without a definition.");
+            output_tree_array(v, tree_output_tmp);
+            sprintf(type_error_tmp, "Function: \'%s\' is invoked without a definition.", tree_output_tmp);
+            print_type_error(2, u->lineno, type_error_tmp);
         }
         else if (t->category != FUNCTION)
         {
             u->inheridata = makeErrorType();
-            print_type_error(11, u->lineno, "applying function invocation operator (foo(...)) on non-function names.");
+            output_tree_array(v, tree_output_tmp);
+            sprintf(type_error_tmp, "applying function invocation operator on non-function name: \'%s\'.", tree_output_tmp);
+            print_type_error(11, u->lineno, type_error_tmp);
         }
         else if (!checkFieldEqual(t->func->params, fl))
         {
             u->inheridata = makeErrorType();
-            print_type_error(9, u->lineno, "parameters missmatch");
+            output_tree_array(v, tree_output_tmp);
+            sprintf(type_error_tmp, "parameters missmatch for function: \'%s\'", tree_output_tmp);
+            print_type_error(9, u->lineno, type_error_tmp);
         }
         else
             u->inheridata = t->func->return_type;
@@ -78,12 +92,16 @@
         if (tv->category != ARRAY)
         {
             u->inheridata = makeErrorType();
-            print_type_error(10, u->lineno, "not an array");
+            output_tree_array(v, tree_output_tmp);
+            sprintf(type_error_tmp, "\'%s\' is not an array", tree_output_tmp);
+            print_type_error(10, u->lineno, type_error_tmp);
         }
         else if (tw->category != PRIMITIVE || tw->primitive != PINT)
         {
             u->inheridata = makeErrorType();
-            print_type_error(12, u->lineno, "index should be an integer");
+            output_tree_array(w, tree_output_tmp);
+            sprintf(type_error_tmp, "index: \'%s\' should be an integer", tree_output_tmp);
+            print_type_error(12, u->lineno, type_error_tmp);
         }
         else
             u->inheridata = tv->array->base;
@@ -96,12 +114,18 @@
         if (tv->category != STRUCTURE)
         {
             u->inheridata = makeErrorType();
-            print_type_error(13, u->lineno, "not a structure");
+            output_tree_array(v, tree_output_tmp);
+            sprintf(type_error_tmp, "\'%s\' is not a structure", tree_output_tmp);
+            print_type_error(13, u->lineno, type_error_tmp);
         }
         else if (tw == NULL)
         {
             u->inheridata = makeErrorType();
-            print_type_error(14, u->lineno, "attribute not found");
+            output_tree_array(w, tree_output_tmp);
+            char *tt = type_error_tmp + sprintf(type_error_tmp, "attribute \'%s\' in struct: ", tree_output_tmp);
+            output_tree_array(v, tree_output_tmp);
+            sprintf(tt, "\'%s\' not found", tree_output_tmp);
+            print_type_error(14, u->lineno, type_error_tmp);
         }
         else
             u->inheridata = tw;
@@ -115,23 +139,26 @@
         }
     }
 
-    void add_others(const Type *p, const size_t lineno) {
+    void add_others(const Type *p, const size_t lineno, const char *name) {
         if(p->category == STRUCTURE){
             add_something(p, p->structure->struct_name, 15, lineno, "redefine the same structure type.");
         } else {
-            add_something(p, p->func->name, 4, lineno, "a function is redefined.");
+            sprintf(type_error_tmp, "function \'%s\' is redefined.", name);
+            add_something(p, p->func->name, 4, lineno, type_error_tmp);
         }
     }
 
-    // TODO
     void add_identifier(const treeNode *p) {
         if(strcmp(p->name, "VarDec") == 0){
-            add_something(p->inheridata, getVarDecName(p), 3, p->lineno, "a variable is redefined in the same scope.");
+            output_tree_array(p, tree_output_tmp);
+            sprintf(type_error_tmp, "variable \'%s\' is redefined in the same scope.", tree_output_tmp);
+            add_something(p->inheridata, getVarDecName(p), 3, p->lineno, type_error_tmp);
         } else if(((Type*)p->inheridata)->category == PRIMITIVE || ((Type*)p->inheridata)->category == ARRAY) {
             // add_something(p->inheridata, getVarDecName(p), 3, p->lineno, "a variable is redefined in the same scope.");
             fprintf(yyout, "At add_identifier: lineno: %zu: Sorry but you cannot do this.", p->lineno);
         } else if(((Type*)p->inheridata)->category == STRUCTURE || ((Type*)p->inheridata)->category == FUNCTION) {
-            add_others(p->inheridata, p->lineno);
+            output_tree_array(p, tree_output_tmp);
+            add_others(p->inheridata, p->lineno, tree_output_tmp);
         } else {
             print_type_error(-1, 0, "What the hell? At add_identifier.");
         }
@@ -158,20 +185,14 @@
         const Type *ret1 = funcRetTypeStack->data;
         const Type *tu = getTypeAfterOp(ret1, ret2, "ass");
         if (tu->category == ERRORTYPE && ret1->category != ERRORTYPE && ret2->category != ERRORTYPE)
-            print_type_error(8, lineno, "a function's return value type mismatches the declared type.");
+            print_type_error(8, lineno, "function's return value type mismatches the declared type.");
     }
-    // void try_define(const treeNode *u)
-    // {
-    //     const char *name = getVarDecName(u);
-    //     if (current_scope_seek(name))
-    //         print_type_error(3, u->lineno, "a variable is redefined in the same scope.");
-    //     else
-    //         add_ortho_node(name, u->inheridata);
-    // }
+
     Type *findStruct(const char *name, const size_t lineno) {
         orthoNode *p=global_scope_seek(name);
         if(p == NULL || p->val->category != STRUCTURE){
-            print_type_error(17, lineno, "Cannot find structure definition.");
+            sprintf(type_error_tmp, "Cannot find structure definition for name: \'%s\'.", name);
+            print_type_error(17, lineno, type_error_tmp);
             return makeErrorType();
         } else {
             return p->val;
@@ -431,7 +452,8 @@ Var : UINT      { $$ = $1; $$->inheridata = makePrimType("int"); }
                 $$ = $1;
                 $$->inheridata = find_type($1->val);
                 if ($$->inheridata == NULL){
-                    print_type_error(1, $$->lineno, "a variable is used without a definition.");
+                    sprintf(type_error_tmp, "variable \'%s\' is used without a definition.", $1->val);
+                    print_type_error(1, $$->lineno, type_error_tmp);
                     $$->inheridata=makeErrorType();
                     // add_something($$->inheridata, $$->val, 0, 0, "");
                 }

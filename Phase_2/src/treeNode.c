@@ -71,6 +71,26 @@ void output_tree(const treeNode *u, size_t spaceno)
     }
 }
 
+char *output_tree_array_(const treeNode *u, char *opt){
+    if(u->child_cnt != 0){
+        const treeNode *p = u->child;
+        while(p != NULL){
+            opt = output_tree_array_(p, opt);
+            p = p->next;
+        }
+    } else {
+        opt += sprintf(opt, "%s", u->val);
+    }
+    return opt;
+}
+char *output_tree_array(const treeNode *u, char *opt){
+    char *s = output_tree_array_(u, opt);
+    // if(s != opt) {
+    //     s[-1] = 0;
+    // }
+    return s;
+}
+
 void make_list(int cnt, treeNode *head, ...)
 {
     va_list args;

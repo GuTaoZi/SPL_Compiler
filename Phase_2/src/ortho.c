@@ -34,11 +34,11 @@ orthoStack *pop_stack()
         fprintf(yyout, "Trying to pop an empty stack.\n");
     }
     orthoNode *it = S->top;
-    if (!it)
-    {
-        // fprintf(yyout, "Trying to del a NULL node.\n");
-        return NULL;
-    }
+    // if (!it)
+    // {
+    //     fprintf(yyout, "Trying to del a NULL node.\n");
+    //     return NULL;
+    // }
     hashNode *hash_head; // the hashNode containing it.
     while (it)
     {

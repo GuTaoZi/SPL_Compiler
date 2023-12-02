@@ -253,7 +253,7 @@ char checkFunctionEqual(const Function *a, const Function *b)
     return checkFieldEqual(a->params, b->params);
 }
 
-Type *getTypeAfterOp(const Type *a, const Type *b, const char *op)
+Type *getTypeAfterOp(Type *a, Type *b, const char *op)
 {
     // printf("getafterOP:\n");
     // outputType(a);
