@@ -42,11 +42,12 @@
             print_type_error(6, u->lineno, "rvalue appears on the left-hand side of the assignment operator");
             u->inheridata = makeErrorType();
         }
-        else if (u->inheridata->category == ERRORTYPE)
+        else if (((Type*)u->inheridata)->category == ERRORTYPE){
             if (strcmp(op, "ass") == 0)
                 print_type_error(5, u->lineno, "unmatching types");
             else
                 print_type_error(7, u->lineno, "unmatching operands");
+        }
         
     }
 
@@ -92,7 +93,7 @@
     {
         Type *tv = v->inheridata;
         Type *tw = findNameInStructure(tv, w->val);
-        if (tv->category != STRUCT)
+        if (tv->category != STRUCTURE)
         {
             u->inheridata = makeErrorType();
             print_type_error(13, u->lineno, "not a structure");
@@ -124,11 +125,12 @@
 
     // TODO
     void add_identifier(const treeNode *p) {
-        if(((Type*)p->inheridata)->category == PRIMITIVE || ((Type*)p->inheridata)->category == ARRAY) {
+        if(strcmp(p->name, "VarDec") == 0){
             add_something(p->inheridata, getVarDecName(p), 3, p->lineno, "a variable is redefined in the same scope.");
+        } else if(((Type*)p->inheridata)->category == PRIMITIVE || ((Type*)p->inheridata)->category == ARRAY) {
+            // add_something(p->inheridata, getVarDecName(p), 3, p->lineno, "a variable is redefined in the same scope.");
+            fprintf(yyout, "At add_identifier: lineno: %zu: Sorry but you cannot do this.", p->lineno);
         } else if(((Type*)p->inheridata)->category == STRUCTURE || ((Type*)p->inheridata)->category == FUNCTION) {
-            printf("At Line %zu:\n", p->lineno);
-            outputType(p->inheridata);
             add_others(p->inheridata, p->lineno);
         } else {
             print_type_error(-1, 0, "What the hell? At add_identifier.");

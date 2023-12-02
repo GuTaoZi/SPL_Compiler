@@ -64,7 +64,7 @@ void del_node(treeNode *p);
 /**
  * Output whole tree according to the syntax requirement
  */
-void output_tree(treeNode *u, size_t spaceno);
+void output_tree(const treeNode *u, size_t spaceno);
 
 /**
  * Set a list of nodes as `head`'s children
@@ -75,6 +75,6 @@ const char *getVarDecName(const treeNode *u);
 
 treeNode *get_child(const treeNode *u, size_t id);
 
-bool is_lvalue(treeNode *u);
+bool is_lvalue(const treeNode *u);
 
 #endif

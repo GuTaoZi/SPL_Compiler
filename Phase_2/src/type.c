@@ -98,15 +98,16 @@ Type *addArrayTypeRec(Type *nowType, size_t sz)
     if (nowType->category == ARRAY)
     {
         nxt = addArrayTypeRec(nowType->array->base, sz);
+        nowType->array->base = nxt;
+        nowType->array->typesize = nxt->typesize * nowType->array->size;
+        nowType->typesize = nowType->array->typesize;
+        return nowType;
     }
     else
     {
         nxt = makeArrayType(nowType, sz);
+        return nxt;
     }
-    nowType->array->base = nxt;
-    nowType->array->typesize = nxt->typesize * nowType->array->size;
-    nowType->typesize = nowType->array->typesize;
-    return nowType;
 }
 
 Type *addArrayType(Type *nowType, size_t sz)
@@ -189,7 +190,7 @@ void deleteType(Type *type)
 
 char checkTypeEqual(const Type *a, const Type *b)
 {
-    if (a->category == PRIMITIVE)
+    if (a->category == PRIMITIVE && b->category == PRIMITIVE)
         return checkPrimEqual(a->primitive, b->primitive);
     if (a == b)
         return 1;
@@ -225,6 +226,10 @@ char checkFieldEqual(const FieldList *a, const FieldList *b)
 {
     if (a == NULL && b == NULL)
         return 1;
+    if (a != NULL && a->type == NULL)
+        return checkFieldEqual(NULL, b);
+    if (b != NULL && b->type == NULL)
+        return checkFieldEqual(a, NULL);
     if (a == NULL || b == NULL)
         return 0;
     if (!checkTypeEqual(a->type, b->type))
@@ -243,13 +248,16 @@ char checkFunctionEqual(const Function *a, const Function *b)
 {
     if (strcmp(a->name, b->name) != 0)
         return 0;
-    if (!checkTypeEqual(a->return_type, b->return_type))
-        return 0;
+    // if (!checkTypeEqual(a->return_type, b->return_type))
+    //     return 0;
     return checkFieldEqual(a->params, b->params);
 }
 
 Type *getTypeAfterOp(const Type *a, const Type *b, const char *op)
 {
+    // printf("getafterOP:\n");
+    // outputType(a);
+    // outputType(b);
     if (a->category == FUNCTION)
         return getTypeAfterOp(a->func->return_type, b, op);
     if (b->category == FUNCTION)

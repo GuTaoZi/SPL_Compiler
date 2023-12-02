@@ -32,7 +32,7 @@ void del_node(treeNode *p)
     free(p);
 }
 
-void output_line(treeNode *u, size_t spaceno)
+void output_line(const treeNode *u, size_t spaceno)
 {
     if (u->child != NULL)
     {
@@ -60,7 +60,7 @@ void output_line(treeNode *u, size_t spaceno)
     }
 }
 
-void output_tree(treeNode *u, size_t spaceno)
+void output_tree(const treeNode *u, size_t spaceno)
 {
     output_line(u, spaceno);
     treeNode *p = u->child;
@@ -104,9 +104,9 @@ treeNode *get_child(const treeNode *u, size_t id)
     return v;
 }
 
-bool is_lvalue(treeNode *u)
+bool is_lvalue(const treeNode *u)
 {
-    return (u->child_cnt == 1 && !strcmp(u->child->child->name, "ID")) ||
-        (u->child_cnt == 3 && get_child(u, 1)->name == "DOT") ||
-        (u->child_cnt == 4 && get_child(u, 1)->name == "LB");
+    return (u->child_cnt == 1 && !strcmp(u->child->name, "ID")) ||
+        (u->child_cnt == 3 && !strcmp(get_child(u, 1)->name, "DOT")) ||
+        (u->child_cnt == 4 && !strcmp(get_child(u, 1)->name, "LB"));
 }
