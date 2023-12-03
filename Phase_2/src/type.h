@@ -14,8 +14,7 @@ typedef struct Type
         FUNCTION,
         ERRORTYPE
     } category;
-    union
-    {
+    union {
         enum
         {
             PINT,

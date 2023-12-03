@@ -1,10 +1,10 @@
 #ifndef TYPE_OP_H
 #define TYPE_OP_H
 
-#include <stdio.h>
-#include "treeNode.h"
 #include "ortho.h"
+#include "treeNode.h"
 #include "type.h"
+#include <stdio.h>
 
 #define MAX_ERROR_LEN 32768
 #define nowFL (structFieldStack->data->structure->data)
@@ -13,13 +13,14 @@ extern size_t last_error_lineno;
 extern int has_error;
 extern char type_error_tmp[], tree_output_tmp[];
 
-typedef struct type_stack {
+typedef struct type_stack
+{
     const Type *data;
     struct type_stack *next;
 } type_stack;
 extern type_stack *funcRetTypeStack, *structFieldStack;
 
-void print_type_error(const int typeID, const size_t lineno, const char* msg);
+void print_type_error(const int typeID, const size_t lineno, const char *msg);
 
 Type *find_type(const char *name);
 

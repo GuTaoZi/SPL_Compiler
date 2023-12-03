@@ -1,15 +1,16 @@
-#include <stdio.h>
-#include "utstack.h"
-#include "treeNode.h"
-#include "ortho.h"
-#include "type.h"
 #include "type_op.h"
+#include "ortho.h"
+#include "treeNode.h"
+#include "type.h"
+#include "utstack.h"
+#include <stdio.h>
 
 char type_error_tmp[MAX_ERROR_LEN];
-char tree_output_tmp[MAX_ERROR_LEN-1024];
+char tree_output_tmp[MAX_ERROR_LEN - 1024];
 type_stack *funcRetTypeStack = NULL, *structFieldStack = NULL;
 
-void print_type_error(const int typeID, const size_t lineno, const char* msg){
+void print_type_error(const int typeID, const size_t lineno, const char *msg)
+{
     fprintf(yyout, "Error type %d at Line %zu: %s\n", typeID, lineno, msg);
     last_error_lineno = lineno;
     has_error = 1;
@@ -30,25 +31,29 @@ void inherit_type(treeNode *u, const treeNode *v, const treeNode *w, const char 
     if (strcmp(op, "ass") == 0 && !is_lvalue(v))
     {
         output_tree_array(v, tree_output_tmp);
-        sprintf(type_error_tmp, "rvalue: \'%s\' appears on the left-hand side of the assignment operator.", tree_output_tmp);
+        sprintf(type_error_tmp, "rvalue: \'%s\' appears on the left-hand side of the assignment operator.",
+                tree_output_tmp);
         print_type_error(6, u->lineno, type_error_tmp);
         u->inheridata = makeErrorType();
     }
-    else if (((Type*)u->inheridata)->category == ERRORTYPE){
-        if (strcmp(op, "ass") == 0){
+    else if (((Type *)u->inheridata)->category == ERRORTYPE)
+    {
+        if (strcmp(op, "ass") == 0)
+        {
             print_type_error(5, u->lineno, "unmatching types for assign(=).");
         }
-        else{
+        else
+        {
             print_type_error(7, u->lineno, "unmatching operands.");
         }
     }
-    
 }
 
 void inherit_function(treeNode *u, const treeNode *v, const FieldList *fl)
 {
     Type *t = find_type(v->val);
-    if (t == NULL){
+    if (t == NULL)
+    {
         u->inheridata = makeErrorType();
         output_tree_array(v, tree_output_tmp);
         sprintf(type_error_tmp, "Function: \'%s\' is invoked without a definition.", tree_output_tmp);
@@ -117,64 +122,87 @@ void inherit_struct(treeNode *u, const treeNode *v, const treeNode *w)
         u->inheridata = tw;
 }
 
-void add_something(const Type *p, const char *name, const int errorID, const size_t lineno, const char *error_msg){
-    if(current_scope_seek(name) == NULL){
+void add_something(const Type *p, const char *name, const int errorID, const size_t lineno, const char *error_msg)
+{
+    if (current_scope_seek(name) == NULL)
+    {
         add_ortho_node(name, p);
-    } else {
+    }
+    else
+    {
         print_type_error(errorID, lineno, error_msg);
     }
 }
 
-void add_others(const Type *p, const size_t lineno, const char *name) {
-    if(p->category == STRUCTURE){
+void add_others(const Type *p, const size_t lineno, const char *name)
+{
+    if (p->category == STRUCTURE)
+    {
         add_something(p, p->structure->struct_name, 15, lineno, "redefine the same structure type.");
-    } else {
+    }
+    else
+    {
         sprintf(type_error_tmp, "function \'%s\' is redefined.", name);
         add_something(p, p->func->name, 4, lineno, type_error_tmp);
     }
 }
 
-void add_identifier(const treeNode *p) {
-    if(strcmp(p->name, "VarDec") == 0){
+void add_identifier(const treeNode *p)
+{
+    if (strcmp(p->name, "VarDec") == 0)
+    {
         output_tree_array(p, tree_output_tmp);
         sprintf(type_error_tmp, "variable \'%s\' is redefined in the same scope.", tree_output_tmp);
         add_something(p->inheridata, getVarDecName(p), 3, p->lineno, type_error_tmp);
-    } else if(((Type*)p->inheridata)->category == PRIMITIVE || ((Type*)p->inheridata)->category == ARRAY) {
+    }
+    else if (((Type *)p->inheridata)->category == PRIMITIVE || ((Type *)p->inheridata)->category == ARRAY)
+    {
         // add_something(p->inheridata, getVarDecName(p), 3, p->lineno, "a variable is redefined in the same scope.");
         fprintf(yyout, "At add_identifier: lineno: %zu: Sorry but you cannot do this.", p->lineno);
-    } else if(((Type*)p->inheridata)->category == STRUCTURE || ((Type*)p->inheridata)->category == FUNCTION) {
+    }
+    else if (((Type *)p->inheridata)->category == STRUCTURE || ((Type *)p->inheridata)->category == FUNCTION)
+    {
         output_tree_array(p, tree_output_tmp);
         add_others(p->inheridata, p->lineno, tree_output_tmp);
-    } else {
+    }
+    else
+    {
         print_type_error(-1, 0, "What the hell? At add_identifier.");
     }
 }
 
-type_stack *utstack_push(type_stack *root, const Type *nowType) {
-    type_stack *p = (type_stack*)malloc(sizeof(type_stack));
+type_stack *utstack_push(type_stack *root, const Type *nowType)
+{
+    type_stack *p = (type_stack *)malloc(sizeof(type_stack));
     p->data = nowType;
     STACK_PUSH(root, p);
     return root;
 }
-type_stack *utstack_pop(type_stack *root){
+type_stack *utstack_pop(type_stack *root)
+{
     type_stack *p;
     STACK_POP(root, p);
     return root;
 }
-void checkRetType(const Type *ret2, const size_t lineno){
+void checkRetType(const Type *ret2, const size_t lineno)
+{
     const Type *ret1 = funcRetTypeStack->data;
     const Type *tu = getTypeAfterOp(ret1, ret2, "ass");
     if (tu->category == ERRORTYPE && ret1->category != ERRORTYPE && ret2->category != ERRORTYPE)
         print_type_error(8, lineno, "function's return value type mismatches the declared type.");
 }
 
-Type *findStruct(const char *name, const size_t lineno) {
-    orthoNode *p=global_scope_seek(name);
-    if(p == NULL || p->val->category != STRUCTURE){
+Type *findStruct(const char *name, const size_t lineno)
+{
+    orthoNode *p = global_scope_seek(name);
+    if (p == NULL || p->val->category != STRUCTURE)
+    {
         sprintf(type_error_tmp, "Cannot find structure definition for name: \'%s\'.", name);
         print_type_error(17, lineno, type_error_tmp);
         return makeErrorType();
-    } else {
+    }
+    else
+    {
         return p->val;
     }
 }

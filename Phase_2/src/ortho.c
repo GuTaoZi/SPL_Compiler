@@ -1,6 +1,6 @@
+#include "ortho.h"
 #include <stdio.h>
 #include <string.h>
-#include "ortho.h"
 
 static hashNode *H = NULL;
 
@@ -71,7 +71,7 @@ orthoNode *stack_top()
     return S ? S->top : NULL;
 }
 
-//TODO: check if redefinition here, or maybe outside?
+// TODO: check if redefinition here, or maybe outside?
 orthoNode *add_ortho_node(const char *name, const Type *val)
 {
     if (!S)

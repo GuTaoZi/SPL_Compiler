@@ -1,7 +1,7 @@
 #include "type.h"
-#include <string.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 Type *makeStructType(const char *name, FieldList *fl)
 {
@@ -9,8 +9,7 @@ Type *makeStructType(const char *name, FieldList *fl)
     nowType->category = STRUCTURE;
     nowType->structure = (Structure *)malloc(sizeof(Structure));
     nowType->structure->data = fl;
-    memset(nowType->structure->struct_name, 0,
-           sizeof(nowType->structure->struct_name));
+    memset(nowType->structure->struct_name, 0, sizeof(nowType->structure->struct_name));
     strncpy(nowType->structure->struct_name, name, 31);
     nowType->structure->typesize = fl->typesize;
     return nowType;
@@ -45,8 +44,10 @@ FieldList *makeFieldList(Type *nowType, const char *name)
     nowFieldList->type = nowType;
     memset(nowFieldList->varname, 0, sizeof(nowFieldList->varname));
     strncpy(nowFieldList->varname, name, 31);
-    if(nowType != NULL) nowFieldList->typesize = nowType->typesize;
-    else nowFieldList->typesize = 0;
+    if (nowType != NULL)
+        nowFieldList->typesize = nowType->typesize;
+    else
+        nowFieldList->typesize = 0;
     return nowFieldList;
 }
 
@@ -334,28 +335,31 @@ Type *findNameInStructure(const Type *a, const char *name)
     }
 }
 
-void outputType(const Type *t) {
+void outputType(const Type *t)
+{
     switch (t->category)
     {
-        case PRIMITIVE:
-            outputPrime(t->primitive);
-            break;
-        case STRUCTURE:
-            outputStruct(t->structure);
-            break;
-        default:
-            break;
+    case PRIMITIVE:
+        outputPrime(t->primitive);
+        break;
+    case STRUCTURE:
+        outputStruct(t->structure);
+        break;
+    default:
+        break;
     }
 }
 
-void outputFieldList(const FieldList *fl) {
+void outputFieldList(const FieldList *fl)
+{
     if (fl == NULL)
         return;
     outputType(fl->type);
     outputFieldList(fl->next);
 }
 
-void outputPrime(const int p) {
+void outputPrime(const int p)
+{
     switch (p)
     {
     case PINT:
@@ -372,7 +376,8 @@ void outputPrime(const int p) {
     }
 }
 
-void outputStruct(const Structure *s) {
+void outputStruct(const Structure *s)
+{
     printf("Structure: %s\n", s->struct_name);
     outputFieldList(s->data);
 }

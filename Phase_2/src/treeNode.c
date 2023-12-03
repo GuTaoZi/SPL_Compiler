@@ -1,8 +1,8 @@
+#include "treeNode.h"
+#include "ortho.h"
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
-#include "treeNode.h"
-#include "ortho.h"
 
 const char *need_output[] = {"INT", "FLOAT", "CHAR", "STRING", "TYPE", "ID", "INCLUDE"};
 const int lno = 7;
@@ -71,19 +71,25 @@ void output_tree(const treeNode *u, size_t spaceno)
     }
 }
 
-char *output_tree_array_(const treeNode *u, char *opt){
-    if(u->child_cnt != 0){
+char *output_tree_array_(const treeNode *u, char *opt)
+{
+    if (u->child_cnt != 0)
+    {
         const treeNode *p = u->child;
-        while(p != NULL){
+        while (p != NULL)
+        {
             opt = output_tree_array_(p, opt);
             p = p->next;
         }
-    } else {
+    }
+    else
+    {
         opt += sprintf(opt, "%s", u->val);
     }
     return opt;
 }
-char *output_tree_array(const treeNode *u, char *opt){
+char *output_tree_array(const treeNode *u, char *opt)
+{
     char *s = output_tree_array_(u, opt);
     // if(s != opt) {
     //     s[-1] = 0;
@@ -127,6 +133,6 @@ treeNode *get_child(const treeNode *u, size_t id)
 bool is_lvalue(const treeNode *u)
 {
     return (u->child_cnt == 1 && !strcmp(u->child->name, "ID")) ||
-        (u->child_cnt == 3 && !strcmp(get_child(u, 1)->name, "DOT")) ||
-        (u->child_cnt == 4 && !strcmp(get_child(u, 1)->name, "LB"));
+           (u->child_cnt == 3 && !strcmp(get_child(u, 1)->name, "DOT")) ||
+           (u->child_cnt == 4 && !strcmp(get_child(u, 1)->name, "LB"));
 }
