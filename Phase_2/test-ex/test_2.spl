@@ -1,0 +1,13 @@
+struct hi{
+    struct hihi{
+        int a,b;
+    } u;
+    int v;
+};
+int main(){
+    struct hi a;
+    a.v=0;
+    a.u.a=1;
+    a.u.b=2;
+    a.u.c=3;
+}

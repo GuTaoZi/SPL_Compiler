@@ -1,0 +1,21 @@
+struct hi1 {
+    int a;
+    float b;
+    struct hihi1 {
+        int a;
+    } u;
+};
+
+struct hi2 {
+    int z;
+    float y;
+    struct hihi2 {
+        int x;
+    } w;
+};
+
+int main(){
+    struct hi1 a;
+    struct hi2 b;
+    a = b;
+}

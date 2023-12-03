@@ -1,0 +1,13 @@
+struct aa {
+    int bb;
+    float cc;
+    char dd;
+} ee, ff, gg[214748];
+int www;
+
+int main(){
+    gg[114514] = ee = ff;
+    ff.bb = ee.bb + www;
+
+    gg[0].dd = 123;
+}

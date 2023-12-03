@@ -1,0 +1,4 @@
+Error type 2 at Line 7: Function: 'foo1' is invoked without a definition.
+Error type 9 at Line 8: parameters missmatch for function: 'foo2'
+Error type 1 at Line 12: variable 'a' is used without a definition.
+Error type 2 at Line 12: Function: 'foo2' is invoked without a definition.

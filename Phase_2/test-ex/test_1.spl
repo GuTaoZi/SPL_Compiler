@@ -1,0 +1,13 @@
+int main(){
+    int a = 1, b = 2;
+    while ( a == 1) {
+        while ( b == 1 ) {
+            break;
+            continue;
+        }
+        break;
+        continue;
+    }
+    break;
+    continue;
+}

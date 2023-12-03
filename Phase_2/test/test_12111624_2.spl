@@ -1,0 +1,6 @@
+int ss(int a, int b){
+    return ss(a,b+a);
+}
+int main(){
+
+}

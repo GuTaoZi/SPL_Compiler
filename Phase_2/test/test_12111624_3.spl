@@ -1,0 +1,13 @@
+int foo1(){
+    return 1;
+    foo1();
+}
+
+int foo2(){
+    foo1();
+    foo2(1,2);
+}
+
+int main(){
+    foo2(a);
+}
