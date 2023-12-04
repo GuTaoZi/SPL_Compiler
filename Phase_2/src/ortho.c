@@ -18,7 +18,7 @@ static orthoNode *new_ortho_node(const char *name, const Type *val)
 
 orthoStack *push_stack()
 {
-    // printf("push_stack\n");
+    printf("push_stack\n");
     orthoStack *p = (orthoStack *)malloc(sizeof(orthoStack));
     p->top = NULL;
     p->next = S;
@@ -28,7 +28,7 @@ orthoStack *push_stack()
 
 orthoStack *pop_stack()
 {
-    // printf("pop_stack\n");
+    printf("pop_stack\n");
     if (!S)
     {
         fprintf(yyout, "Trying to pop an empty stack.\n");

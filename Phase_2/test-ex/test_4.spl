@@ -14,8 +14,24 @@ struct hi2 {
     } w;
 };
 
+struct w1 {
+    int a[100];
+};
+
+struct w2 {
+    int a[100];
+};
+
+int x[100];
+int y[100];
+
 int main(){
     struct hi1 a;
     struct hi2 b;
+    struct w1 c;
+    struct w2 d;
     a = b;
+
+    c=d;
+    x=y;
 }

@@ -74,17 +74,17 @@ Type *addArrayType(Type *nowType, size_t sz);
 
 FieldList *addFieldList(FieldList *fl, Type *nowType, const char *name);
 
-void deleteArray(Array *arr);
+// void deleteArray(Array *arr);
 
-void deleteFieldList(FieldList *fl);
+// void deleteFieldList(FieldList *fl);
 
-void deleteStructure(Structure *stru);
+// void deleteStructure(Structure *stru);
 
-void deleteFunction(Function *func);
+// void deleteFunction(Function *func);
 /**
  * So... Please do not use me
  */
-void deleteType(Type *type);
+// void deleteType(Type *type);
 
 char checkTypeEqual(const Type *a, const Type *b);
 
@@ -111,5 +111,10 @@ void outputFieldList(const FieldList *fl);
 void outputPrime(const int p);
 
 void outputStruct(const Structure *s);
+
+void calcTypeSize(Type *p);
+void calcStructSize(Structure *p);
+void calcFieldSize(FieldList *p);
+void calcArraySize(Array *p);
 
 #endif
