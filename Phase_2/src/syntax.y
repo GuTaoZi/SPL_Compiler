@@ -72,7 +72,7 @@ ExtDefList :            { add0($$, "ExtDefList"); }
 ExtDef : Specifier ExtDecList SEMI  { addn($$, "ExtDef", 3, $1, $2, $3); }
     | Specifier SEMI                { addn($$, "ExtDef", 2, $1, $2); }
     | Specifier FunDec              { funcRetTypeStack = utstack_push(funcRetTypeStack,nowType); addFuncRet($2->inheridata, nowType); }
-      CompSt                        { printf("ExtDef\n"); addn($$, "ExtDef", 3, $1, $2, $4); pop_stack(); funcRetTypeStack = utstack_pop(funcRetTypeStack); }
+      CompSt                        { addn($$, "ExtDef", 3, $1, $2, $4); pop_stack(); funcRetTypeStack = utstack_pop(funcRetTypeStack); }
     | Specifier ExtDecList error    { add0($$, "ExtDef"); has_error = 1; print_B_error("ExtDef", $1->lineno, "Missing semicolon \';\'"); }
     | Specifier error               { add0($$, "ExtDef"); has_error = 1; print_B_error("ExtDef", $1->lineno, "Missing semicolon \';\'"); }
     | ExtDecList SEMI               { add0($$, "ExtDef"); has_error = 1; print_B_error("ExtDef", $1->lineno, "Missing specifier"); }

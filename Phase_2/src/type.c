@@ -12,7 +12,7 @@ Type *makeStructType(const char *name, FieldList *fl)
     memset(nowType->structure->struct_name, 0, sizeof(nowType->structure->struct_name));
     strncpy(nowType->structure->struct_name, name, 31);
     nowType->structure->typesize = fl->typesize;
-    printf("Struct_size=%zu, %p\n", nowType->structure->typesize, fl);
+    // printf("Struct_size=%zu, %p\n", nowType->structure->typesize, fl);
     return nowType;
 }
 
@@ -40,9 +40,9 @@ Type *makePrimType(const char *u)
 
 FieldList *makeFieldList(Type *nowType, const char *name)
 {
-    printf("FL: %p\n", nowType);
-    if(nowType != NULL)
-    printf("%d\n", nowType->category);
+    // printf("FL: %p\n", nowType);
+    // if(nowType != NULL)
+    // printf("%d\n", nowType->category);
     FieldList *nowFieldList = (FieldList *)malloc(sizeof(FieldList));
     nowFieldList->next = NULL;
     nowFieldList->type = nowType;
@@ -52,7 +52,7 @@ FieldList *makeFieldList(Type *nowType, const char *name)
         nowFieldList->typesize = nowType->typesize;
     else
         nowFieldList->typesize = 0;
-    printf("FL_size=%zu\n", nowFieldList->typesize);
+    // printf("FL_size=%zu\n", nowFieldList->typesize);
     return nowFieldList;
 }
 
@@ -134,8 +134,10 @@ FieldList *addFieldList(FieldList *fl, Type *nowType, const char *name)
     if (fl->type == NULL)
     {
         fl->type = nowType;
-        if(nowType != NULL) fl->typesize = nowType->typesize;
-        else fl->typesize = 0;
+        if (nowType != NULL)
+            fl->typesize = nowType->typesize;
+        else
+            fl->typesize = 0;
         strncpy(fl->varname, name, 31);
         return fl;
     }
@@ -202,20 +204,20 @@ char checkTypeEqual(const Type *a, const Type *b)
         return checkPrimEqual(a->primitive, b->primitive);
     if (a == b)
         return 1;
-    if (a == NULL || b == NULL){
-        printf("NULL\n");
+    if (a == NULL || b == NULL)
+    {
         return 0;
     }
-    if (a->category == ERRORTYPE || b->category == ERRORTYPE){
-        printf("ERRORTYPE\n");
+    if (a->category == ERRORTYPE || b->category == ERRORTYPE)
+    {
         return 1;
     }
-    if (a->typesize != b->typesize){
-        printf("typesize %zu %zu\n",a->typesize, b->typesize);
+    if (a->typesize != b->typesize)
+    {
         return 0;
     }
-    if (a->category != b->category){
-        printf("category\n");
+    if (a->category != b->category)
+    {
         return 0;
     }
     if (a->category == ARRAY)
@@ -240,10 +242,10 @@ char checkStructEqual(const Structure *a, const Structure *b)
 
 char checkFieldEqual(const FieldList *a, const FieldList *b)
 {
-    printf("CK_FL_EQ:\nType1:\n");
-    outputFieldList(a);
-    printf("Type2:\n");
-    outputFieldList(b);
+    // printf("CK_FL_EQ:\nType1:\n");
+    // outputFieldList(a);
+    // printf("Type2:\n");
+    // outputFieldList(b);
     if (a == NULL && b == NULL)
         return 1;
     if (a != NULL && a->type == NULL)
@@ -353,14 +355,16 @@ Type *findNameInStructure(const Type *a, const char *name)
         return NULL;
     }
 }
-void outputFunction(Function *p){
+void outputFunction(Function *p)
+{
     printf("Function: %s\n", p->name);
     outputFieldList(p->params);
 }
 
 void outputType(const Type *t)
 {
-    if(t == NULL) return;
+    if (t == NULL)
+        return;
     switch (t->category)
     {
     case PRIMITIVE:
@@ -409,7 +413,8 @@ void outputStruct(const Structure *s)
     outputFieldList(s->data);
 }
 
-void calcTypeSize(Type *p){
+void calcTypeSize(Type *p)
+{
     switch (p->category)
     {
     case PRIMITIVE:
@@ -423,26 +428,33 @@ void calcTypeSize(Type *p){
         calcArraySize(p->array);
         p->typesize = p->array->typesize;
         break;
-    
+
     default:
         break;
     }
 }
-void calcStructSize(Structure *p){
+void calcStructSize(Structure *p)
+{
     calcFieldSize(p->data);
     p->typesize = p->data->typesize;
 }
-void calcFieldSize(FieldList *p){
-    if(p==NULL) return;
+void calcFieldSize(FieldList *p)
+{
+    if (p == NULL)
+        return;
     calcTypeSize(p->type);
-    if(p->next == NULL){
-        p->typesize=p->type->typesize;
-    } else {
+    if (p->next == NULL)
+    {
+        p->typesize = p->type->typesize;
+    }
+    else
+    {
         calcFieldSize(p->next);
-        p->typesize=p->type->typesize + p->next->typesize;
+        p->typesize = p->type->typesize + p->next->typesize;
     }
 }
-void calcArraySize(Array *p){
+void calcArraySize(Array *p)
+{
     calcTypeSize(p->base);
-    p->typesize=p->base->typesize*p->size;
+    p->typesize = p->base->typesize * p->size;
 }
