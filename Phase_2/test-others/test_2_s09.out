@@ -1,3 +1,0 @@
-Error type 12 at Line 5: index: 'num3[i]' should be an integer
-Error type 3 at Line 6: variable 'num4[2][3]' is redefined in the same scope.
-Error type 6 at Line 9: rvalue: '3' appears on the left-hand side of the assignment operator.

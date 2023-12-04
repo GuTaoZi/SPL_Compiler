@@ -1,6 +1,0 @@
-Single LINE COMMENT at Line 16
-Single LINE COMMENT at Line 19
-Single LINE COMMENT at Line 22
-Error type 12 at Line 24: index: 'st.ttt' should be an integer
-Single LINE COMMENT at Line 26
-Error type 14 at Line 27: attribute 'add' in struct: 'st' not found
