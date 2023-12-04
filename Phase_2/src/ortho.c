@@ -6,7 +6,7 @@ static hashNode *H = NULL;
 
 static orthoStack *S = NULL;
 
-static orthoNode *new_ortho_node(const char *name, const Type *val)
+static orthoNode *new_ortho_node(const char *name, Type *val)
 {
     orthoNode *p = (orthoNode *)malloc(sizeof(orthoNode));
     strncpy(p->name, name, 31);
@@ -72,7 +72,7 @@ orthoNode *stack_top()
 }
 
 // TODO: check if redefinition here, or maybe outside?
-orthoNode *add_ortho_node(const char *name, const Type *val)
+orthoNode *add_ortho_node(const char *name, Type *val)
 {
     if (!S)
     {

@@ -100,9 +100,9 @@ char checkFunctionEqual(const Function *a, const Function *b);
 
 Type *getTypeAfterOp(Type *a, Type *b, const char *op);
 
-Type *findNameInStructure(const Type *a, const char *name);
+Type *findNameInStructure(Type *a, const char *name);
 
-Type *findNameInField(const FieldList *a, const char *name);
+Type *findNameInField(FieldList *a, const char *name);
 
 void outputType(const Type *t);
 

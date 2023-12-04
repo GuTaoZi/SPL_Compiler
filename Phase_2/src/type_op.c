@@ -98,7 +98,7 @@ void inherit_array(treeNode *u, const treeNode *v, const treeNode *w)
         u->inheridata = tv->array->base;
 }
 
-void inherit_struct(treeNode *u, const treeNode *v, const treeNode *w)
+void inherit_struct(treeNode *u, treeNode *v, const treeNode *w)
 {
     Type *tv = v->inheridata;
     Type *tw = findNameInStructure(tv, w->val);
@@ -122,7 +122,7 @@ void inherit_struct(treeNode *u, const treeNode *v, const treeNode *w)
         u->inheridata = tw;
 }
 
-void add_something(const Type *p, const char *name, const int errorID, const size_t lineno, const char *error_msg)
+void add_something(Type *p, const char *name, const int errorID, const size_t lineno, const char *error_msg)
 {
     if (current_scope_seek(name) == NULL)
     {
@@ -134,7 +134,7 @@ void add_something(const Type *p, const char *name, const int errorID, const siz
     }
 }
 
-void add_others(const Type *p, const size_t lineno, const char *name)
+void add_others(Type *p, const size_t lineno, const char *name)
 {
     if (p->category == STRUCTURE)
     {
@@ -147,7 +147,7 @@ void add_others(const Type *p, const size_t lineno, const char *name)
     }
 }
 
-void add_identifier(const treeNode *p)
+void add_identifier(treeNode *p)
 {
     // outputType(p->inheridata);
     calcTypeSize(p->inheridata);
@@ -173,7 +173,7 @@ void add_identifier(const treeNode *p)
     }
 }
 
-type_stack *utstack_push(type_stack *root, const Type *nowType)
+type_stack *utstack_push(type_stack *root, Type *nowType)
 {
     // printf("ut_push: %p, %p\n", root, nowType);
     type_stack *p = (type_stack *)malloc(sizeof(type_stack));
@@ -188,10 +188,10 @@ type_stack *utstack_pop(type_stack *root)
     STACK_POP(root, p);
     return root;
 }
-void checkRetType(const Type *ret2, const size_t lineno)
+void checkRetType(Type *ret2, const size_t lineno)
 {
-    const Type *ret1 = funcRetTypeStack->data;
-    const Type *tu = getTypeAfterOp(ret1, ret2, "ass");
+    Type *ret1 = funcRetTypeStack->data;
+    Type *tu = getTypeAfterOp(ret1, ret2, "ass");
     if (tu->category == ERRORTYPE && ret1->category != ERRORTYPE && ret2->category != ERRORTYPE)
     {
         print_type_error(8, lineno, "function's return value type mismatches the declared type.");

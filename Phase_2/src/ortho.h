@@ -55,7 +55,7 @@ orthoNode *stack_top();
  * @param {Type} *val type of the orthoNode
  * @return {*}
  */
-orthoNode *add_ortho_node(const char *name, const Type *val);
+orthoNode *add_ortho_node(const char *name, Type *val);
 
 /**
  * @description: Look for orthoNode with given name within the current scope.

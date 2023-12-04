@@ -347,7 +347,7 @@ Type *getTypeAfterOp(Type *a, Type *b, const char *op)
     }
 }
 
-Type *findNameInField(const FieldList *a, const char *name)
+Type *findNameInField(FieldList *a, const char *name)
 {
     if (a == NULL)
         return NULL;
@@ -356,7 +356,7 @@ Type *findNameInField(const FieldList *a, const char *name)
     return findNameInField(a->next, name);
 }
 
-Type *findNameInStructure(const Type *a, const char *name)
+Type *findNameInStructure(Type *a, const char *name)
 {
     if (a->category == STRUCTURE)
     {

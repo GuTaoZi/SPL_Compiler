@@ -15,7 +15,7 @@ extern char type_error_tmp[], tree_output_tmp[];
 
 typedef struct type_stack
 {
-    const Type *data;
+    Type *data;
     struct type_stack *next;
 } type_stack;
 extern type_stack *funcRetTypeStack, *structFieldStack;
@@ -30,19 +30,19 @@ void inherit_function(treeNode *u, const treeNode *v, const FieldList *fl);
 
 void inherit_array(treeNode *u, const treeNode *v, const treeNode *w);
 
-void inherit_struct(treeNode *u, const treeNode *v, const treeNode *w);
+void inherit_struct(treeNode *u, treeNode *v, const treeNode *w);
 
-void add_something(const Type *p, const char *name, const int errorID, const size_t lineno, const char *error_msg);
+void add_something(Type *p, const char *name, const int errorID, const size_t lineno, const char *error_msg);
 
-void add_others(const Type *p, const size_t lineno, const char *name);
+void add_others(Type *p, const size_t lineno, const char *name);
 
-void add_identifier(const treeNode *p);
+void add_identifier(treeNode *p);
 
-type_stack *utstack_push(type_stack *root, const Type *nowType);
+type_stack *utstack_push(type_stack *root, Type *nowType);
 
 type_stack *utstack_pop(type_stack *root);
 
-void checkRetType(const Type *ret2, const size_t lineno);
+void checkRetType(Type *ret2, const size_t lineno);
 
 Type *findStruct(const char *name, const size_t lineno);
 
