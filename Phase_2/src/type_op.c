@@ -149,7 +149,7 @@ void add_others(const Type *p, const size_t lineno, const char *name)
 
 void add_identifier(const treeNode *p)
 {
-    outputType(p->inheridata);
+    // outputType(p->inheridata);
     calcTypeSize(p->inheridata);
     if (strcmp(p->name, "VarDec") == 0)
     {
