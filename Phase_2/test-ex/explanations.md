@@ -1,30 +1,15 @@
 #### test_1.spl
 
-
+Test for `continue` and `break` in `while` loops.
 
 #### test_2.spl
 
-
+Test for nested structures.
 
 #### test_3.spl
 
-
+Test for multi-level scope.
 
 #### test_4.spl
 
-
-
-#### test_5.spl
-
-
-
-#### test_6.spl
-
-
-
-#### test_7.spl
-
-
-
-### test_8.spl
-
+Test for structure equivalence.

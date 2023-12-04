@@ -1,0 +1,11 @@
+struct hihi{
+    int a,b,c[10];
+    float d;
+};
+
+struct hihi e;
+
+int main(){
+    e.c[e.a]=e.c[e.b];
+    e.c[e.d]=e.a;
+}

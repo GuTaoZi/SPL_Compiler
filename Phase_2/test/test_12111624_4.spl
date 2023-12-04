@@ -1,0 +1,13 @@
+struct ww {
+    int a;
+};
+
+struct qq {
+    struct ww ss[10086];
+} qwe[998244353];
+
+int main(){
+    qwe[qwe[0].ss[0].a] = qwe[3];
+
+    qwe[qwe[0].ss[1]] = qwe[1];
+}

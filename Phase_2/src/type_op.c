@@ -149,6 +149,8 @@ void add_others(const Type *p, const size_t lineno, const char *name)
 
 void add_identifier(const treeNode *p)
 {
+    // outputType(p->inheridata);
+    calcTypeSize(p->inheridata);
     if (strcmp(p->name, "VarDec") == 0)
     {
         output_tree_array(p, tree_output_tmp);
@@ -173,6 +175,7 @@ void add_identifier(const treeNode *p)
 
 type_stack *utstack_push(type_stack *root, const Type *nowType)
 {
+    // printf("ut_push: %p, %p\n", root, nowType);
     type_stack *p = (type_stack *)malloc(sizeof(type_stack));
     p->data = nowType;
     STACK_PUSH(root, p);
@@ -180,6 +183,7 @@ type_stack *utstack_push(type_stack *root, const Type *nowType)
 }
 type_stack *utstack_pop(type_stack *root)
 {
+    // printf("ut_pop: %p\n", root);
     type_stack *p;
     STACK_POP(root, p);
     return root;
@@ -189,7 +193,9 @@ void checkRetType(const Type *ret2, const size_t lineno)
     const Type *ret1 = funcRetTypeStack->data;
     const Type *tu = getTypeAfterOp(ret1, ret2, "ass");
     if (tu->category == ERRORTYPE && ret1->category != ERRORTYPE && ret2->category != ERRORTYPE)
+    {
         print_type_error(8, lineno, "function's return value type mismatches the declared type.");
+    }
 }
 
 Type *findStruct(const char *name, const size_t lineno)

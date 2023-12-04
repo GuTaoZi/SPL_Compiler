@@ -1,5 +1,6 @@
 %{
     #define YYSTYPE treeNode*
+    #include <stddef.h>
     #include <string.h>
     #include "utstack.h"
     #include "ortho.h"
@@ -13,6 +14,7 @@
     treeNode* root = NULL;
     int loop_cnt = 0;
     Type *nowType = NULL;
+    treeNode* fakeFuncNode = NULL;
 
     void yyerror(const char *s);
     
@@ -53,7 +55,7 @@
 %%
 
 /* high-level definition */
-Program : { push_stack(); structFieldStack = utstack_push(structFieldStack, makeStructType("", makeFieldList(NULL, ""))); } HeaderDefList ExtDefList { addn($$, "Program", 2, $2, $3); root = $$; }
+Program : { push_stack();funcRetTypeStack = utstack_push(funcRetTypeStack, makePrimType("int")); structFieldStack = utstack_push(structFieldStack, makeStructType("", makeFieldList(NULL, ""))); } HeaderDefList ExtDefList { addn($$, "Program", 2, $2, $3); root = $$; }
     ;
 
 HeaderDefList :             { add0($$, "HeaderDefList"); }
@@ -69,8 +71,8 @@ ExtDefList :            { add0($$, "ExtDefList"); }
 
 ExtDef : Specifier ExtDecList SEMI  { addn($$, "ExtDef", 3, $1, $2, $3); }
     | Specifier SEMI                { addn($$, "ExtDef", 2, $1, $2); }
-    | Specifier FunDec              { funcRetTypeStack = utstack_push(funcRetTypeStack,$1->inheridata); }
-      CompSt                        { addn($$, "ExtDef", 3, $1, $2, $4); pop_stack(); addFuncRet($2->inheridata, $1->inheridata); add_identifier($2); funcRetTypeStack = utstack_pop(funcRetTypeStack); }
+    | Specifier FunDec              { funcRetTypeStack = utstack_push(funcRetTypeStack,$1->inheridata); addFuncRet($2->inheridata, $1->inheridata); }
+      CompSt                        { addn($$, "ExtDef", 3, $1, $2, $4); pop_stack(); funcRetTypeStack = utstack_pop(funcRetTypeStack); }
     | Specifier ExtDecList error    { add0($$, "ExtDef"); has_error = 1; print_B_error("ExtDef", $1->lineno, "Missing semicolon \';\'"); }
     | Specifier error               { add0($$, "ExtDef"); has_error = 1; print_B_error("ExtDef", $1->lineno, "Missing semicolon \';\'"); }
     | ExtDecList SEMI               { add0($$, "ExtDef"); has_error = 1; print_B_error("ExtDef", $1->lineno, "Missing specifier"); }
@@ -105,11 +107,12 @@ StructSpecifier :
                         has_error = 1;
                         print_B_error("StructSpecifier", $3->lineno, "Missing closing curly braces \'}\'"); }
     
-    | STRUCT ID     { push_stack(); }
+    | STRUCT ID     { push_stack(); structFieldStack = utstack_push(structFieldStack, makeStructType("", makeFieldList(NULL, "")));}
       DefList RC    { add0($$, "StructSpecifier");
                         pop_stack();
-                        $$->inheridata = makeStructType($2->val, $5->inheridata);
+                        $$->inheridata = makeStructType($2->val, nowFL);
                         add_identifier($$);
+                        structFieldStack = utstack_pop(structFieldStack);
                         has_error = 1;
                         print_B_error("StructSpecifier", $3->lineno, "Missing closing curly braces \'{\'"); }
     | STRUCT INVALID LC DefList RC      { add0($$, "StructSpecifier"); has_error = 1; }
@@ -127,13 +130,21 @@ VarDec : ID                 { add1($$, "VarDec", 1, $1); $$->inheridata = nowTyp
     ;
 
 FunDec :
-      ID LP         { structFieldStack = utstack_push(structFieldStack, makeStructType("", makeFieldList(NULL, ""))); push_stack(); }
-      VarList RP    { addn($$, "FunDec", 4, $1, $2, $4, $5); $$->inheridata = makeFuncType($1->val, nowFL); structFieldStack = utstack_pop(structFieldStack); }
-    | ID LP RP      { push_stack(); addn($$, "FunDec", 3, $1, $2, $3); $$->inheridata = makeFuncType($1->val, NULL); }
-    | ID LP         { structFieldStack = utstack_push(structFieldStack, makeStructType("", makeFieldList(NULL, ""))); push_stack(); }
-      VarList error { add0($$, "FunDec"); $$->inheridata = makeFuncType($1->val, nowFL); structFieldStack = utstack_pop(structFieldStack); has_error = 1; print_B_error("FunDec", $2->lineno, "Missing closing parenthesis \')\'"); }
-    | ID RP         { push_stack(); add0($$, "FunDec"); $$->inheridata = makeFuncType($1->val, NULL); has_error = 1; print_B_error("FunDec", $2->lineno, "Missing closing parenthesis \'(\'"); }
-    | ID LP error   { push_stack(); add0($$, "FunDec"); $$->inheridata = makeFuncType($1->val, NULL); has_error = 1; print_B_error("FunDec", $2->lineno, "Missing closing parenthesis \')\'"); }
+      ID LP         { structFieldStack = utstack_push(structFieldStack, makeStructType("", makeFieldList(NULL, "")));
+                        add0(fakeFuncNode, "FunDec");
+                        fakeFuncNode->child = $1;
+                        fakeFuncNode->inheridata = makeFuncType($1->val, NULL); add_identifier(fakeFuncNode);
+                        push_stack(); }
+      VarList RP    { $$=fakeFuncNode; $$->child = $1; $$->child_cnt = 4; make_list(4, $1, $2, $4, $5); ((Type*)($$->inheridata))->func->params = nowFL; structFieldStack = utstack_pop(structFieldStack); }
+    | ID LP RP      { addn($$, "FunDec", 3, $1, $2, $3); $$->inheridata = makeFuncType($1->val, NULL); add_identifier($$); push_stack(); }
+    | ID LP         { structFieldStack = utstack_push(structFieldStack, makeStructType("", makeFieldList(NULL, "")));
+                        add0(fakeFuncNode, "FunDec");
+                        fakeFuncNode->child = $1;
+                        fakeFuncNode->inheridata = makeFuncType($1->val, NULL); add_identifier(fakeFuncNode);
+                        push_stack(); }
+      VarList error { $$=fakeFuncNode; $$->child_cnt = 0; ((Type*)($$->inheridata))->func->params = nowFL; structFieldStack = utstack_pop(structFieldStack); has_error = 1; print_B_error("FunDec", $2->lineno, "Missing closing parenthesis \')\'"); }
+    | ID RP         { add0($$, "FunDec"); $$->inheridata = makeFuncType($1->val, NULL); add_identifier($$->inheridata); push_stack(); has_error = 1; print_B_error("FunDec", $2->lineno, "Missing closing parenthesis \'(\'"); }
+    | ID LP error   { add0($$, "FunDec"); $$->inheridata = makeFuncType($1->val, NULL); add_identifier($$->inheridata); push_stack(); has_error = 1; print_B_error("FunDec", $2->lineno, "Missing closing parenthesis \')\'"); }
 
     | INVALID LP        { structFieldStack = utstack_push(structFieldStack, makeStructType("", makeFieldList(NULL, "")));  push_stack();}
       VarList RP        { add0($$, "FunDec"); has_error = 1; structFieldStack = utstack_pop(structFieldStack); }
@@ -174,7 +185,7 @@ Stmt : SEMI                                     { add1($$, "Stmt", 1, $1); }
     | IF LP Exp RP Stmt ELSE Stmt               { addn($$, "Stmt", 7, $1, $2, $3, $4, $5, $6, $7); }
     | WHILE LP Exp RP {++loop_cnt;} Stmt        { --loop_cnt; addn($$, "Stmt", 5, $1, $2, $3, $4, $5); }
     | FOR LP DecList SEMI Exp SEMI Exp RP {++loop_cnt;} Stmt  %prec UPPER_FOR { --loop_cnt; addn($$, "Stmt", 9, $1, $2, $3, $4, $5, $6, $7, $8, $9); }
-    | FOR LP VarDec COLON Exp RP {++loop_cnt;} Stmt      %prec LOWER_FOR      { --loop_cnt; addn($$, "Stmt", 7, $1, $2, $3, $4, $5, $6, $7); }
+    // | FOR LP VarDec COLON Exp RP {++loop_cnt;} Stmt      %prec LOWER_FOR      { --loop_cnt; addn($$, "Stmt", 7, $1, $2, $3, $4, $5, $6, $7); }
     | BREAK SEMI                                { addn($$, "Stmt", 2, $1, $2); if(loop_cnt == 0) print_type_error(16, $1->lineno, "\'break\' outside of loop."); }
     | CONTINUE SEMI                             { addn($$, "Stmt", 2, $1, $2); if(loop_cnt == 0) print_type_error(16, $1->lineno, "\'continue\' outside of loop."); }
     | Exp error                                 { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Missing semicolon \';\'"); }
@@ -192,8 +203,8 @@ Stmt : SEMI                                     { add1($$, "Stmt", 1, $1); }
     | FOR DecList SEMI Exp SEMI Exp RP {++loop_cnt;} Stmt %prec UPPER_FOR         { --loop_cnt; add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Expected \'(\' after \'for\'"); }
     | FOR error %prec UPPER_FOR                                                     { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Expected \'(\' after \'for\'"); }
     | FOR LP DecList SEMI Exp SEMI Exp error {++loop_cnt;} Stmt %prec UPPER_FOR   { --loop_cnt; add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Missing closing parenthesis \')\'"); }
-    | FOR VarDec COLON Exp RP {++loop_cnt;} Stmt  %prec LOWER_FOR                 { --loop_cnt; add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Expected \'(\' after \'for\'"); }
-    | FOR LP VarDec COLON Exp error {++loop_cnt;} Stmt  %prec LOWER_FOR           { --loop_cnt; add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Missing closing parenthesis \')\'"); }
+    // | FOR VarDec COLON Exp RP {++loop_cnt;} Stmt  %prec LOWER_FOR                 { --loop_cnt; add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Expected \'(\' after \'for\'"); }
+    // | FOR LP VarDec COLON Exp error {++loop_cnt;} Stmt  %prec LOWER_FOR           { --loop_cnt; add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Missing closing parenthesis \')\'"); }
     | ELSE Stmt                                 { add0($$, "Stmt"); has_error = 1; print_B_error("Stmt", $1->lineno, "Expected \'if\' before \'else\'"); }
     | BREAK error                               { addn($$, "Stmt", 2, $1, $2); if(loop_cnt == 0) print_type_error(16, $1->lineno, "\'break\' outside of loop."); has_error = 1; print_B_error("Stmt", $1->lineno, "Missing semicolon \';\'"); }
     | CONTINUE error                            { addn($$, "Stmt", 2, $1, $2); if(loop_cnt == 0) print_type_error(16, $1->lineno, "\'continue\' outside of loop."); has_error = 1; print_B_error("Stmt", $1->lineno, "Missing semicolon \';\'"); }
@@ -236,7 +247,7 @@ Exp : Exp ASSIGN Exp    { addn($$, "Exp", 3, $1, $2, $3); inherit_type($$, $1, $
     | NOT Exp           { addn($$, "Exp", 2, $1, $2); inherit_type($$, $2, $2, "bin"); }
     | ID LP             { structFieldStack = utstack_push(structFieldStack, makeStructType("", makeFieldList(NULL, ""))); }
       Args RP           { addn($$, "Exp", 4, $1, $2, $4, $5); inherit_function($$, $1, nowFL); structFieldStack = utstack_pop(structFieldStack); }                // function call with args
-    | ID LP RP          { addn($$, "Exp", 3, $1, $2, $3); inherit_function($$, $1, makeFieldList(NULL, "")); }  // function call with no args
+    | ID LP RP          { addn($$, "Exp", 3, $1, $2, $3); inherit_function($$, $1, NULL); }  // function call with no args
     | Exp LB Exp RB     { addn($$, "Exp", 4, $1, $2, $3, $4); inherit_array($$, $1, $3); }                      // array
     | Exp DOT ID        { addn($$, "Exp", 3, $1, $2, $3); inherit_struct($$, $1, $3); }                            // attribute of structure
     | Var               { add1($$, "Exp", 1, $1); $$->inheridata = $1->inheridata; }

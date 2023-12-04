@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#define IMPLICIT_CONVERT
 
 Type *makeStructType(const char *name, FieldList *fl)
 {
@@ -12,6 +13,7 @@ Type *makeStructType(const char *name, FieldList *fl)
     memset(nowType->structure->struct_name, 0, sizeof(nowType->structure->struct_name));
     strncpy(nowType->structure->struct_name, name, 31);
     nowType->structure->typesize = fl->typesize;
+    // printf("Struct_size=%zu, %p\n", nowType->structure->typesize, fl);
     return nowType;
 }
 
@@ -39,6 +41,9 @@ Type *makePrimType(const char *u)
 
 FieldList *makeFieldList(Type *nowType, const char *name)
 {
+    // printf("FL: %p\n", nowType);
+    // if(nowType != NULL)
+    // printf("%d\n", nowType->category);
     FieldList *nowFieldList = (FieldList *)malloc(sizeof(FieldList));
     nowFieldList->next = NULL;
     nowFieldList->type = nowType;
@@ -48,6 +53,7 @@ FieldList *makeFieldList(Type *nowType, const char *name)
         nowFieldList->typesize = nowType->typesize;
     else
         nowFieldList->typesize = 0;
+    // printf("FL_size=%zu\n", nowFieldList->typesize);
     return nowFieldList;
 }
 
@@ -129,80 +135,94 @@ FieldList *addFieldList(FieldList *fl, Type *nowType, const char *name)
     if (fl->type == NULL)
     {
         fl->type = nowType;
-        fl->typesize = nowType->typesize;
+        if (nowType != NULL)
+            fl->typesize = nowType->typesize;
+        else
+            fl->typesize = 0;
         strncpy(fl->varname, name, 31);
         return fl;
     }
-    FieldList *nowFL = makeFieldList(nowType, name);
-    nowFL->next = fl;
-    nowFL->typesize += fl->typesize;
-    return nowFL;
+    FieldList *nFL = makeFieldList(nowType, name);
+    nFL->next = fl;
+    nFL->typesize += fl->typesize;
+    // printf("add_FL_size=%zu\n", nFL->typesize);
+    return nFL;
 }
 
-void deleteArray(Array *arr)
-{
-    if (arr == NULL)
-        return;
-    deleteType(arr->base);
-    free(arr);
-}
+// void deleteArray(Array *arr)
+// {
+//     if (arr == NULL)
+//         return;
+//     deleteType(arr->base);
+//     free(arr);
+// }
 
-void deleteFieldList(FieldList *fl)
-{
-    if (fl == NULL)
-        return;
-    deleteType(fl->type);
-    deleteFieldList(fl->next);
-    free(fl);
-}
+// void deleteFieldList(FieldList *fl)
+// {
+//     if (fl == NULL)
+//         return;
+//     deleteType(fl->type);
+//     deleteFieldList(fl->next);
+//     free(fl);
+// }
 
-void deleteStructure(Structure *stru)
-{
-    if (stru == NULL)
-        return;
-    deleteFieldList(stru->data);
-}
+// void deleteStructure(Structure *stru)
+// {
+//     if (stru == NULL)
+//         return;
+//     deleteFieldList(stru->data);
+// }
 
-void deleteFunction(Function *func)
-{
-    if (func == NULL)
-        return;
-    deleteFieldList(func->params);
-}
+// void deleteFunction(Function *func)
+// {
+//     if (func == NULL)
+//         return;
+//     deleteFieldList(func->params);
+// }
 
-void deleteType(Type *type)
-{
-    if (type == NULL)
-        return;
-    if (type->category == ARRAY)
-    {
-        deleteArray(type->array);
-    }
-    else if (type->category == STRUCTURE)
-    {
-        deleteStructure(type->structure);
-    }
-    else if (type->category == FUNCTION)
-    {
-        deleteFunction(type->func);
-    }
-    free(type);
-}
+// void deleteType(Type *type)
+// {
+//     if (type == NULL)
+//         return;
+//     if (type->category == ARRAY)
+//     {
+//         deleteArray(type->array);
+//     }
+//     else if (type->category == STRUCTURE)
+//     {
+//         deleteStructure(type->structure);
+//     }
+//     else if (type->category == FUNCTION)
+//     {
+//         deleteFunction(type->func);
+//     }
+//     free(type);
+// }
 
 char checkTypeEqual(const Type *a, const Type *b)
 {
     if (a->category == PRIMITIVE && b->category == PRIMITIVE)
+    {
         return checkPrimEqual(a->primitive, b->primitive);
+    }
     if (a == b)
         return 1;
     if (a == NULL || b == NULL)
+    {
         return 0;
+    }
     if (a->category == ERRORTYPE || b->category == ERRORTYPE)
+    {
         return 1;
+    }
     if (a->typesize != b->typesize)
+    {
         return 0;
+    }
     if (a->category != b->category)
+    {
         return 0;
+    }
     if (a->category == ARRAY)
         return checkArrayEqual(a->array, b->array);
     if (a->category == STRUCTURE)
@@ -211,12 +231,21 @@ char checkTypeEqual(const Type *a, const Type *b)
         return checkFunctionEqual(a->func, b->func);
 }
 
+#ifdef IMPLICIT_CONVERT
 char checkPrimEqual(const int pr1, const int pr2)
 {
-    if (pr1 == PCHAR || pr2 == PCHAR)
+    if (pr1 != pr2 && (pr1 == PCHAR || pr2 == PCHAR))
+    {
         return 0;
+    }
     return 1;
 }
+#else
+char checkPrimEqual(const int pr1, const int pr2)
+{
+    return pr1 == pr2;
+}
+#endif
 
 char checkStructEqual(const Structure *a, const Structure *b)
 {
@@ -225,12 +254,16 @@ char checkStructEqual(const Structure *a, const Structure *b)
 
 char checkFieldEqual(const FieldList *a, const FieldList *b)
 {
+    // printf("CK_FL_EQ:\nType1:\n");
+    // outputFieldList(a);
+    // printf("Type2:\n");
+    // outputFieldList(b);
     if (a == NULL && b == NULL)
         return 1;
     if (a != NULL && a->type == NULL)
-        return checkFieldEqual(NULL, b);
+        return checkFieldEqual(a->next, b);
     if (b != NULL && b->type == NULL)
-        return checkFieldEqual(a, NULL);
+        return checkFieldEqual(a, b->next);
     if (a == NULL || b == NULL)
         return 0;
     if (!checkTypeEqual(a->type, b->type))
@@ -334,9 +367,16 @@ Type *findNameInStructure(const Type *a, const char *name)
         return NULL;
     }
 }
+void outputFunction(Function *p)
+{
+    printf("Function: %s\n", p->name);
+    outputFieldList(p->params);
+}
 
 void outputType(const Type *t)
 {
+    if (t == NULL)
+        return;
     switch (t->category)
     {
     case PRIMITIVE:
@@ -344,6 +384,9 @@ void outputType(const Type *t)
         break;
     case STRUCTURE:
         outputStruct(t->structure);
+        break;
+    case FUNCTION:
+        outputFunction(t->func);
         break;
     default:
         break;
@@ -380,4 +423,50 @@ void outputStruct(const Structure *s)
 {
     printf("Structure: %s\n", s->struct_name);
     outputFieldList(s->data);
+}
+
+void calcTypeSize(Type *p)
+{
+    switch (p->category)
+    {
+    case PRIMITIVE:
+        p->typesize = (p->primitive == PCHAR ? 1 : 4);
+        break;
+    case STRUCTURE:
+        calcStructSize(p->structure);
+        p->typesize = p->structure->typesize;
+        break;
+    case ARRAY:
+        calcArraySize(p->array);
+        p->typesize = p->array->typesize;
+        break;
+
+    default:
+        break;
+    }
+}
+void calcStructSize(Structure *p)
+{
+    calcFieldSize(p->data);
+    p->typesize = p->data->typesize;
+}
+void calcFieldSize(FieldList *p)
+{
+    if (p == NULL)
+        return;
+    calcTypeSize(p->type);
+    if (p->next == NULL)
+    {
+        p->typesize = p->type->typesize;
+    }
+    else
+    {
+        calcFieldSize(p->next);
+        p->typesize = p->type->typesize + p->next->typesize;
+    }
+}
+void calcArraySize(Array *p)
+{
+    calcTypeSize(p->base);
+    p->typesize = p->base->typesize * p->size;
 }
