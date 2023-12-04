@@ -193,7 +193,9 @@ void checkRetType(const Type *ret2, const size_t lineno)
     const Type *ret1 = funcRetTypeStack->data;
     const Type *tu = getTypeAfterOp(ret1, ret2, "ass");
     if (tu->category == ERRORTYPE && ret1->category != ERRORTYPE && ret2->category != ERRORTYPE)
+    {
         print_type_error(8, lineno, "function's return value type mismatches the declared type.");
+    }
 }
 
 Type *findStruct(const char *name, const size_t lineno)

@@ -201,7 +201,9 @@ FieldList *addFieldList(FieldList *fl, Type *nowType, const char *name)
 char checkTypeEqual(const Type *a, const Type *b)
 {
     if (a->category == PRIMITIVE && b->category == PRIMITIVE)
+    {
         return checkPrimEqual(a->primitive, b->primitive);
+    }
     if (a == b)
         return 1;
     if (a == NULL || b == NULL)
@@ -230,8 +232,10 @@ char checkTypeEqual(const Type *a, const Type *b)
 
 char checkPrimEqual(const int pr1, const int pr2)
 {
-    if (pr1 == PCHAR || pr2 == PCHAR)
+    if (pr1 != pr2 && (pr1 == PCHAR || pr2 == PCHAR))
+    {
         return 0;
+    }
     return 1;
 }
 
