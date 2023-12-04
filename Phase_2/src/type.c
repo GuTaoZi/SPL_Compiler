@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#define IMPLICIT_CONVERT
 
 Type *makeStructType(const char *name, FieldList *fl)
 {
@@ -230,6 +231,7 @@ char checkTypeEqual(const Type *a, const Type *b)
         return checkFunctionEqual(a->func, b->func);
 }
 
+#ifdef IMPLICIT_CONVERT
 char checkPrimEqual(const int pr1, const int pr2)
 {
     if (pr1 != pr2 && (pr1 == PCHAR || pr2 == PCHAR))
@@ -238,6 +240,12 @@ char checkPrimEqual(const int pr1, const int pr2)
     }
     return 1;
 }
+#else
+char checkPrimEqual(const int pr1, const int pr2)
+{
+    return pr1 == pr2;
+}
+#endif
 
 char checkStructEqual(const Structure *a, const Structure *b)
 {
