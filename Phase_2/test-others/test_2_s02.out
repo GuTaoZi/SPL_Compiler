@@ -1,0 +1,2 @@
+Error type 10 at Line 4: 'a[2]' is not an array
+Error type 2 at Line 5: Function: 'func' is invoked without a definition.

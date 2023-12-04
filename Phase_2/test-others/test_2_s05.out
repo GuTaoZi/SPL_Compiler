@@ -1,0 +1,4 @@
+Error type 5 at Line 8: unmatching types for assign(=).
+Error type 7 at Line 9: unmatching operands.
+Error type 7 at Line 11: unmatching operands.
+Error type 10 at Line 12: 'ra' is not an array

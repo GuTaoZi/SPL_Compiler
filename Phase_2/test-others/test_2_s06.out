@@ -1,0 +1,8 @@
+Error type 5 at Line 7: unmatching types for assign(=).
+Error type 9 at Line 8: parameters missmatch for function: 'test'
+Error type 9 at Line 9: parameters missmatch for function: 'test'
+Error type 9 at Line 10: parameters missmatch for function: 'test'
+Error type 9 at Line 11: parameters missmatch for function: 'test'
+Error type 9 at Line 12: parameters missmatch for function: 'test'
+Error type 9 at Line 13: parameters missmatch for function: 'test'
+Error type 9 at Line 14: parameters missmatch for function: 'test'
