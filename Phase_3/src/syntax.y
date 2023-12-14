@@ -7,6 +7,7 @@
     #include "type.h"
     #include "type_op.h"
     #include "treeNode.h"
+    #include "IRgen.h"
     #include "lex.yy.c"
 
     extern size_t last_error_lineno;
@@ -321,9 +322,9 @@ int main(int argc, char **argv)
             char *ofname = (char *)malloc((len + 4) * sizeof(char));
             for (int i = 0; i < len; i++)
                 ofname[i] = argv[1][i];
-            ofname[len] = 'o';
-            ofname[len + 1] = 'u';
-            ofname[len + 2] = 't';
+            ofname[len] = 'i';
+            ofname[len + 1] = 'r';
+            ofname[len + 2] = '0';
             ofname[len + 3] = 0;
             file_out = fopen(ofname, "w");
             free(ofname);
@@ -354,8 +355,10 @@ int main(int argc, char **argv)
     yyparse();
     if (!has_error)
     {
-        if (root != NULL)
-            output_tree(root, 0);
+        if (root != NULL){
+            IR_tree *IRroot = build_IR_tree(root);
+            output_IR_tree(IRroot, file_out);
+        }
         else
         {
             print_B_error("root", -1, "There is error somewhere...");

@@ -14,7 +14,8 @@ typedef struct Type
         FUNCTION,
         ERRORTYPE
     } category;
-    union {
+    union
+    {
         enum
         {
             PINT,
@@ -116,5 +117,7 @@ void calcTypeSize(Type *p);
 void calcStructSize(Structure *p);
 void calcFieldSize(FieldList *p);
 void calcArraySize(Array *p);
+
+size_t get_offset(const FieldList *p, const char *name);
 
 #endif

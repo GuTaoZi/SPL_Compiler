@@ -455,6 +455,11 @@ void calcFieldSize(FieldList *p)
     if (p == NULL)
         return;
     calcTypeSize(p->type);
+    int k = p->type->typesize & 3;
+    if (k != 0)
+    {
+        p->type->typesize += 4 - k;
+    }
     if (p->next == NULL)
     {
         p->typesize = p->type->typesize;
@@ -469,4 +474,14 @@ void calcArraySize(Array *p)
 {
     calcTypeSize(p->base);
     p->typesize = p->base->typesize * p->size;
+}
+
+size_t get_offset(const FieldList *p, const char *name){
+    while(p != NULL){
+        if(strcmp(p->varname, name) == 0){
+            return p->typesize - p->type->typesize;
+        }
+        p = p->next;
+    }
+    return -1;
 }
