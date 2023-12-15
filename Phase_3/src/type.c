@@ -486,7 +486,7 @@ size_t get_offset(const FieldList *p, const char *name){
     return -1;
 }
 
-size_t get_offset_Struct(const Type *p, const char name){
+size_t get_offset_Struct(const Type *p, const char* name){
     if(p->category != STRUCTURE){return -1;}
     else{
         return get_offset(p->structure->data, name);

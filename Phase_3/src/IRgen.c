@@ -574,8 +574,8 @@ IR_tree *build_ref_IR_tree(const treeNode *u, bool is_ptr)
         return build_normExp_IR_tree(u);
     } else if(u->child_cnt == 3){
         IR_tree *p;
-        IR_tree *c1 = build_ref_IR_tree(p->child, true);
-        sprintf(ttmp, "%s := %s + #%d", c1->stmt, c1->stmt, get_offset_Struct(u->child->inheridata, u->child->next->next->val));
+        IR_tree *c1 = build_ref_IR_tree(u->child, true);
+        sprintf(ttmp, "%s := %s + #%zu", c1->stmt, c1->stmt, get_offset_Struct(u->child->inheridata, u->child->next->next->val));
         IR_tree *c2 = new_IR_node(ttmp);
         addIRn(p, 2, c1,c2);
         if(is_ptr){
@@ -587,10 +587,10 @@ IR_tree *build_ref_IR_tree(const treeNode *u, bool is_ptr)
         return p;
     } else {
         IR_tree *p;
-        IR_tree *c1 = build_ref_IR_tree(p->child, true);
-        IR_tree *c2 = build_normExp_IR_tree(p->child->next->next);
+        IR_tree *c1 = build_ref_IR_tree(u->child, true);
+        IR_tree *c2 = build_normExp_IR_tree(u->child->next->next);
         char *ttva = alloc_tmpvar();
-        sprintf(ttmp, "%s := %d * %s", ttva, get_array_size(u->child->inheridata), c2->stmt);
+        sprintf(ttmp, "%s := #%zu * %s", ttva, get_array_size(u->child->inheridata), c2->stmt);
         IR_tree *c3 = new_IR_node(ttmp);
         sprintf(ttmp, "%s := %s + %s", c1->stmt, c1->stmt, ttva);
         IR_tree *c4 = new_IR_node(ttmp);

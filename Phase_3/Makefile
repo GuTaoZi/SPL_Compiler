@@ -3,7 +3,7 @@ FLEX=flex
 BISON=bison
 SRC_DIR = ./src
 
-SRCS = syntax.tab.c treeNode.c ortho.c type.c type_op.c IRgen.c optimizer.c
+SRCS = syntax.tab.c treeNode.c ortho.c type.c type_op.c IRgen.c optimizer.c IRortho.c
 
 .PHONY: splc splcb splcc splcd clean
 

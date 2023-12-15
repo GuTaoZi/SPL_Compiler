@@ -119,5 +119,7 @@ void calcFieldSize(FieldList *p);
 void calcArraySize(Array *p);
 
 size_t get_offset(const FieldList *p, const char *name);
+size_t get_offset_Struct(const Type *p, const char* name);
+size_t get_array_size(const Type *p);
 
 #endif

@@ -366,7 +366,7 @@ int main(int argc, char **argv)
             IR_tree *IRroot = build_IR_tree(root);
             output_IR_tree(IRroot, file_out);
             fseek(file_out, 0, SEEK_SET);
-            optimizer(file_out, file_opt);
+            optimize(file_out, file_opt);
         }
         else
         {
