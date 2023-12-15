@@ -2,13 +2,14 @@
 #define _IRGEN_H_
 
 #include "treeNode.h"
+#include "IRortho.h"
 
 typedef struct IR_tree
 {
     char *stmt; // Only if child == NULL
     struct IR_tree *child;
     struct IR_tree *next;
-    bool is_leaf;
+    bool should_print;
 } IR_tree;
 
 //// add a IR node with its children ////
@@ -38,7 +39,7 @@ char *alloc_label();
 
 /// @brief Remember to free()
 /// @return 
-char *alloc_tmpval();
+char *alloc_tmpvar();
 
 /// @brief Remember to free()
 /// @return 
@@ -60,6 +61,7 @@ IR_tree *build_stmt_IR_tree(const treeNode *u, const char *lloop_head, const cha
 IR_tree *build_normExp_IR_tree(const treeNode *u);
 IR_tree *build_ifExp_IR_tree(const treeNode *u, const char *ltrue, const char *lfalse, const char *lend);
 IR_tree *build_default_IR_tree(const treeNode *u);
+IR_tree *build_ref_IR_tree(const treeNode *u);
 
 IR_tree *build_IR_tree(const treeNode *u);
 void output_IR_tree(const IR_tree *u, FILE *f);
