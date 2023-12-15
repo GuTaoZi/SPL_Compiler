@@ -30,6 +30,7 @@ typedef struct IR_tree
 //////// IR node add ends here /////////
 
 IR_tree *new_IR_node(const char *stmt);
+void add_IR_stmt(IR_tree *p, const char *stmt);
 void make_IR_list(int cnt, IR_tree *head, ...);
 IR_tree *alloc_var_mem(const treeNode *u);
 
@@ -60,8 +61,8 @@ IR_tree *build_stmt_IR_tree(const treeNode *u, const char *lloop_head, const cha
 
 IR_tree *build_normExp_IR_tree(const treeNode *u);
 IR_tree *build_ifExp_IR_tree(const treeNode *u, const char *ltrue, const char *lfalse, const char *lend);
+IR_tree *build_ref_IR_tree(const treeNode *u, bool is_ptr);
 IR_tree *build_default_IR_tree(const treeNode *u);
-IR_tree *build_ref_IR_tree(const treeNode *u);
 
 IR_tree *build_IR_tree(const treeNode *u);
 void output_IR_tree(const IR_tree *u, FILE *f);
