@@ -5,6 +5,8 @@
 #include <stdarg.h>
 #include <string.h>
 
+static treeNode *tntmp;
+
 size_t mlg10(size_t u)
 {
     int n = 0;
@@ -153,11 +155,11 @@ IR_tree *build_FunDec_IR_tree(const treeNode *u)
 {
     // u: ExtDef
     IR_tree *p;
-    sprintf(ttmp, "FUNCTION %s :", u->child->next->child->val);
+    sprintf(ttmp, "FUNCTION %s :", (tntmp=u->child->next->child)->val);
     IR_tree *c1 = new_IR_node(ttmp);
     IR_tree *c2;
     if (u->child->next->child_cnt == 4)
-        c2 = build_params_IR_tree(u->child->next->child->next->next);
+        c2 = build_params_IR_tree(tntmp->next->next);
     else
         c2 = new_IR_node(NULL);
     IR_tree *c3 = build_CompSt_IR_tree(u->child->next->next, NULL, NULL);
@@ -172,8 +174,8 @@ IR_tree *build_CompSt_IR_tree(const treeNode *u, const char *lloop_head, const c
     // Called by build_FunDec
     // u: CompSt
     IR_tree *p;
-    IR_tree *c1 = build_defList_IR_tree(u->child->next);
-    IR_tree *c2 = build_stmtList_IR_tree(u->child->next->next, lloop_head, lloop_end);
+    IR_tree *c1 = build_defList_IR_tree(tntmp = u->child->next);
+    IR_tree *c2 = build_stmtList_IR_tree(tntmp->next, lloop_head, lloop_end);
     addIRn(p, 2, c1, c2);
     return p;
 }
@@ -266,8 +268,8 @@ IR_tree *build_stmt_IR_tree(const treeNode *u, const char *lloop_head, const cha
         {
             char *endlabel = alloc_label();
             IR_tree *p;
-            IR_tree *c1 = build_ifExp_IR_tree(u->child->next->next, NULL, endlabel, endlabel);
-            IR_tree *c2 = build_stmt_IR_tree(u->child->next->next->next->next, lloop_head, lloop_end);
+            IR_tree *c1 = build_ifExp_IR_tree(tntmp = u->child->next->next, NULL, endlabel, endlabel);
+            IR_tree *c2 = build_stmt_IR_tree(tntmp = tntmp->next->next, lloop_head, lloop_end);
             sprintf(ttmp, "LABEL %s", endlabel);
             IR_tree *c3 = new_IR_node(ttmp);
             addIRn(p, 3, c1, c2, c3);
@@ -278,17 +280,17 @@ IR_tree *build_stmt_IR_tree(const treeNode *u, const char *lloop_head, const cha
             char *falselabel = alloc_label();
             char *endlabel = alloc_label();
             IR_tree *p;
-            IR_tree *c1 = build_ifExp_IR_tree(u->child->next->next, NULL, falselabel, endlabel);
+            IR_tree *c1 = build_ifExp_IR_tree(tntmp = u->child->next->next, NULL, falselabel, endlabel);
 
-            IR_tree *c2 = build_stmt_IR_tree(u->child->next->next->next->next, lloop_head, lloop_end);
-
+            IR_tree *c2 = build_stmt_IR_tree(tntmp = tntmp->next->next, lloop_head, lloop_end);
+            
             sprintf(ttmp, "GOTO %s", endlabel);
             IR_tree *c3 = new_IR_node(ttmp);
 
             sprintf(ttmp, "LABEL %s", falselabel);
             IR_tree *c4 = new_IR_node(ttmp);
 
-            IR_tree *c5 = build_stmt_IR_tree(u->child->next->next->next->next->next->next, lloop_head, lloop_end);
+            IR_tree *c5 = build_stmt_IR_tree(tntmp = tntmp->next->next, lloop_head, lloop_end);
 
             sprintf(ttmp, "LABEL %s", endlabel);
             IR_tree *c6 = new_IR_node(ttmp);
@@ -299,15 +301,49 @@ IR_tree *build_stmt_IR_tree(const treeNode *u, const char *lloop_head, const cha
     }
     else if (strcmp(u->child->name, "WHILE") == 0)
     {
+        char *nloop_head = alloc_label();
+        char *nloop_tail = alloc_label();
+
         IR_tree *p;
-        char *loop_head = alloc_label();
-        char *loop_tail = alloc_label();
-        IR_tree *c1 = build_ifExp_IR_tree(u->child->next->next, NULL, loop_tail, loop_tail);
-        IR_tree *c2 =
+        sprintf(ttmp, "LABEL %s", nloop_head);
+        IR_tree *c1 = new_IR_node(ttmp);
+        IR_tree *c2 = build_ifExp_IR_tree(tntmp = u->child->next->next, NULL, nloop_tail, nloop_tail);
+        IR_tree *c3 = build_stmt_IR_tree(tntmp->next->next, nloop_head, nloop_tail);
+        sprintf(ttmp, "GOTO %s", nloop_head);
+        IR_tree *c4 = new_IR_node(ttmp);
+        sprintf(ttmp, "LABEL %s", nloop_tail);
+        IR_tree *c5 = new_IR_node(ttmp);
+        addIRn(p, 5, c1,c2,c3,c4,c5);
+    }
+    else if (strcmp(u->child->name, "FOR") == 0)
+    {
+        IR_tree *p;
+        char *nloop_head = alloc_label();
+        char *nloop_tail = alloc_label();
+
+        IR_tree *c1 = build_normExp_IR_tree(tntmp = u->child->next->next);
+
+        sprintf(ttmp, "LABEL %s", nloop_head);
+        IR_tree *c2 = new_IR_node(ttmp);
+
+        IR_tree *c3 = build_ifExp_IR_tree(tntmp = tntmp->next->next, NULL, nloop_tail, nloop_tail);
+
+        IR_tree *c5 = build_normExp_IR_tree(tntmp = tntmp->next->next);
+
+        IR_tree *c4 = build_stmt_IR_tree(tntmp = tntmp->next->next, nloop_head, nloop_tail);
+
+        sprintf(ttmp, "GOTO %s", nloop_head);
+        IR_tree *c6 = new_IR_node(ttmp);
+        sprintf(ttmp, "LABEL %s", nloop_tail);
+        IR_tree *c7 = new_IR_node(ttmp);
+        
+        addIRn(p, 7, c1,c2,c3,c4,c5,c6,c7);
+        return p;
     }
     else
     {
-        ;
+        // Raise an error
+        return new_IR_node("error := #1");
     }
 }
 
