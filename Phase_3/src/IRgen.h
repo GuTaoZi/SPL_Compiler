@@ -27,18 +27,31 @@ typedef struct IR_tree
 IR_tree *new_IR_node(const char *stmt);
 void make_IR_list(int cnt, IR_tree *head, ...);
 IR_tree *alloc_var_mem(const treeNode *u);
+
+/// @brief Remember to free()
+/// @return 
 char *alloc_label();
-IR_tree *build_param_IR_tree(const treeNode *u);
-IR_tree *build_arg_IR_tree(const treeNode *u);
+
+/// @brief Remember to free()
+/// @return 
+char *alloc_tmpval();
+
+IR_tree *build_paramDec_IR_tree(const treeNode *u);
+IR_tree *build_params_IR_tree(const treeNode *u);
+IR_tree *build_assign_IR_tree(const char *result, const treeNode *u);
+IR_tree *build_arg_IR_tree(const char *varname);
+IR_tree *build_args_IR_tree(const treeNode *u);
 IR_tree *build_FunDec_IR_tree(const treeNode *u);
 IR_tree *build_CompSt_IR_tree(const treeNode *u);
 
 IR_tree *build_defList_IR_tree(const treeNode *u);
-IR_tree *build_def_IR_tree(const treeNode *u);
 IR_tree *build_stmtList_IR_tree(const treeNode *u);
+IR_tree *build_def_IR_tree(const treeNode *u);
 IR_tree *build_stmt_IR_tree(const treeNode *u);
 
 IR_tree *build_normExp_IR_tree(const treeNode *u);
 IR_tree *build_ifExp_IR_tree(const treeNode *u, const char *ltrue, const char *lfalse);
+IR_tree *build_default_IR_tree(const treeNode *u);
+
 IR_tree *build_IR_tree(const treeNode *u);
 void output_IR_tree(const IR_tree *u, FILE *f);

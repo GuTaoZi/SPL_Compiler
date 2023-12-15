@@ -55,10 +55,6 @@ IR_tree *alloc_var_mem(const treeNode *u)
 }
 
 size_t label_cnt = 0;
-
-/**
- * Remember to free()
- */
 char *alloc_label()
 {
     char *tlabel = (char *)malloc(sizeof(char) * (2 + mlg10(label_cnt)));
@@ -66,15 +62,81 @@ char *alloc_label()
     return tlabel;
 }
 
+size_t tmp_val_cnt = 0;
+char *alloc_tmpval()
+{
+    char *tlabel = (char *)malloc(sizeof(char) * (2 + mlg10(tmp_val_cnt)));
+    sprintf(tlabel, "t%zu", tmp_val_cnt);
+    return tlabel;
+}
+
 char ttmp[32768];
 
-IR_tree *build_param_IR_tree(const treeNode *u)
+IR_tree *build_paramDec_IR_tree(const treeNode *u)
+{
+    // u: ParamDec
+    sprintf(ttmp, "PARAM %s", get_IR_name(getVarDecName(u->child->next)));
+    return new_IR_node(ttmp);
+}
+
+IR_tree *build_params_IR_tree(const treeNode *u)
 {
     // u: VarList
+    if (u->child_cnt == 1)
+    {
+        return build_paramDec_IR_tree(u->child);
+    }
+    else
+    {
+        IR_tree *p;
+        IR_tree *c1 = build_paramDec_IR_tree(u->child);
+        IR_tree *c2 = build_params_IR_tree(u->child->next->next);
+        addIRn(p, 2, c1, c2);
+    }
 }
-IR_tree *build_arg_IR_tree(const treeNode *u)
+
+IR_tree *build_assign_IR_tree(const char *result, const treeNode *u)
+{
+    // u: Exp
+    // return result := xxx
+    IR_tree *p;
+    IR_tree *c1 = build_normExp_IR_tree(u);
+    sprintf(ttmp, "%s := %s", result, c1->stmt);
+    IR_tree *c2 = new_IR_node(ttmp);
+    addIRn(p, 2, c1,c2);
+    return p;
+}
+
+IR_tree *build_arg_IR_tree(const char *varname)
+{
+    sprintf(ttmp, "ARG %s", varname);
+    return new_IR_node(ttmp);
+}
+
+IR_tree *build_args_IR_tree(const treeNode *u)
 {
     // u: Args
+    if (u->child_cnt == 1)
+    {
+        IR_tree *p;
+        char *tmp_val = alloc_tmpval();
+        IR_tree *c1 = build_assign_IR_tree(tmp_val, u->child);
+        IR_tree *c2 = build_arg_IR_tree(tmp_val);
+        addIRn(p, 2, c1, c2);
+        free(tmp_val);
+        return p;
+    }
+    else
+    {
+        IR_tree *p;
+        char *tmp_val = alloc_tmpval();
+        IR_tree *c1 = build_assign_IR_tree(tmp_val, u->child);
+        IR_tree *c2 = build_args_IR_tree(u->child->next->next);
+        IR_tree *c3 = build_arg_IR_tree(tmp_val);
+        addIRn(p, 3, c1, c2, c3);
+        free(tmp_val);
+        return p;
+    }
 }
 
 IR_tree *build_FunDec_IR_tree(const treeNode *u)
@@ -101,50 +163,59 @@ IR_tree *build_CompSt_IR_tree(const treeNode *u)
     IR_tree *p;
     IR_tree *c1 = build_defList_IR_tree(u->child->next);
     IR_tree *c2 = build_stmtList_IR_tree(u->child->next->next);
-    addIRn(p, 2, c1,c2);
+    addIRn(p, 2, c1, c2);
     return p;
 }
 
-IR_tree *build_defList_IR_tree(const treeNode *u){
-    if(u->child_cnt == 2){
+IR_tree *build_defList_IR_tree(const treeNode *u)
+{
+    if (u->child_cnt == 2)
+    {
         IR_tree *p;
         IR_tree *c1 = build_def_IR_tree(u->child);
         IR_tree *c2 = build_defList_IR_tree(u->child->next);
-        addIRn(p, 2, c1,c2);
+        addIRn(p, 2, c1, c2);
         return p;
-    } else {
+    }
+    else
+    {
         // return new_IR_node(NULL);
         return NULL;
     }
 }
-IR_tree *build_stmtList_IR_tree(const treeNode *u){
-    if(u->child_cnt == 2){
+IR_tree *build_stmtList_IR_tree(const treeNode *u)
+{
+    if (u->child_cnt == 2)
+    {
         IR_tree *p;
         IR_tree *c1 = build_stmt_IR_tree(u->child);
         IR_tree *c2 = build_stmtList_IR_tree(u->child->next);
-        addIRn(p, 2, c1,c2);
+        addIRn(p, 2, c1, c2);
         return p;
-    } else {
+    }
+    else
+    {
         // return new_IR_node(NULL);
         return NULL;
     }
 }
 
-IR_tree *build_stmt_IR_tree(const treeNode *u){
-    // from CompSt
-    // u: Stmt
-}
-
-IR_tree *build_def_IR_tree(const treeNode *u){
+IR_tree *build_def_IR_tree(const treeNode *u)
+{
     // from CompSt
     // u: Def
+}
+
+IR_tree *build_stmt_IR_tree(const treeNode *u)
+{
+    // from CompSt
+    // u: Stmt
 }
 
 IR_tree *build_normExp_IR_tree(const treeNode *u)
 {
     // Called by stmt
     // u: Exp
-
 }
 
 IR_tree *build_ifExp_IR_tree(const treeNode *u, const char *ltrue, const char *lfalse)

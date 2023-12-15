@@ -8,6 +8,7 @@
     #include "type_op.h"
     #include "treeNode.h"
     #include "IRgen.h"
+    #include "optimizer.h"
     #include "lex.yy.c"
 
     extern size_t last_error_lineno;
@@ -307,6 +308,7 @@ int main(int argc, char **argv)
 {
     FILE *file_in;
     FILE *file_out;
+    FILE *file_opt;
     if (argc == 2 || argc == 3)
     {
         file_in = fopen(argv[1], "r");
@@ -315,25 +317,29 @@ int main(int argc, char **argv)
             perror("Error opening input file");
             return 1;
         }
+
+        int len = strlen(argv[1]);
+        while (argv[1][len - 1] != '.')
+            len--;
+        char *ofname = (char *)malloc((len + 4) * sizeof(char));
+        for (int i = 0; i < len; i++)
+            ofname[i] = argv[1][i];
+        ofname[len] = 'i';
+        ofname[len + 1] = 'r';
+        ofname[len + 2] = '0';
+        ofname[len + 3] = 0;
+        file_out = fopen(ofname, "w+");
         if (argc == 2)
         {
-            int len = strlen(argv[1]);
-            while (argv[1][len - 1] != '.')
-                len--;
-            char *ofname = (char *)malloc((len + 4) * sizeof(char));
-            for (int i = 0; i < len; i++)
-                ofname[i] = argv[1][i];
-            ofname[len] = 'i';
-            ofname[len + 1] = 'r';
-            ofname[len + 2] = '0';
-            ofname[len + 3] = 0;
-            file_out = fopen(ofname, "w");
-            free(ofname);
+            ofname[len + 2] = 0;
+            file_opt = fopen(ofname, "w");
         }
         else if (argc == 3)
         {
-            file_out = fopen(argv[2], "w");
+            file_opt = fopen(argv[2], "w");
         }
+        free(ofname);
+
         if (file_out == NULL)
         {
             perror("Error opening output file");
@@ -359,6 +365,8 @@ int main(int argc, char **argv)
         if (root != NULL){
             IR_tree *IRroot = build_IR_tree(root);
             output_IR_tree(IRroot, file_out);
+            fseek(file_out, 0, SEEK_SET);
+            optimizer(file_out, file_opt);
         }
         else
         {
