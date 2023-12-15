@@ -8,24 +8,18 @@ typedef struct IR_tree
 } IR_tree;
 
 //// add a IR node with its children ////
-#define addIR0(self, stmt)        \
-    do                            \
-    {                             \
-        self = new_IR_node(stmt); \
-    } while (0)
-
-#define addIRn(self, stmt, n, v1, ...)    \
+#define addIRn(self, n, v1, ...)          \
     do                                    \
     {                                     \
-        self = new_IR_node(stmt);         \
+        self = new_IR_node(NULL);         \
         self->child = v1;                 \
         make_IR_list(n, v1, __VA_ARGS__); \
     } while (0)
 
-#define addIR1(self, stmt, n, v1) \
+#define addIR1(self, n, v1)       \
     do                            \
     {                             \
-        self = new_IR_node(stmt); \
+        self = new_IR_node(NULL); \
         self->child = v1;         \
     } while (0)
 //////// IR node add ends here /////////
@@ -33,10 +27,18 @@ typedef struct IR_tree
 IR_tree *new_IR_node(const char *stmt);
 void make_IR_list(int cnt, IR_tree *head, ...);
 IR_tree *alloc_var_mem(const treeNode *u);
-void *alloc_label();
+char *alloc_label();
+IR_tree *build_param_IR_tree(const treeNode *u);
+IR_tree *build_arg_IR_tree(const treeNode *u);
 IR_tree *build_FunDec_IR_tree(const treeNode *u);
 IR_tree *build_CompSt_IR_tree(const treeNode *u);
+
+IR_tree *build_defList_IR_tree(const treeNode *u);
+IR_tree *build_def_IR_tree(const treeNode *u);
+IR_tree *build_stmtList_IR_tree(const treeNode *u);
+IR_tree *build_stmt_IR_tree(const treeNode *u);
+
 IR_tree *build_normExp_IR_tree(const treeNode *u);
-IR_tree *build_ifExp_IR_tree(const treeNode *u);
+IR_tree *build_ifExp_IR_tree(const treeNode *u, const char *ltrue, const char *lfalse);
 IR_tree *build_IR_tree(const treeNode *u);
 void output_IR_tree(const IR_tree *u, FILE *f);

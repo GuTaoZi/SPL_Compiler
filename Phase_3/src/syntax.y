@@ -56,7 +56,8 @@
 %%
 
 /* high-level definition */
-Program : { push_stack();funcRetTypeStack = utstack_push(funcRetTypeStack, makePrimType("int")); structFieldStack = utstack_push(structFieldStack, makeStructType("", makeFieldList(NULL, ""))); } HeaderDefList ExtDefList { addn($$, "Program", 2, $2, $3); root = $$; }
+Program : { push_stack();funcRetTypeStack = utstack_push(funcRetTypeStack, makePrimType("int")); structFieldStack = utstack_push(structFieldStack, makeStructType("", makeFieldList(NULL, ""))); }
+    HeaderDefList ExtDefList { addn($$, "Program", 2, $2, $3); root = $$; }
     ;
 
 HeaderDefList :             { add0($$, "HeaderDefList"); }
