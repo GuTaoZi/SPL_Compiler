@@ -1,8 +1,8 @@
 #include "IRgen.h"
 #include "type.h"
 
-#include <stdarg.h>
 #include <assert.h>
+#include <stdarg.h>
 #include <string.h>
 
 size_t mlg10(size_t u)
@@ -28,6 +28,7 @@ IR_tree *new_IR_node(const char *stmt)
         p->stmt = (char *)malloc(sizeof(char) * (ll + 1));
         strncpy(p->stmt, stmt, ll);
     }
+    p->is_leaf=true;
     return p;
 }
 
@@ -256,12 +257,12 @@ IR_tree *build_stmt_IR_tree(const treeNode *u, const char *lloop_head, const cha
         IR_tree *c1 = build_normExp_IR_tree(u->child->next);
         sprintf(ttmp, "RETURN %s", c1->stmt);
         IR_tree *c2 = new_IR_node(ttmp);
-        addIRn(p, 2, c1,c2);
+        addIRn(p, 2, c1, c2);
         return p;
     }
     else if (strcmp(u->child->name, "IF") == 0)
     {
-        if(u->child_cnt == 5) // No else
+        if (u->child_cnt == 5) // No else
         {
             char *endlabel = alloc_label();
             IR_tree *p;
@@ -269,16 +270,18 @@ IR_tree *build_stmt_IR_tree(const treeNode *u, const char *lloop_head, const cha
             IR_tree *c2 = build_stmt_IR_tree(u->child->next->next->next->next, lloop_head, lloop_end);
             sprintf(ttmp, "LABEL %s", endlabel);
             IR_tree *c3 = new_IR_node(ttmp);
-            addIRn(p, 3, c1,c2,c3);
+            addIRn(p, 3, c1, c2, c3);
             free(endlabel);
-        } else {
+        }
+        else
+        {
             char *falselabel = alloc_label();
             char *endlabel = alloc_label();
             IR_tree *p;
             IR_tree *c1 = build_ifExp_IR_tree(u->child->next->next, NULL, falselabel, endlabel);
 
             IR_tree *c2 = build_stmt_IR_tree(u->child->next->next->next->next, lloop_head, lloop_end);
-            
+
             sprintf(ttmp, "GOTO %s", endlabel);
             IR_tree *c3 = new_IR_node(ttmp);
 
@@ -289,7 +292,7 @@ IR_tree *build_stmt_IR_tree(const treeNode *u, const char *lloop_head, const cha
 
             sprintf(ttmp, "LABEL %s", endlabel);
             IR_tree *c6 = new_IR_node(ttmp);
-            addIRn(p, 6, c1,c2,c3,c4,c5,c6);
+            addIRn(p, 6, c1, c2, c3, c4, c5, c6);
             free(endlabel);
             free(falselabel);
         }
@@ -300,7 +303,7 @@ IR_tree *build_stmt_IR_tree(const treeNode *u, const char *lloop_head, const cha
         char *loop_head = alloc_label();
         char *loop_tail = alloc_label();
         IR_tree *c1 = build_ifExp_IR_tree(u->child->next->next, NULL, loop_tail, loop_tail);
-        IR_tree *c2 = 
+        IR_tree *c2 =
     }
     else
     {
@@ -312,6 +315,48 @@ IR_tree *build_normExp_IR_tree(const treeNode *u)
 {
     // Called by stmt
     // u: Exp
+    IR_tree *p;
+    if (u->child_cnt == 1)
+    {
+        treeNode *uc = u->child;
+        if (!strcmp(uc->name, "Var"))
+        {
+            if (strcmp(uc->child->name, "ID"))
+            {
+            }
+            else
+            {
+                sprintf(ttmp, "#%s", uc->child->val);
+                return p = new_IR_node(ttmp);
+            }
+        }
+        else if (!strcmp(uc->name, "STRING"))
+        {
+            sprintf(ttmp, "\"%s\"", uc->child->val);
+            return p = new_IR_node(ttmp);
+        }
+    }
+    else if (u->child_cnt == 2)
+    {
+        treeNode *opc = u->child;
+        treeNode *expc = u->child->next;
+        if (!strcmp(opc->name, "PLUS"))
+        {
+            return p = build_normExp_IR_tree(expc);
+        }
+        if (!strcmp(opc->name, "MINUS"))
+        {
+            IR_tree *subexp = build_normExp_IR_tree(expc);
+            IR_tree *resexp = ;
+            return p;
+        }
+    }
+    else if (u->child_cnt == 3)
+    {
+    }
+    else // ID LP Args RP
+    {
+    }
 }
 
 IR_tree *build_ifExp_IR_tree(const treeNode *u, const char *ltrue, const char *lfalse, const char *lend)
@@ -346,8 +391,7 @@ IR_tree *build_IR_tree(const treeNode *u)
     IR_tree *p;
     if (strcmp(u->name, "ExtDef") == 0)
     {
-        if (strcmp(u->child->name, "Specifier") == 0 &&
-            strcmp(u->child->next->name, "ExtDecList") == 0 &&
+        if (strcmp(u->child->name, "Specifier") == 0 && strcmp(u->child->next->name, "ExtDecList") == 0 &&
             ((Type *)(u->child->inheridata))->category != PRIMITIVE)
         {
             IR_tree *c1 = alloc_var_mem(u->child->next);

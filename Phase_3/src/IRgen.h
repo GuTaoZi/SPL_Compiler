@@ -8,6 +8,7 @@ typedef struct IR_tree
     char *stmt; // Only if child == NULL
     struct IR_tree *child;
     struct IR_tree *next;
+    bool is_leaf;
 } IR_tree;
 
 //// add a IR node with its children ////
