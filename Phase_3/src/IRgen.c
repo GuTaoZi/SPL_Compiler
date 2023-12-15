@@ -675,7 +675,7 @@ void output_IR_tree(const IR_tree *u, FILE *f)
 {
     if (u->child == NULL)
     {
-        if (u->stmt != NULL)
+        if (u->stmt != NULL && u->should_print)
         {
             fprintf(f, "%s\n", u->stmt);
         }
