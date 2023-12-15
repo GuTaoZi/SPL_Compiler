@@ -186,8 +186,8 @@ Stmt : SEMI                                     { add1($$, "Stmt", 1, $1); }
     | RETURN Exp SEMI                           { checkRetType($2->inheridata, $1->lineno); addn($$, "Stmt", 3, $1, $2, $3); }
     | IF LP Exp RP Stmt  %prec LOWER_ELSE       { addn($$, "Stmt", 5, $1, $2, $3, $4, $5); }
     | IF LP Exp RP Stmt ELSE Stmt               { addn($$, "Stmt", 7, $1, $2, $3, $4, $5, $6, $7); }
-    | WHILE LP Exp RP {++loop_cnt;} Stmt        { --loop_cnt; addn($$, "Stmt", 5, $1, $2, $3, $4, $5); }
-    | FOR LP DecList SEMI Exp SEMI Exp RP {++loop_cnt;} Stmt  %prec UPPER_FOR { --loop_cnt; addn($$, "Stmt", 9, $1, $2, $3, $4, $5, $6, $7, $8, $9); }
+    | WHILE LP Exp RP {++loop_cnt;} Stmt        { --loop_cnt; addn($$, "Stmt", 5, $1, $2, $3, $4, $6); }
+    | FOR LP DecList SEMI Exp SEMI Exp RP {++loop_cnt;} Stmt  %prec UPPER_FOR { --loop_cnt; addn($$, "Stmt", 9, $1, $2, $3, $4, $5, $6, $7, $8, $10); }
     // | FOR LP VarDec COLON Exp RP {++loop_cnt;} Stmt      %prec LOWER_FOR      { --loop_cnt; addn($$, "Stmt", 7, $1, $2, $3, $4, $5, $6, $7); }
     | BREAK SEMI                                { addn($$, "Stmt", 2, $1, $2); if(loop_cnt == 0) print_type_error(16, $1->lineno, "\'break\' outside of loop."); }
     | CONTINUE SEMI                             { addn($$, "Stmt", 2, $1, $2); if(loop_cnt == 0) print_type_error(16, $1->lineno, "\'continue\' outside of loop."); }

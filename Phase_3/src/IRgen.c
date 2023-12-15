@@ -70,6 +70,14 @@ char *alloc_tmpval()
     return tlabel;
 }
 
+size_t var_val_cnt = 0;
+char *alloc_varval()
+{
+    char *tlabel = (char *)malloc(sizeof(char) * (2 + mlg10(var_val_cnt)));
+    sprintf(tlabel, "v%zu", var_val_cnt);
+    return tlabel;
+}
+
 char ttmp[32768];
 
 IR_tree *build_paramDec_IR_tree(const treeNode *u)
@@ -92,6 +100,7 @@ IR_tree *build_params_IR_tree(const treeNode *u)
         IR_tree *c1 = build_paramDec_IR_tree(u->child);
         IR_tree *c2 = build_params_IR_tree(u->child->next->next);
         addIRn(p, 2, c1, c2);
+        return p;
     }
 }
 
@@ -103,7 +112,7 @@ IR_tree *build_assign_IR_tree(const char *result, const treeNode *u)
     IR_tree *c1 = build_normExp_IR_tree(u);
     sprintf(ttmp, "%s := %s", result, c1->stmt);
     IR_tree *c2 = new_IR_node(ttmp);
-    addIRn(p, 2, c1,c2);
+    addIRn(p, 2, c1, c2);
     return p;
 }
 
@@ -147,22 +156,23 @@ IR_tree *build_FunDec_IR_tree(const treeNode *u)
     IR_tree *c1 = new_IR_node(ttmp);
     IR_tree *c2;
     if (u->child->next->child_cnt == 4)
-        c2 = build_param_IR_tree(u->child->next->child->next->next);
+        c2 = build_params_IR_tree(u->child->next->child->next->next);
     else
         c2 = new_IR_node(NULL);
-    IR_tree *c3 = build_CompSt_IR_tree(u->child->next->next);
-    addIRn(p, 3, c1, c2, c3);
+    IR_tree *c3 = build_CompSt_IR_tree(u->child->next->next, NULL, NULL);
+    IR_tree *c4 = new_IR_node("RETURN #0");
+    addIRn(p, 4, c1, c2, c3, c4);
     return p;
 }
 
-IR_tree *build_CompSt_IR_tree(const treeNode *u)
+IR_tree *build_CompSt_IR_tree(const treeNode *u, const char *lloop_head, const char *lloop_end)
 {
     // All Stmts go here
     // Called by build_FunDec
     // u: CompSt
     IR_tree *p;
     IR_tree *c1 = build_defList_IR_tree(u->child->next);
-    IR_tree *c2 = build_stmtList_IR_tree(u->child->next->next);
+    IR_tree *c2 = build_stmtList_IR_tree(u->child->next->next, lloop_head, lloop_end);
     addIRn(p, 2, c1, c2);
     return p;
 }
@@ -183,13 +193,13 @@ IR_tree *build_defList_IR_tree(const treeNode *u)
         return NULL;
     }
 }
-IR_tree *build_stmtList_IR_tree(const treeNode *u)
+IR_tree *build_stmtList_IR_tree(const treeNode *u, const char *lloop_head, const char *lloop_end)
 {
     if (u->child_cnt == 2)
     {
         IR_tree *p;
-        IR_tree *c1 = build_stmt_IR_tree(u->child);
-        IR_tree *c2 = build_stmtList_IR_tree(u->child->next);
+        IR_tree *c1 = build_stmt_IR_tree(u->child, lloop_head, lloop_end);
+        IR_tree *c2 = build_stmtList_IR_tree(u->child->next, lloop_head, lloop_end);
         addIRn(p, 2, c1, c2);
         return p;
     }
@@ -206,10 +216,96 @@ IR_tree *build_def_IR_tree(const treeNode *u)
     // u: Def
 }
 
-IR_tree *build_stmt_IR_tree(const treeNode *u)
+IR_tree *build_stmt_IR_tree(const treeNode *u, const char *lloop_head, const char *lloop_end)
 {
     // from CompSt
     // u: Stmt
+    if (strcmp(u->child->name, "CompSt") == 0)
+    {
+        return build_CompSt_IR_tree(u->child, lloop_head, lloop_end);
+    }
+    else if (strcmp(u->child->name, "SEMI") == 0)
+    {
+        return new_IR_node("");
+    }
+    else if (u->child_cnt == 2)
+    {
+        if (strcmp(u->child->name, "Exp") == 0)
+        {
+            return build_normExp_IR_tree(u->child);
+        }
+        else if (strcmp(u->child->name, "BREAK") == 0)
+        {
+            sprintf(ttmp, "GOTO %s", lloop_end);
+            return new_IR_node(ttmp);
+        }
+        else if (strcmp(u->child->name, "CONTINUE") == 0)
+        {
+            sprintf(ttmp, "GOTO %s", lloop_head);
+            return new_IR_node(ttmp);
+        }
+        else
+        {
+            // Raise an error
+            return new_IR_node("error := #1");
+        }
+    }
+    else if (strcmp(u->child->name, "RETURN") == 0)
+    {
+        IR_tree *p;
+        IR_tree *c1 = build_normExp_IR_tree(u->child->next);
+        sprintf(ttmp, "RETURN %s", c1->stmt);
+        IR_tree *c2 = new_IR_node(ttmp);
+        addIRn(p, 2, c1,c2);
+        return p;
+    }
+    else if (strcmp(u->child->name, "IF") == 0)
+    {
+        if(u->child_cnt == 5) // No else
+        {
+            char *endlabel = alloc_label();
+            IR_tree *p;
+            IR_tree *c1 = build_ifExp_IR_tree(u->child->next->next, NULL, endlabel, endlabel);
+            IR_tree *c2 = build_stmt_IR_tree(u->child->next->next->next->next, lloop_head, lloop_end);
+            sprintf(ttmp, "LABEL %s", endlabel);
+            IR_tree *c3 = new_IR_node(ttmp);
+            addIRn(p, 3, c1,c2,c3);
+            free(endlabel);
+        } else {
+            char *falselabel = alloc_label();
+            char *endlabel = alloc_label();
+            IR_tree *p;
+            IR_tree *c1 = build_ifExp_IR_tree(u->child->next->next, NULL, falselabel, endlabel);
+
+            IR_tree *c2 = build_stmt_IR_tree(u->child->next->next->next->next, lloop_head, lloop_end);
+            
+            sprintf(ttmp, "GOTO %s", endlabel);
+            IR_tree *c3 = new_IR_node(ttmp);
+
+            sprintf(ttmp, "LABEL %s", falselabel);
+            IR_tree *c4 = new_IR_node(ttmp);
+
+            IR_tree *c5 = build_stmt_IR_tree(u->child->next->next->next->next->next->next, lloop_head, lloop_end);
+
+            sprintf(ttmp, "LABEL %s", endlabel);
+            IR_tree *c6 = new_IR_node(ttmp);
+            addIRn(p, 6, c1,c2,c3,c4,c5,c6);
+            free(endlabel);
+            free(falselabel);
+        }
+    }
+    else if (strcmp(u->child->name, "WHILE") == 0)
+    {
+        IR_tree *p;
+        char *loop_head = alloc_label();
+        char *loop_tail = alloc_label();
+        IR_tree *c1 = build_ifExp_IR_tree(u->child->next->next, NULL, loop_tail, loop_tail);
+        IR_tree *c2 = 
+    }
+    else
+    {
+        ;
+    }
 }
 
 IR_tree *build_normExp_IR_tree(const treeNode *u)
@@ -218,7 +314,7 @@ IR_tree *build_normExp_IR_tree(const treeNode *u)
     // u: Exp
 }
 
-IR_tree *build_ifExp_IR_tree(const treeNode *u, const char *ltrue, const char *lfalse)
+IR_tree *build_ifExp_IR_tree(const treeNode *u, const char *ltrue, const char *lfalse, const char *lend)
 {
     // Called by `if` or `loop` stmt
     // u: Exp
