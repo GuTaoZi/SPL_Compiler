@@ -6,10 +6,8 @@
 #include <stdarg.h>
 #include <string.h>
 
-#define DEBUG_OUTPUT
-#define DEBUG_MUCH_OUTPUT
-
-static treeNode *tntmp;
+// #define DEBUG_OUTPUT
+// #define DEBUG_MUCH_OUTPUT
 
 size_t mlg10(size_t u)
 {
@@ -283,6 +281,7 @@ IR_tree *build_FunDec_IR_tree(const treeNode *u)
 #endif
     // u: ExtDef
     IR_tree *p;
+    treeNode *tntmp;
     sprintf(ttmp, "FUNCTION %s :", (tntmp = u->child->next->child)->val);
     IR_tree *c1 = new_IR_node(ttmp);
     IR_tree *c2;
@@ -311,6 +310,7 @@ IR_tree *build_CompSt_IR_tree(const treeNode *u, const char *lloop_head, const c
     // u: CompSt
     IR_push_stack();
     IR_tree *p;
+    treeNode *tntmp;
     IR_tree *c1 = build_defList_IR_tree(tntmp = u->child->next);
     IR_tree *c2 = build_stmtList_IR_tree(tntmp->next, lloop_head, lloop_end);
     IR_pop_stack();
@@ -424,6 +424,7 @@ IR_tree *build_stmt_IR_tree(const treeNode *u, const char *lloop_head, const cha
             char *truelabel = alloc_label();
             char *endlabel = alloc_label();
             IR_tree *p;
+            treeNode *tntmp;
             IR_tree *c1 = build_ifExp_IR_tree(tntmp = u->child->next->next, truelabel, endlabel, endlabel);
             sprintf(ttmp, "LABEL %s :", truelabel);
             IR_tree *c2 = new_IR_node(ttmp);
@@ -441,6 +442,7 @@ IR_tree *build_stmt_IR_tree(const treeNode *u, const char *lloop_head, const cha
             char *falselabel = alloc_label();
             char *endlabel = alloc_label();
             IR_tree *p;
+            treeNode *tntmp;
             IR_tree *c1 = build_ifExp_IR_tree(tntmp = u->child->next->next, truelabel, falselabel, endlabel);
 
             sprintf(ttmp, "LABEL %s :", truelabel);
@@ -453,8 +455,8 @@ IR_tree *build_stmt_IR_tree(const treeNode *u, const char *lloop_head, const cha
 
             sprintf(ttmp, "LABEL %s :", falselabel);
             IR_tree *c5 = new_IR_node(ttmp);
-
-            IR_tree *c6 = build_stmt_IR_tree(tntmp = tntmp->next->next, lloop_head, lloop_end);
+            
+            IR_tree *c6 = build_stmt_IR_tree(tntmp->next->next, lloop_head, lloop_end);
 
             sprintf(ttmp, "LABEL %s :", endlabel);
             IR_tree *c7 = new_IR_node(ttmp);
@@ -472,6 +474,7 @@ IR_tree *build_stmt_IR_tree(const treeNode *u, const char *lloop_head, const cha
         char *nloop_tail = alloc_label();
 
         IR_tree *p;
+        treeNode *tntmp;
         sprintf(ttmp, "LABEL %s :", nloop_head);
         IR_tree *c1 = new_IR_node(ttmp);
         IR_tree *c2 = build_ifExp_IR_tree(tntmp = u->child->next->next, nloop_body, nloop_tail, nloop_tail);
@@ -497,6 +500,7 @@ IR_tree *build_stmt_IR_tree(const treeNode *u, const char *lloop_head, const cha
         char *nloop_body = alloc_label();
         char *nloop_tail = alloc_label();
 
+        treeNode *tntmp;
         IR_tree *c1 = build_normExp_IR_tree(tntmp = u->child->next->next); // first
 
         sprintf(ttmp, "LABEL %s :", nloop_head);
@@ -799,7 +803,6 @@ IR_tree *build_ifExp_IR_tree(const treeNode *u, const char *ltrue, const char *l
             IR_tree *c3 = build_ifExp_IR_tree(u3, ltrue, lfalse, lend);
             addIRn(p, 3, c1, c2, c3);
             free(lptrue);
-            printf("END AND\n");
             return p;
         }
         else if (strcmp(u2->name, "OR") == 0)
@@ -870,7 +873,6 @@ IR_tree *build_ifExp_IR_tree(const treeNode *u, const char *ltrue, const char *l
         }
         else if (strcmp(u2->name, "EQ") == 0)
         {
-            printf("BEG EQ\n");
             IR_tree *c1 = build_normExp_IR_tree(u1);
             IR_tree *c2 = build_normExp_IR_tree(u3);
             sprintf(ttmp, "IF %s == %s GOTO %s", c1->stmt, c2->stmt, ltrue);
@@ -878,7 +880,6 @@ IR_tree *build_ifExp_IR_tree(const treeNode *u, const char *ltrue, const char *l
             sprintf(ttmp, "GOTO %s", lfalse);
             IR_tree *c4 = new_IR_node(ttmp);
             addIRn(p, 4, c1, c2, c3, c4);
-            printf("END EQ\n");
             return p;
         }
         else
@@ -971,10 +972,8 @@ IR_tree *build_default_IR_tree(const treeNode *u)
         if (un == NULL)
             break;
         pn->next = build_IR_tree(un);
-        printf("build %s done\n", un->name);
         pn = pn->next;
     }
-    printf("default done\n");
     return p;
 }
 
