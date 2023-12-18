@@ -122,6 +122,15 @@ void inherit_struct(treeNode *u, treeNode *v, const treeNode *w)
         u->inheridata = tw;
 }
 
+void add_initial_functions()
+{
+    Type *p1 = makeFuncType("read", makeFieldList(NULL, ""));
+    addFuncRet(p1, makePrimType("int"));
+    add_something(p1, "read", 0, 0, "");
+    p1 = makeFuncType("write", makeFieldList(makePrimType("int"), "a"));
+    addFuncRet(p1, makePrimType("int"));
+    add_something(p1, "write", 0, 0, "");
+}
 void add_something(Type *p, const char *name, const int errorID, const size_t lineno, const char *error_msg)
 {
     if (current_scope_seek(name) == NULL)

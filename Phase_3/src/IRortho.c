@@ -11,7 +11,8 @@ static IR_orthoNode *IR_new_ortho_node(const char *name, const char *vname)
     IR_orthoNode *p = (IR_orthoNode *)malloc(sizeof(IR_orthoNode));
     strncpy(p->name, name, 31);
     p->name[31] = 0;
-    p->vname = vname;
+    p->vname = (char*)malloc(sizeof(char)*(strlen(vname)+1));
+    strcpy(p->vname, vname);
     p->next[0] = p->next[1] = NULL;
     return p;
 }

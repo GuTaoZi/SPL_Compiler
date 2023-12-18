@@ -26,26 +26,28 @@ typedef struct IR_tree
     {                             \
         self = new_IR_node(NULL); \
         self->child = v1;         \
+        v1->next = NULL;          \
     } while (0)
 //////// IR node add ends here /////////
 
 IR_tree *new_IR_node(const char *stmt);
 void add_IR_stmt(IR_tree *p, const char *stmt);
 void make_IR_list(int cnt, IR_tree *head, ...);
-IR_tree *alloc_var_mem(const treeNode *u);
 
 /// @brief Remember to free()
-/// @return 
+/// @return
 char *alloc_label();
 
 /// @brief Remember to free()
-/// @return 
+/// @return
 char *alloc_tmpvar();
 
 /// @brief Remember to free()
-/// @return 
+/// @return
 char *alloc_varval();
 
+IR_tree *build_ExtDecList_tree(const treeNode *u);
+IR_tree *build_DecList_tree(const treeNode *u);
 IR_tree *build_paramDec_IR_tree(const treeNode *u);
 IR_tree *build_params_IR_tree(const treeNode *u);
 IR_tree *build_assign_IR_tree(const char *result, const treeNode *u);

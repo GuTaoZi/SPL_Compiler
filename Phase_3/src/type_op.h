@@ -32,6 +32,7 @@ void inherit_array(treeNode *u, const treeNode *v, const treeNode *w);
 
 void inherit_struct(treeNode *u, treeNode *v, const treeNode *w);
 
+void add_initial_functions();
 void add_something(Type *p, const char *name, const int errorID, const size_t lineno, const char *error_msg);
 
 void add_others(Type *p, const size_t lineno, const char *name);

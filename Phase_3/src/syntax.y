@@ -56,7 +56,8 @@
 %%
 
 /* high-level definition */
-Program : { push_stack();funcRetTypeStack = utstack_push(funcRetTypeStack, makePrimType("int")); structFieldStack = utstack_push(structFieldStack, makeStructType("", makeFieldList(NULL, ""))); }
+Program : { push_stack(); funcRetTypeStack = utstack_push(funcRetTypeStack, makePrimType("int")); structFieldStack = utstack_push(structFieldStack, makeStructType("", makeFieldList(NULL, "")));
+            add_initial_functions();}
     HeaderDefList ExtDefList { addn($$, "Program", 2, $2, $3); root = $$; }
     ;
 
@@ -304,12 +305,13 @@ void yyerror(const char *s)
 }
 
 static char my_ttmp[32768];
+static char ofname[32768];
+static char optname[32768];
 
 int main(int argc, char **argv)
 {
     FILE *file_in;
     FILE *file_out;
-    FILE *file_opt;
     if (argc == 2 || argc == 3)
     {
         file_in = fopen(argv[1], "r");
@@ -322,24 +324,22 @@ int main(int argc, char **argv)
         int len = strlen(argv[1]);
         while (argv[1][len - 1] != '.')
             len--;
-        char *ofname = (char *)malloc((len + 4) * sizeof(char));
         for (int i = 0; i < len; i++)
             ofname[i] = argv[1][i];
         ofname[len] = 'i';
         ofname[len + 1] = 'r';
         ofname[len + 2] = '0';
         ofname[len + 3] = 0;
-        file_out = fopen(ofname, "w+");
+        file_out = fopen(ofname, "w");
         if (argc == 2)
         {
-            ofname[len + 2] = 0;
-            file_opt = fopen(ofname, "w");
+            strcpy(optname, ofname);
+            optname[len + 2] = 0;
         }
         else if (argc == 3)
         {
-            file_opt = fopen(argv[2], "w");
+            strcpy(optname, argv[2]);
         }
-        free(ofname);
 
         if (file_out == NULL)
         {
@@ -358,6 +358,7 @@ int main(int argc, char **argv)
         fprintf(stderr, "Parameters Error!\nShould be %s [input_file] [output_file]\n", argv[0]);
         return -1;
     }
+    printf("of:%s opt:%s\n", ofname, optname);
     yyin = file_in;
     yyout = file_out;
     yyparse();
@@ -365,6 +366,7 @@ int main(int argc, char **argv)
     if (!has_error)
     {
         if (root != NULL){
+            printf("**IR start:\n");
             IR_tree *IRroot = build_IR_tree(root);
             output_IR_tree(IRroot, file_out);
             need_optmize = true;
@@ -389,7 +391,8 @@ int main(int argc, char **argv)
             i++;
         }
         argv[0][pos] = 0;
-        sprintf(my_ttmp, "%s/optimizer %s %s", argv[0], file_out, file_opt);
+        sprintf(my_ttmp, "%s/optimizer %s %s", argv[0], ofname, optname);
+        printf(my_ttmp);
         system(my_ttmp);
     }
     return 0;

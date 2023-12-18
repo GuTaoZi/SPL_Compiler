@@ -1,0 +1,10 @@
+/*struct mat{
+    int data[2][2];
+};*/
+
+
+int main(){
+    // struct mat u;
+    int a = read();
+    write(a+read());
+}
