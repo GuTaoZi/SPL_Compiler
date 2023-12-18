@@ -873,7 +873,7 @@ IR_tree *build_ifExp_IR_tree(const treeNode *u, const char *ltrue, const char *l
     {
         goto default_if;
     }
-default_if:
+default_if:;
     IR_tree *c1 = build_normExp_IR_tree(u);
     sprintf(ttmp, "IF %s == #0 GOTO %s", c1->stmt, lfalse);
     IR_tree *c2 = new_IR_node(ttmp);
