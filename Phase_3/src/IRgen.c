@@ -87,6 +87,10 @@ char *alloc_varval()
 
 char ttmp[32768];
 
+char *get_IR_name(const char *){
+    return "";
+}
+
 IR_tree *build_paramDec_IR_tree(const treeNode *u)
 {
     // u: ParamDec

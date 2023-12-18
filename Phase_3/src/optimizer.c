@@ -1,10 +1,11 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 char s[32768];
 char ss[10][32768];
 
-inline char is_ws(const char c)
+inline static char is_ws(const char c)
 {
     return c == ' ' || c == '\n' || c == '\r' || c == '\t';
 }

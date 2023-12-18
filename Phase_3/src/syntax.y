@@ -8,7 +8,6 @@
     #include "type_op.h"
     #include "treeNode.h"
     #include "IRgen.h"
-    #include "optimizer.h"
     #include "lex.yy.c"
 
     extern size_t last_error_lineno;
