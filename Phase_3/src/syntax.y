@@ -276,7 +276,7 @@ Exp : Exp ASSIGN Exp    { addn($$, "Exp", 3, $1, $2, $3); inherit_type($$, $1, $
     | Exp LB Exp error  { add0($$, "Exp"); has_error = 1; print_B_error("Exp", $2->lineno, "Missing closing braces \']\'"); inherit_array($$, $1, $3); }
     ;
 
-Args : Exp COMMA Args   { addn($$, "Args", 3, $1, $2, $3); nowFL = addFieldList(nowFL, $1->inheridata, ""); }
+Args : Exp { nowFL = addFieldList(nowFL, $1->inheridata, ""); } COMMA Args   { addn($$, "Args", 3, $1, $3, $4); }
     | Exp               { add1($$, "Args", 1, $1); nowFL = addFieldList(nowFL, $1->inheridata, ""); }
     ;
 
@@ -392,7 +392,6 @@ int main(int argc, char **argv)
         }
         argv[0][pos] = 0;
         sprintf(my_ttmp, "%s/optimizer %s %s", argv[0], ofname, optname);
-        printf(my_ttmp);
         system(my_ttmp);
     }
     return 0;

@@ -256,7 +256,6 @@ IR_tree *build_args_IR_tree(const treeNode *u)
     }
     else
     {
-        IR_tree *p;
         char *tmp_val = alloc_tmpvar();
         IR_tree *c1 = build_assign_IR_tree(tmp_val, u->child);
         IR_tree *c2 = build_args_IR_tree(u->child->next->next);
@@ -330,8 +329,10 @@ IR_tree *build_defList_IR_tree(const treeNode *u)
     }
     else
     {
-        // return new_IR_node(NULL);
-        return NULL;
+        IR_tree *p = new_IR_node(NULL);
+        p->should_print = false;
+        return p;
+        //return NULL;
     }
 }
 IR_tree *build_stmtList_IR_tree(const treeNode *u, const char *lloop_head, const char *lloop_end)
@@ -349,8 +350,10 @@ IR_tree *build_stmtList_IR_tree(const treeNode *u, const char *lloop_head, const
     }
     else
     {
-        // return new_IR_node(NULL);
-        return NULL;
+        IR_tree *p = new_IR_node(NULL);
+        p->should_print = false;
+        return p;
+        // return NULL;
     }
 }
 
@@ -487,26 +490,26 @@ IR_tree *build_stmt_IR_tree(const treeNode *u, const char *lloop_head, const cha
         char *nloop_body = alloc_label();
         char *nloop_tail = alloc_label();
 
-        IR_tree *c1 = build_normExp_IR_tree(tntmp = u->child->next->next);
+        IR_tree *c1 = build_normExp_IR_tree(tntmp = u->child->next->next); // first
 
         sprintf(ttmp, "LABEL %s :", nloop_head);
         IR_tree *c2 = new_IR_node(ttmp);
 
-        IR_tree *c3 = build_ifExp_IR_tree(tntmp = tntmp->next->next, NULL, nloop_tail, nloop_tail);
+        IR_tree *c3 = build_ifExp_IR_tree(tntmp = tntmp->next->next, nloop_body, nloop_tail, nloop_tail); // if
 
         sprintf(ttmp, "LABEL %s :", nloop_body);
         IR_tree *c4 = new_IR_node(ttmp);
 
-        IR_tree *c5 = build_normExp_IR_tree(tntmp = tntmp->next->next);
+        IR_tree *c5 = build_normExp_IR_tree(tntmp = tntmp->next->next); // increase
 
-        IR_tree *c6 = build_stmt_IR_tree(tntmp = tntmp->next->next, nloop_head, nloop_tail);
+        IR_tree *c6 = build_stmt_IR_tree(tntmp = tntmp->next->next, nloop_head, nloop_tail); //body
 
         sprintf(ttmp, "GOTO %s", nloop_head);
         IR_tree *c7 = new_IR_node(ttmp);
         sprintf(ttmp, "LABEL %s :", nloop_tail);
         IR_tree *c8 = new_IR_node(ttmp);
 
-        addIRn(p, 8, c1, c2, c3, c4, c5, c6, c7, c8);
+        addIRn(p, 8, c1, c2, c3, c4, c6, c5, c7, c8);
         free(nloop_tail);
         free(nloop_body);
         free(nloop_head);
@@ -566,7 +569,6 @@ IR_tree *build_normExp_IR_tree(const treeNode *u)
         }
         else
         {
-            printf("hihi2\n");
             sprintf(ttmp, "#%s", uc->val);
             p = new_IR_node(ttmp);
             p->should_print = false;
