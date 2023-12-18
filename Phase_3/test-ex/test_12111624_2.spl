@@ -1,18 +1,56 @@
-int Fib(int n)
+struct point
 {
-    int p;
-    if(n==1||n==2)
+    int x, y;
+    int v;
+};
+
+struct map
+{
+    struct point size;
+    int data[100][100];
+};
+
+int is_inbound(int x, int y, struct map mp)
+{
+    if (1 <= x && x <= mp.size.x && 1 <= y && y <= mp.size.y && mp.data[x][y] != 1)
     {
         return 1;
     }
-    p = Fib(n-1) + Fib(n-2);
-    write(p);
-    return p;
+    return 0;
+}
+
+int dfs(int x, int y, struct map mp)
+{
+    int dx[4];
+    int dy[4];
+    int ls = 4, i;
+    dx[0] = dx[1] = dy[2] = dy[3] = 0;
+    dx[2] = dy[0] = 1;
+    dx[3] = dy[1] = -1;
+    if (!is_inbound(x, y, mp))
+    {
+        return 0;
+    }
+    if(mp.data[x][y]==2) return 1;
+    mp.data[x][y] = 1;
+    for (i = 0; i < ls; i = i + 1)
+        if (dfs(x + dx[i], y + dy[i], mp))
+            return 1;
+    return 0;
 }
 
 int main()
 {
-    int n;
+    int n, i, j;
+    struct map mp;
     n = read();
-    write(Fib(n));
+    mp.size.x = mp.size.y = n;
+    for (i = 1; i <= n; i = i + 1)
+        for (j = 1; j <= n; j = j + 1)
+            mp.data[i][j] = read();
+    write(dfs(1, 1, mp));
+    return 0;
 }
+
+// input: 3,0,1,2,0,1,0,0,0,0
+// or 3,0,1,2,0,1,0,0,1,0

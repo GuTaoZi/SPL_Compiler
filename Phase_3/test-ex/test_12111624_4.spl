@@ -1,16 +1,27 @@
-int a(int n)
-{
-    int i;
-    int pp[200];
-    pp[1]=pp[2]=1;
-    for (i = 3; i <= n; i = i + 1)
-    {
-        pp[i]=pp[i-1]+pp[i-2];
-        write(pp[i]);
+int gaussEliminate(int gauss[50][50], int n){
+    int i,j,k;
+    for(i=0;i<n;i=i+1){
+        for(k=i+1;k<n;k=k+1){
+            int frac = gauss[k][i]/gauss[i][i];
+            for(j=0;j<n;j=j+1){
+                gauss[k][j] = gauss[k][j] - frac*gauss[i][j];
+            }
+        }
+    }
+    for(i=0;i<n;i=i+1){
+        write(gauss[i][i]);
     }
 }
-
-int main()
-{
-    a(20);
+int main(){
+    int n = read(),i,j;
+    int gauss[50][50];
+    for (i=0;i<n;i=i=i+1){
+        for(j=0;j<n;j=j+1){
+            gauss[i][j]=read();
+        }
+    }
+    gaussEliminate(gauss, n);
 }
+
+// input: 3,1,0,1,3,2,4,2,4,7
+// output: 1, 2, 3
