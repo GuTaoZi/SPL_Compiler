@@ -1,33 +1,18 @@
-struct w1
+int fib(int n)
 {
-    int a[1];
-};
-
-struct w2
-{
-    int a[2];
-};
-
-struct w3
-{
-    int a[3];
-};
-
-struct w4
-{
-    int a[4];
-};
-
-int foo(struct w1 a, struct w2 b, struct w3 c, struct w4 d)
-{
-    a.a[0]=1;
+    int a[100];
+    int i;
+    a[0] = a[1] = 1;
+    for (i = 2; i <= n; i = i + 1)
+    {
+        a[i] = a[i - 1] + a[i - 2];
+        write(a[i]);
+    }
+    write(a[n]);
 }
 
 int main()
 {
-    struct w1 x;
-    struct w2 y;
-    struct w3 z;
-    struct w4 w;
-    foo(x,y,z,w);
+    int n = read();
+    fib(n);
 }
