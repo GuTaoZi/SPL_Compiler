@@ -8,3 +8,4 @@ tmp*
 ./*.spl
 test.out
 test.spl
+**/irsim.log
