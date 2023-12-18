@@ -1,16 +1,8 @@
-int a(int n)
-{
+int main(){
     int i;
-    int pp[200];
-    pp[1]=pp[2]=1;
-    for (i = 3; i <= n; i = i + 1)
-    {
-        pp[i]=pp[i-1]+pp[i-2];
-        write(pp[i]);
+    for(i=0;i<10;i=i+1){
+        if(i==2) continue;
+        if(i==5) break;
+        write(i);
     }
-}
-
-int main()
-{
-    a(20);
 }
