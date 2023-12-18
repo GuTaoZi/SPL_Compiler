@@ -1,0 +1,18 @@
+int Fib(int n)
+{
+    int p;
+    if(n==1||n==2)
+    {
+        return 1;
+    }
+    p = Fib(n-1) + Fib(n-2);
+    write(p);
+    return p;
+}
+
+int main()
+{
+    int n;
+    n = read();
+    write(Fib(n));
+}

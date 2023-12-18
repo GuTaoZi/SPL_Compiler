@@ -1,8 +1,8 @@
 #ifndef _IRGEN_H_
 #define _IRGEN_H_
 
-#include "treeNode.h"
 #include "IRortho.h"
+#include "treeNode.h"
 
 typedef struct IR_tree
 {
