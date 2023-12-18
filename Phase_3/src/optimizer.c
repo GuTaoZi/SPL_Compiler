@@ -34,8 +34,8 @@ void optimize(FILE *fin, FILE *fout)
 {
     while (fscanf(fin, "%[^\n]", s) != EOF)
     {
+        fscanf(fin, "%*c");
         split_str(s);
-        printf("nl\n");
         // similar to ss = s.split(whitespace), ss : list
         if (strncmp(s, "LABEL", 5) == 0)
         {

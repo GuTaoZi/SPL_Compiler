@@ -747,18 +747,20 @@ IR_tree *build_ref_IR_tree(const treeNode *u, bool is_ptr)
     {
         IR_tree *p;
         IR_tree *c1 = build_ref_IR_tree(u->child, true);
-        sprintf(ttmp, "%s := %s + #%zu", c1->stmt, c1->stmt, get_offset_Struct(u->child->inheridata, u->child->next->next->val));
+        char *tname = alloc_tmpvar();
+        sprintf(ttmp, "%s := %s + #%zu", tname, c1->stmt, get_offset_Struct(u->child->inheridata, u->child->next->next->val));
         IR_tree *c2 = new_IR_node(ttmp);
         addIRn(p, 2, c1, c2);
-        if (is_ptr)
+        if (!is_ptr)
         {
-            sprintf(ttmp, "*%s", c1->stmt);
+            sprintf(ttmp, "*%s", tname);
             add_IR_stmt(p, ttmp);
         }
         else
         {
-            add_IR_stmt(p, c1->stmt);
+            add_IR_stmt(p, tname);
         }
+        free(tname);
         return p;
     }
     else
@@ -769,19 +771,21 @@ IR_tree *build_ref_IR_tree(const treeNode *u, bool is_ptr)
         char *ttva = alloc_tmpvar();
         sprintf(ttmp, "%s := #%zu * %s", ttva, get_array_size(u->child->inheridata), c2->stmt);
         IR_tree *c3 = new_IR_node(ttmp);
-        sprintf(ttmp, "%s := %s + %s", c1->stmt, c1->stmt, ttva);
+        char *tname = alloc_tmpvar();
+        sprintf(ttmp, "%s := %s + %s", tname, c1->stmt, ttva);
         IR_tree *c4 = new_IR_node(ttmp);
         addIRn(p, 4, c1, c2, c3, c4);
         free(ttva);
-        if (is_ptr)
+        if (!is_ptr)
         {
-            sprintf(ttmp, "*%s", c1->stmt);
+            sprintf(ttmp, "*%s", tname);
             add_IR_stmt(p, ttmp);
         }
         else
         {
-            add_IR_stmt(p, c1->stmt);
+            add_IR_stmt(p, tname);
         }
+        free(tname);
         return p;
     }
 }
@@ -832,8 +836,12 @@ IR_tree *build_IR_tree(const treeNode *u)
         }
         else
         {
-            ;
+            p=new_IR_node(NULL);
+            p->should_print = false;
         }
+        #ifdef DEBUG_OUTPUT
+            printf("leave: %s: %s\n",__FUNCTION__, u->name);
+        #endif
         return p;
     }
     else if (strcmp(u->name, "Def") == 0)

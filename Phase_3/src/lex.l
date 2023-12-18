@@ -91,8 +91,8 @@ INVALID_NUMBER (0{digit}*)|(({FLOAT}\.({digit}|\.)*))|({hexadecimal}\.({digit}|\
 {INVALID_CHAR}                          { yylval = new_node("INVALID", yytext, yylineno); has_error = 1; print_A_error(yylineno, yytext); return INVALID; }
 {INVALID_NUMBER}                        { yylval = new_node("INVALID", yytext, yylineno); has_error = 1; print_A_error(yylineno, yytext); return INVALID; }
 ({INT}{ID})|{INVALID_CHAR}              { yylval = new_node("INVALID", yytext, yylineno); has_error = 1; print_A_error(yylineno, yytext); return INVALID; }
-"//".*$                       { fprintf(yyout,"Single LINE COMMENT at Line %d\n", yylineno); }
-"/*"((("*"[^/])?)|[^*])*"*/"  { fprintf(yyout,"MULTI LINE COMMENT at Line %d\n", yylineno); }
+"//".*$                       { }
+"/*"((("*"[^/])?)|[^*])*"*/"  { }
 {ws}|{new_line} {;}
 . { yylval = new_node("INVALID_ID", yytext, yylineno); has_error = 1; print_A_error(yylineno, yytext); return INVALID; }
 
