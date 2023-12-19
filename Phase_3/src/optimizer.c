@@ -11,13 +11,14 @@ typedef struct IR_list
 
 IR_list root;
 char ss[10][32768];
+int lss;
 IR_list *new_IR_list(IR_list *prev)
 {
     IR_list *p = (IR_list *)malloc(sizeof(IR_list));
     for (int i = 0; i < 10; i++)
     {
         size_t ll = strlen(ss[i]);
-        if (ll == 0)
+        if (ll == 0 || i>=lss)
         {
             p->ss[i] = NULL;
         }
@@ -59,6 +60,83 @@ void split_str(const char *s)
         l2 = 0;
         ++l1;
     }
+    lss=l1;
+}
+
+void del_list(IR_list *p)
+{
+    if (p->prev != NULL)
+    {
+        p->prev->next = p->next;
+    }
+    if (p->next != NULL)
+    {
+        p->next->prev = p->prev;
+    }
+    free(p);
+}
+
+char opt_if(IR_list *u)
+{
+    char flg = 0;
+    while (u != NULL)
+    {
+        if (strcmp(u->ss[0], "IF") == 0)
+        {
+            if (u->next != NULL && strcmp(u->next->ss[0], "GOTO") == 0 &&
+                u->next->next != NULL && strcmp(u->next->next->ss[0], "LABEL") == 0)
+            {
+                if (strcmp(u->ss[5], u->next->next->ss[1]) == 0)
+                {
+                    free(u->ss[5]);
+                    int ll = strlen(u->next->ss[1]);
+                    u->ss[5] = (char *)malloc(sizeof(char) * (ll + 1));
+                    strcpy(u->ss[5], u->next->ss[1]);
+                    u->ss[5][ll] = 0;
+
+                    del_list(u->next);
+
+                    if (u->ss[2][0] == '=')
+                    {
+                        u->ss[2][0] = '!';
+                    }
+                    else if (u->ss[2][0] == '<')
+                    {
+                        u->ss[2][0] = '>';
+                    }
+                    else if (u->ss[2][0] == '>')
+                    {
+                        u->ss[2][0] = '<';
+                    }
+                    else if (u->ss[2][0] == '!')
+                    {
+                        u->ss[2][0] = '=';
+                    }
+                    flg = 1;
+                }
+            }
+        }
+        u = u->next;
+    }
+    return flg;
+}
+
+char opt_exp(IR_list *u)
+{
+    return 0;
+}
+
+void output_list(const IR_list *u, FILE *fout)
+{
+    while (u != NULL)
+    {
+        for (int i = 0; u->ss[i] != NULL; ++i)
+        {
+            fprintf(fout, "%s ", u->ss[i]);
+        }
+        fprintf(fout, "\n");
+        u = u->next;
+    }
 }
 
 void optimize(FILE *fin, FILE *fout)
@@ -78,6 +156,21 @@ void optimize(FILE *fin, FILE *fout)
             nowp = new_IR_list(nowp);
         }
     }
+
+    while (1)
+    {
+        if (opt_if(root))
+        {
+            continue;
+        }
+        else if (opt_exp(root))
+        {
+            continue;
+        }
+        break;
+    }
+
+    output_list(root, fout);
 
     // if (strncmp(s, "LABEL", 5) == 0)
     // {
@@ -123,6 +216,7 @@ void optimize(FILE *fin, FILE *fout)
 
 int main(int argc, char **argv)
 {
+    printf("START OPTMIZER\n");
     if (argc < 3)
     {
         fprintf(stderr, "useage: %s <in_file> <out_file>\n", argv[0]);
