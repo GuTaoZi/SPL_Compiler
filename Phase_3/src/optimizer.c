@@ -1,6 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
+#include <limits.h>
+
+#include "GAS_utility.h"
+
 
 char s[32768];
 typedef struct IR_list
@@ -11,6 +16,7 @@ typedef struct IR_list
 
 char ss[10][32768];
 int lss;
+
 IR_list *new_IR_list(IR_list *prev)
 {
     IR_list *p = (IR_list *)malloc(sizeof(IR_list));
@@ -72,12 +78,23 @@ void del_list(IR_list *p)
     {
         p->next->prev = p->prev;
     }
+    for(int i=0;i<10;++i)
+        if(p->ss[i] != NULL)
+            free(p->ss[i]);
     free(p);
 }
 
-char opt_if(IR_list *u)
+size_t get_list_len(IR_list *list)
 {
-    char flg = 0;
+    for (int i = 0; ; i++)
+        if (list->ss[i] == NULL)
+            return i;
+}
+
+
+bool opt_if(IR_list *u)
+{
+    bool flg = false;
     while (u != NULL)
     {
         if (strcmp(u->ss[0], "IF") == 0)
@@ -140,7 +157,7 @@ char opt_if(IR_list *u)
                        LABEL: Lu*/
                     u=u->next;
                     del_list(u->prev);
-                    flg = 1;
+                    flg = true;
                 }
             }
         }
@@ -151,7 +168,7 @@ char opt_if(IR_list *u)
                        LABEL: Lu*/
                     u=u->next;
                     del_list(u->prev);
-                    flg = 1;
+                    flg = true;
                 }
             }
         }
@@ -160,8 +177,160 @@ char opt_if(IR_list *u)
     return flg;
 }
 
+
+typedef struct _Var
+{
+    char name[7]; // "?65535\0"
+    Var *parent[2];
+    IR_list *recent_ir, parent_ir[2];
+    bool constant;
+    size_t val;
+} Var;
+
+Var v_var[USHRT_MAX], t_var[USHRT_MAX];
+bool useful_v[USHRT_MAX], useful_t[USHRT_MAX];
+
+
+Var *get_var(const char *name)
+{
+    switch (name[0])
+    {
+        case 'v':
+            return &v_var[atoi(name + 1)];
+        case 't':
+            return &t_var[atoi(name + 1)];
+        case '#':
+            return new_contant_var(name + 1);
+        case '&':
+        case '*':
+            return get_var(name + 1);
+    }
+}
+
+bool equal_var(Var *a, Var *b)
+{
+    // TODO
+    return false;
+}
+
+char *val_to_const(size_t val)
+{
+    size_t len = mlg10(val);
+    char *ss = (char *)malloc(sizeof(char) * (len + 2));
+    for (size_t i = 0; i < len; i++)
+    {
+        ss[i] = val % 10;
+        val /= 10;
+    }
+    ss[len] = '#';
+    reverse_str(ss, len + 1);
+    return ss;
+}
+
+size_t calc(size_t a, size_t b, char op)
+{
+    switch (op)
+    {
+        case '+':
+            return a + b;
+        case '-':
+            return a - b;
+        case '*':
+            return a * b;
+        case '/':
+            return a / b;
+    }
+}
+
+void simplify_IR(IR_list *ir)
+{
+    Var *x = get_var(ir->ss[0]);
+    x->recent_ir = ir;
+    switch (get_list_len(ir->ss))
+    {
+        case 3:
+            if (ir->ss[2][0] == '&' || ir->ss[2][0] == '*')
+                break;
+            Var *y = get_var(ir->ss[3]);
+            if (y->constant = true)
+            {
+                ir->ss[3] = val_to_const(y->val);
+            }
+            if (ir->ss[0][0] != '*')
+                *x = *y;
+            break;
+        case 5:
+            Var *y = get_var(ir->ss[2]), *z = get_var(ir->ss[4]);
+            char op = ir->ss[3];
+            if (y->constant && z->constant)
+            {
+                x->constant = true;
+                x->val = (y->val, z->val, op);
+                for (size_t i = 2; i <= 4; i++)
+                {
+                    free(ir->ss[i]);
+                    ir->ss[i] = NULL;
+                }
+                ir->ss[2] = val_to_const(x->val);
+            }
+            else if ((op == '*' && ((y->constant && y->val == 0) || (z->constant && z->val == 0))) ||
+                     (op == '-' && equal_var(y, z)) ||
+                     (op == '/' && y->constant && y->val == 0))
+            {
+                x->constant = true;
+                x->val = 0;
+                for (size_t i = 2; i <= 4; i++)
+                {
+                    free(ir->ss[i]);
+                    ir->ss[i] = NULL;
+                }
+                ir->ss[2] = val_to_const(0);
+            }
+            break;
+    }
+}
+
 char opt_exp(IR_list *u)
 {
+    memset(v_var, 0, sizeof(v_var));
+    memset(t_var, 0, sizeof(t_var));
+    IR_list *ir, *tail;
+
+    // pos: simplify const ops
+    while (ir != NULL)
+    {
+        if (strcmp(ir->ss[1], ":=") == 0)
+        {
+            if (strcmp(ir->ss[2], "CALL"));
+            else
+                simplify_IR(ir);
+        }
+
+        if (ir->next == NULL)
+            tail = ir;
+        ir = ir->next;
+    }
+
+    // neg: remove useless vars
+    ir = tail;
+    while (ir != NULL)
+    {
+        if (strcmp(ir->ss[1], ":=") == 0);
+        else if (strcmp(ir->ss[0], "LABEL") == 0);
+        else if (strcmp(ir->ss[0], "FUNCTION") == 0);
+        else if (strcmp(ir->ss[0], "GOTO") == 0);
+        else if (strcmp(ir->ss[0], "IF") == 0);
+        else if (strcmp(ir->ss[0], "RETURN") == 0);
+        else if (strcmp(ir->ss[0], "DEC") == 0);
+        else if (strcmp(ir->ss[0], "PARAM") == 0);
+        else if (strcmp(ir->ss[0], "ARG") == 0);
+        else if (strcmp(ir->ss[0], "READ") == 0);
+        else if (strcmp(ir->ss[0], "WRITE") == 0)
+        ir = ir->prev;
+    }
+    for (int i = 0; i < useful_cnt; i++)
+        inhert_useful(useful_var[i]);
+    
     return 0;
 }
 

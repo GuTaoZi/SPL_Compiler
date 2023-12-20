@@ -1,6 +1,7 @@
 #include "IRgen.h"
 #include "type.h"
 #include "IRortho.h"
+#include "GAS_utility.h"
 
 #include <assert.h>
 #include <stdarg.h>
@@ -8,17 +9,6 @@
 
 // #define DEBUG_OUTPUT
 // #define DEBUG_MUCH_OUTPUT
-
-size_t mlg10(size_t u)
-{
-    size_t n = 0;
-    do
-    {
-        u /= 10;
-        n += 1;
-    } while (u);
-    return n;
-}
 
 IR_tree *new_IR_node(const char *stmt)
 {
