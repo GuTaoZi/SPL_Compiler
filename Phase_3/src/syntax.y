@@ -358,7 +358,6 @@ int main(int argc, char **argv)
         fprintf(stderr, "Parameters Error!\nShould be %s [input_file] [output_file]\n", argv[0]);
         return -1;
     }
-    printf("of:%s opt:%s\n", ofname, optname);
     yyin = file_in;
     yyout = file_out;
     yyparse();
@@ -366,7 +365,6 @@ int main(int argc, char **argv)
     if (!has_error)
     {
         if (root != NULL){
-            printf("**IR start:\n");
             IR_tree *IRroot = build_IR_tree(root);
             output_IR_tree(IRroot, file_out);
             need_optmize = true;

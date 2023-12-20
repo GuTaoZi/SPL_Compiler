@@ -39,9 +39,9 @@ void add_others(Type *p, const size_t lineno, const char *name);
 
 void add_identifier(treeNode *p);
 
-type_stack *utstack_push(type_stack *root, Type *nowType);
+type_stack *utstack_push(type_stack *rootx, Type *nowType);
 
-type_stack *utstack_pop(type_stack *root);
+type_stack *utstack_pop(type_stack *rootx);
 
 void checkRetType(Type *ret2, const size_t lineno);
 

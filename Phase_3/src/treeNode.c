@@ -4,13 +4,17 @@
 #include <stdio.h>
 #include <string.h>
 
+// #define TREE_OUTPUT
+
 const char *need_output[] = {"INT", "FLOAT", "CHAR", "STRING", "TYPE", "ID", "INCLUDE"};
 const int lno = 7;
 
 treeNode *new_node(const char *name, const char *val, size_t lino)
 {
-    // fprintf(yyout, "NODE GET:%s - %s\n", name, val);
-    // fflush(yyout);
+#ifdef TREE_OUTPUT
+    fprintf(yyout, "NODE GET:%s - %s\n", name, val);
+    fflush(yyout);
+#endif
     treeNode *p = (treeNode *)malloc(sizeof(treeNode));
     p->name = name;
     if (val == NULL)

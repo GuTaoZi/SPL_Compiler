@@ -182,20 +182,20 @@ void add_identifier(treeNode *p)
     }
 }
 
-type_stack *utstack_push(type_stack *root, Type *nowType)
+type_stack *utstack_push(type_stack *rootx, Type *nowType)
 {
-    // printf("ut_push: %p, %p\n", root, nowType);
+    // printf("ut_push: %p, %p\n", rootx, nowType);
     type_stack *p = (type_stack *)malloc(sizeof(type_stack));
     p->data = nowType;
-    STACK_PUSH(root, p);
-    return root;
+    STACK_PUSH(rootx, p);
+    return rootx;
 }
-type_stack *utstack_pop(type_stack *root)
+type_stack *utstack_pop(type_stack *rootx)
 {
     // printf("ut_pop: %p\n", root);
     type_stack *p;
-    STACK_POP(root, p);
-    return root;
+    STACK_POP(rootx, p);
+    return rootx;
 }
 void checkRetType(Type *ret2, const size_t lineno)
 {

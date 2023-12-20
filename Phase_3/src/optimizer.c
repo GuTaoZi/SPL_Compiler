@@ -9,7 +9,6 @@ typedef struct IR_list
     struct IR_list *next, *prev;
 } IR_list;
 
-IR_list root;
 char ss[10][32768];
 int lss;
 IR_list *new_IR_list(IR_list *prev)
@@ -83,35 +82,75 @@ char opt_if(IR_list *u)
     {
         if (strcmp(u->ss[0], "IF") == 0)
         {
-            if (u->next != NULL && strcmp(u->next->ss[0], "GOTO") == 0 &&
-                u->next->next != NULL && strcmp(u->next->next->ss[0], "LABEL") == 0)
-            {
-                if (strcmp(u->ss[5], u->next->next->ss[1]) == 0)
-                {
-                    free(u->ss[5]);
-                    int ll = strlen(u->next->ss[1]);
-                    u->ss[5] = (char *)malloc(sizeof(char) * (ll + 1));
-                    strcpy(u->ss[5], u->next->ss[1]);
-                    u->ss[5][ll] = 0;
+            // if (u->next != NULL && strcmp(u->next->ss[0], "GOTO") == 0 &&
+            //     u->next->next != NULL && strcmp(u->next->next->ss[0], "LABEL") == 0)
+            // {
+            //     if (strcmp(u->ss[5], u->next->next->ss[1]) == 0)
+            //     {
+            //         free(u->ss[5]);
+            //         int ll = strlen(u->next->ss[1]);
+            //         u->ss[5] = (char *)malloc(sizeof(char) * (ll + 1));
+            //         strcpy(u->ss[5], u->next->ss[1]);
+            //         u->ss[5][ll] = 0;
 
-                    del_list(u->next);
+            //         del_list(u->next);
 
-                    if (u->ss[2][0] == '=')
-                    {
-                        u->ss[2][0] = '!';
-                    }
-                    else if (u->ss[2][0] == '<')
-                    {
-                        u->ss[2][0] = '>';
-                    }
-                    else if (u->ss[2][0] == '>')
-                    {
-                        u->ss[2][0] = '<';
-                    }
-                    else if (u->ss[2][0] == '!')
-                    {
-                        u->ss[2][0] = '=';
-                    }
+            //         if (u->ss[2][0] == '=')
+            //         {
+            //             u->ss[2][0] = '!';
+            //         }
+            //         else if (u->ss[2][0] == '!')
+            //         {
+            //             u->ss[2][0] = '=';
+            //         }
+            //         else if (u->ss[2][0] == '<')
+            //         {
+            //             free(u->ss[2]);
+            //             if(u->ss[2][1] == '='){
+            //                 u->ss[2] = (char*)malloc(sizeof(char)*2);
+            //                 u->ss[2][0]='>';
+            //                 u->ss[2][1]=0;
+            //             } else {
+            //                 u->ss[2] = (char*)malloc(sizeof(char)*3);
+            //                 u->ss[2][0]='>';
+            //                 u->ss[2][1]='=';
+            //                 u->ss[2][2]=0;
+            //             }
+            //         }
+            //         else if (u->ss[2][0] == '>')
+            //         {
+            //             free(u->ss[2]);
+            //             if(u->ss[2][1] == '='){
+            //                 u->ss[2] = (char*)malloc(sizeof(char)*2);
+            //                 u->ss[2][0]='<';
+            //                 u->ss[2][1]=0;
+            //             } else {
+            //                 u->ss[2] = (char*)malloc(sizeof(char)*3);
+            //                 u->ss[2][0]='<';
+            //                 u->ss[2][1]='=';
+            //                 u->ss[2][2]=0;
+            //             }
+            //         }
+            //         flg = 1;
+            //     }
+            // }
+            if (u->next != NULL && strcmp(u->next->ss[0], "LABEL") == 0){
+                if(strcmp(u->ss[5], u->next->ss[1]) == 0){
+                    /* IF xxx GOTO Lu
+                       LABEL: Lu*/
+                    u=u->next;
+                    del_list(u->prev);
+                    flg = 1;
+                }
+            }
+        }
+        if(strcmp(u->ss[0], "GOTO") == 0){
+            if (u->next != NULL && strcmp(u->next->ss[0], "LABEL") == 0){
+                if(strcmp(u->ss[1], u->next->ss[1]) == 0){
+                    /* GOTO Lu
+                       LABEL: Lu*/
+                    u=u->next;
+                    del_list(u->prev);
                     flg = 1;
                 }
             }
@@ -141,15 +180,15 @@ void output_list(const IR_list *u, FILE *fout)
 
 void optimize(FILE *fin, FILE *fout)
 {
-    IR_list *root = NULL, *nowp;
+    IR_list *rootw = NULL, *nowp;
     while (fscanf(fin, "%[^\n]", s) != EOF)
     {
         fscanf(fin, "%*c");
         split_str(s); // similar to ss = s.split(whitespace), ss : list
-        if (root == NULL)
+        if (rootw == NULL)
         {
-            root = new_IR_list(NULL);
-            nowp = root;
+            rootw = new_IR_list(NULL);
+            nowp = rootw;
         }
         else
         {
@@ -159,18 +198,18 @@ void optimize(FILE *fin, FILE *fout)
 
     while (1)
     {
-        if (opt_if(root))
+        if (opt_if(rootw))
         {
             continue;
         }
-        else if (opt_exp(root))
+        else if (opt_exp(rootw))
         {
             continue;
         }
         break;
     }
 
-    output_list(root, fout);
+    output_list(rootw, fout);
 
     // if (strncmp(s, "LABEL", 5) == 0)
     // {
@@ -216,7 +255,6 @@ void optimize(FILE *fin, FILE *fout)
 
 int main(int argc, char **argv)
 {
-    printf("START OPTMIZER\n");
     if (argc < 3)
     {
         fprintf(stderr, "useage: %s <in_file> <out_file>\n", argv[0]);
