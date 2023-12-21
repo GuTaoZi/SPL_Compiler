@@ -46,6 +46,10 @@ char *alloc_tmpvar();
 /// @return
 char *alloc_varval();
 
+extern size_t label_cnt;
+extern size_t tmp_val_cnt;
+extern size_t var_val_cnt;
+
 IR_tree *build_ExtDecList_tree(const treeNode *u);
 IR_tree *build_DecList_tree(const treeNode *u);
 IR_tree *build_paramDec_IR_tree(const treeNode *u);
