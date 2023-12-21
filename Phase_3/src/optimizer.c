@@ -7,6 +7,8 @@
 #include "GAS_utility.h"
 
 
+size_t label_cnt, tmp_cnt, var_cnt;
+
 char s[32768];
 typedef struct IR_list
 {
@@ -90,7 +92,6 @@ size_t get_list_len(IR_list *list)
         if (list->ss[i] == NULL)
             return i;
 }
-
 
 bool opt_if(IR_list *u)
 {
@@ -178,14 +179,28 @@ bool opt_if(IR_list *u)
 }
 
 
+struct _Parent;
+
 typedef struct _Var
 {
-    char name[7]; // "?65535\0"
-    Var *parent[2];
-    IR_list *recent_ir, parent_ir[2];
-    bool constant;
-    size_t val;
+    enum
+    {
+        VAR,
+        CONST,
+        FUNC,
+    } type;
+
+    // char name[7]; // "?65535\0"
+    IR_list *recent_ir;
+    int val;
+    struct _Parent parent[2];
 } Var;
+
+typedef struct _Parent
+{
+    Var *var;
+    IR_list *recent;
+} Parent;
 
 Var v_var[USHRT_MAX], t_var[USHRT_MAX];
 bool useful_v[USHRT_MAX], useful_t[USHRT_MAX];
@@ -207,16 +222,28 @@ Var *get_var(const char *name)
     }
 }
 
-bool equal_var(Var *a, Var *b)
+bool equal_parent(Parent a, Parent b)
 {
-    // TODO
-    return false;
+    if (a.var == NULL && b.var == NULL)
+        return true;
+    if ((a.var == NULL) + (b.var == NULL) == 1)
+        return false;
+    return a.var == b.var ||
+        (a.var->type == CONST && b.var->type == CONST && a.var->val == b.var->val);
 }
 
-char *val_to_const(size_t val)
+bool equal_var(Var *a, Var *b) // a and b can't both be constant
 {
-    size_t len = mlg10(val);
-    char *ss = (char *)malloc(sizeof(char) * (len + 2));
+    return a == b ||
+        (equal_parent(a->parent[0], b->parent[0]) && equal_parent(a->parent[1], b->parent[1])) ||
+        (equal_parent(a->parent[0], b->parent[1]) && equal_parent(a->parent[1], b->parent[0]));
+}
+
+char *val_to_const(int val)
+{
+    bool neg = val < 0;
+        size_t len = mlg10(abs(val));
+    char *ss = (char *)malloc(sizeof(char) * (len + neg + 2));
     for (size_t i = 0; i < len; i++)
     {
         ss[i] = val % 10;
@@ -227,7 +254,7 @@ char *val_to_const(size_t val)
     return ss;
 }
 
-size_t calc(size_t a, size_t b, char op)
+int calc(int a, int b, char op)
 {
     switch (op)
     {
@@ -248,24 +275,34 @@ void simplify_IR(IR_list *ir)
     x->recent_ir = ir;
     switch (get_list_len(ir->ss))
     {
+        // (*)x := (*&)y
         case 3:
             if (ir->ss[2][0] == '&' || ir->ss[2][0] == '*')
                 break;
             Var *y = get_var(ir->ss[3]);
-            if (y->constant = true)
+            if (y->type == CONST)
             {
                 ir->ss[3] = val_to_const(y->val);
             }
             if (ir->ss[0][0] != '*')
-                *x = *y;
+            {
+                x->parent[0] = (Parent){y, y->recent_ir};
+                x->parent[1] = (Parent){NULL, NULL};
+                x->type = y->type;
+                x->val = y->val;
+            }
             break;
+        // x := y ? z
         case 5:
             Var *y = get_var(ir->ss[2]), *z = get_var(ir->ss[4]);
             char op = ir->ss[3];
-            if (y->constant && z->constant)
+            x->parent[0] = (Parent){y, y->recent_ir};
+            x->parent[1] = (Parent){z, z->recent_ir};
+            // #?
+            if (y->type == CONST && z->type == CONST)
             {
-                x->constant = true;
-                x->val = (y->val, z->val, op);
+                x->type = CONST;
+                x->val = calc(y->val, z->val, op);
                 for (size_t i = 2; i <= 4; i++)
                 {
                     free(ir->ss[i]);
@@ -273,11 +310,12 @@ void simplify_IR(IR_list *ir)
                 }
                 ir->ss[2] = val_to_const(x->val);
             }
-            else if ((op == '*' && ((y->constant && y->val == 0) || (z->constant && z->val == 0))) ||
+            // #0
+            else if ((op == '*' && ((y->type == CONST && y->val == 0) || (z->type == CONST && z->val == 0))) ||
                      (op == '-' && equal_var(y, z)) ||
-                     (op == '/' && y->constant && y->val == 0))
+                     (op == '/' && y->type == CONST && y->val == 0))
             {
-                x->constant = true;
+                x->type = true;
                 x->val = 0;
                 for (size_t i = 2; i <= 4; i++)
                 {
@@ -328,8 +366,6 @@ char opt_exp(IR_list *u)
         else if (strcmp(ir->ss[0], "WRITE") == 0)
         ir = ir->prev;
     }
-    for (int i = 0; i < useful_cnt; i++)
-        inhert_useful(useful_var[i]);
     
     return 0;
 }
@@ -367,11 +403,11 @@ void optimize(FILE *fin, FILE *fout)
 
     while (1)
     {
-        if (opt_if(rootw))
+        if (opt_exp(rootw))
         {
             continue;
         }
-        else if (opt_exp(rootw))
+        if (opt_if(rootw))
         {
             continue;
         }
@@ -424,9 +460,9 @@ void optimize(FILE *fin, FILE *fout)
 
 int main(int argc, char **argv)
 {
-    if (argc < 3)
+    if (argc < 6)
     {
-        fprintf(stderr, "useage: %s <in_file> <out_file>\n", argv[0]);
+        fprintf(stderr, "useage: %s <in_file> <out_file> <label_cnt> <tmp_cnt> <var_cnt>\n", argv[0]);
         exit(1);
     }
     FILE *fin = fopen(argv[1], "r");
@@ -436,6 +472,9 @@ int main(int argc, char **argv)
         fprintf(stderr, "Open file error\n");
         exit(0);
     }
+    label_cnt = atoi(argv[3]);
+    tmp_cnt = atoi(argv[4]);
+    var_cnt = atoi(argv[5]);
     optimize(fin, fout);
     return 0;
 }
