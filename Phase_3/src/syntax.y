@@ -304,7 +304,7 @@ void yyerror(const char *s)
     // fprintf(stderr, "YYERROR: %s\n", s);
 }
 
-static char my_ttmp[32768];
+static char my_ttmp[66000];
 static char ofname[32768];
 static char optname[32768];
 
