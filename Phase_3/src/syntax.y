@@ -390,6 +390,7 @@ int main(int argc, char **argv)
         }
         argv[0][pos] = 0;
         sprintf(my_ttmp, "%s/optimizer %s %s %zu %zu %zu", argv[0], ofname, optname,label_cnt, tmp_val_cnt, var_val_cnt);
+        printf("%s\n", my_ttmp);
         system(my_ttmp);
     }
     return 0;

@@ -14,5 +14,9 @@ size_t mlg10(size_t u)
 void reverse_str(char *s, size_t len)
 {
     for (size_t i = 0; i < len / 2; i++)
-        s[i] = s[i + len - 1 - i];
+    {
+        char t = s[i];
+        s[i] = s[len - 1 - i];
+        s[len - 1 - i] = t;
+    }
 }

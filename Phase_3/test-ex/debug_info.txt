@@ -1,0 +1,14 @@
+v1 := v0 
+var name: v1
+var name: v0
+t0 := v1 - v1 
+var name: t0
+var name: v1
+var name: v1
+val: 0, len: 1
+ name: 0#
+v2 := t0 
+var name: v2
+var name: t0
+val: 0, len: 1
+ name: 0#
