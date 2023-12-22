@@ -1,8 +1,10 @@
 int main()
 {
-    int a[4];
-    a[0] = 1;
-    a[1] = 2;
-    a[1] = 0;
+    int a, b, c, d;
+    c = a * b + b * a;
+    d = (b * a) + a * b;
+    b = a;
+    c = b;
+    d = c;
     return 0;
 }

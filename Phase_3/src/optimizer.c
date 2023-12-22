@@ -202,7 +202,7 @@ typedef struct _Var
     } type;
 
     // char name[7]; // "?65535\0"
-    IR_list *recent_ir;
+    IR_list *recent;
     int val;
     struct _Parent parent[2];
 } Var;
@@ -292,11 +292,11 @@ char *get_name(Var *var)
     if (var->type == CONST)
         return val_to_const(var->val);
     char type = 'v';
-    ll idx = (var - v_var) / sizeof(Var);
+    ll idx = ((ll)var - (ll)v_var) / (ll)sizeof(Var);
     if (idx < 0 || idx >= MAX_VAR_CNT)
     {
         type = 't';
-        idx = (var - t_var) / sizeof(Var);
+        idx = ((ll)var - (ll)t_var) / (ll)sizeof(Var);
     }
     size_t len = mlg10(idx);
     char *s = (char *)malloc(sizeof(char) * (len + 2));
@@ -322,6 +322,15 @@ char *get_ptr_name(Var *var)
     return ret;
 }
 
+Var *seek_parent(Var *var)
+{
+    if (var->parent[0].var == NULL)
+        return var;
+    if (var->parent[1].var == NULL && var->parent[0].recent == var->parent[0].var->recent)
+        return var->parent[0].var;
+    return var;
+}
+
 void find_identity(IR_list *ir) // x is not const
 {
     Var *x = get_var(ir->ss[0]);
@@ -332,44 +341,54 @@ void find_identity(IR_list *ir) // x is not const
             return;
 
         Var *y = get_var(ir->ss[2]);
-        if (y->parent[0].var == NULL)
+        Var *p = seek_parent(y);
+        if (p == y)
             return;
-        if (y->parent[1].var == NULL && y->parent[0].recent == y->parent[0].var->recent_ir)
+        // *x = y
+fprintf(debug, "*x = y\n");
+fflush(debug);
+        if (ir->ss[0][0] == '*')
         {
-            // *x = y
-            if (ir->ss[0][0] == '*')
-                if (y->parent[0].recent->ss[2][0] != '*')
+            if (p->recent->ss[2][0] != '*')
+            {
+                free(ir->ss[2]);
+                ir->ss[2] = get_name(p);
+            }
+        }
+        // x = (*)y
+        else
+        {
+fprintf(debug, "x = (*)y\n");
+fflush(debug);
+            // x = *y
+            if (ir->ss[2][0] == '*')
+            {
+fprintf(debug, "x = *y\n");
+fflush(debug);
+                if (y->recent->ss[2][0] != '*')
                 {
                     free(ir->ss[2]);
-                    ir->ss[2] = get_name(y->parent[0].var);
+                    ir->ss[2] = get_ptr_name(p);
+                    x->parent[0] = y->parent[0];
                 }
-            // x = (*)y
+            }
+            // x = y
             else
             {
-                // x = *y
-                if (ir->ss[2][0] == '*')
-                    if (y->recent_ir->ss[2][0] != '*')
-                    {
-                        free(ir->ss[2]);
-                        ir->ss[2] = get_ptr_name(y->parent[0].var);
-                        x->parent[0] = y->parent[0];
-                    }
-                // x = y
+fprintf(debug, "x = y\n");
+fflush(debug);
+                free(ir->ss[2]);
+                // y = *z
+                if (y->recent->ss[2][0] == '*')
+                {
+                    ir->ss[2] = get_ptr_name(p);
+                    x->parent[0] = y->parent[0];
+                }
+                // y = z
                 else
                 {
-                    free(ir->ss[2]);
-                    // y = *z
-                    if (y->recent_ir->ss[2][0] == '*')
-                    {
-                        ir->ss[2] = get_ptr_name(y->parent[0].var);
-                        x->parent[0] = y->parent[0];
-                    }
-                    // y = z
-                    else
-                    {
-                        ir->ss[2] = get_name(y->parent[0].var);
-                        x->parent[0] = y->parent[0];
-                    }
+                    ir->ss[2] = get_name(p);
+                    x->parent[0] = y->parent[0];
                 }
             }
         }
@@ -377,7 +396,29 @@ void find_identity(IR_list *ir) // x is not const
     // common subexpression
     else
     {
-        Var *y;
+fprintf(debug, "%s\n", __FUNCTION__);
+fflush(debug);
+        if (ir->ss[2][0] == '&' || ir->ss[4][0] == '&')
+            return;
+        Var *y = get_var(ir->ss[2]), *z = get_var(ir->ss[4]);
+        Var *p[2] = {seek_parent(y), seek_parent(z)};
+fprintf(debug, "%s\n%s %s\n%s %s\n", get_name(x), get_name(y), get_name(z), get_name(p[0]), get_name(p[1]));
+fflush(debug);
+        if (p[0] != y)
+        {
+            x->parent[0] = y->parent[0];
+            free(ir->ss[2]);
+            ir->ss[2] = get_name(p[0]);
+        }
+        if (p[1] != z)
+        {
+            x->parent[1] = z->parent[0];
+            free(ir->ss[4]);
+            ir->ss[4] = get_name(p[1]);
+        }
+debug_IR_list(ir, false);
+fprintf(debug, "before for\n");
+fflush(debug);
         for (size_t i = 0; i < tmp_cnt; i++)
         {
             y = &t_var[i];
@@ -400,7 +441,7 @@ void find_identity(IR_list *ir) // x is not const
         ir->ss[2] = get_name(y);
         if (ir->ss[0][0] != '*')
         {
-            x->parent[0] = (Parent){y, y->recent_ir};
+            x->parent[0] = (Parent){y, y->recent};
             x->parent[1] = (Parent){NULL, NULL};
         }
     }
@@ -410,7 +451,7 @@ void simplify_assign(IR_list *ir)
 {
 debug_IR_list(ir, false);
     Var *x = get_var(ir->ss[0]), *y, *z;
-    x->recent_ir = ir;
+    x->recent = ir;
     x->type = VAR;
     switch (get_list_len(ir))
     {
@@ -425,7 +466,7 @@ debug_IR_list(ir, false);
             {
                 x->type = y->type;
                 x->val = y->val;
-                x->parent[0] = (Parent){y, y->recent_ir};
+                x->parent[0] = (Parent){y, y->recent};
                 x->parent[1] = (Parent){NULL, NULL};
             }
             break;
@@ -435,8 +476,8 @@ debug_IR_list(ir, false);
             char op = ir->ss[3][0];
             if (ir->ss[0][0] != '*')
             {
-                x->parent[0] = (Parent){y, y->recent_ir};
-                x->parent[1] = (Parent){z, z->recent_ir};
+                x->parent[0] = (Parent){y, y->recent};
+                x->parent[1] = (Parent){z, z->recent};
             }
             // #? 
             if (y->type == CONST && z->type == CONST)
@@ -494,9 +535,11 @@ debug_IR_list(ir, false);
             }
             break;
     }
+debug_IR_list(ir, false);
     if (x->type != CONST)
         find_identity(ir);
 debug_IR_list(ir, true);
+fflush(debug);
 }
 
 char opt_exp(IR_list *u)
@@ -514,7 +557,7 @@ char opt_exp(IR_list *u)
             {
                 Var *x = get_var(ir->ss[0]);
                 x->type = VAR;
-                x->recent_ir = ir;
+                x->recent = ir;
             }
             else
             {
@@ -528,22 +571,22 @@ char opt_exp(IR_list *u)
     }
 
     // neg: remove useless vars
-    // ir = tail;
-    // while (ir != NULL)
-    // {
-    //     if (strcmp(ir->ss[1], ":=") == 0);
-    //     else if (strcmp(ir->ss[0], "LABEL") == 0);
-    //     else if (strcmp(ir->ss[0], "FUNCTION") == 0);
-    //     else if (strcmp(ir->ss[0], "GOTO") == 0);
-    //     else if (strcmp(ir->ss[0], "IF") == 0);
-    //     else if (strcmp(ir->ss[0], "RETURN") == 0);
-    //     else if (strcmp(ir->ss[0], "DEC") == 0);
-    //     else if (strcmp(ir->ss[0], "PARAM") == 0);
-    //     else if (strcmp(ir->ss[0], "ARG") == 0);
-    //     else if (strcmp(ir->ss[0], "READ") == 0);
-    //     else if (strcmp(ir->ss[0], "WRITE") == 0)
-    //     ir = ir->prev;
-    // }
+    ir = tail;
+    while (ir != NULL)
+    {
+        if (strcmp(ir->ss[1], ":=") == 0);
+        else if (strcmp(ir->ss[0], "LABEL") == 0);
+        else if (strcmp(ir->ss[0], "FUNCTION") == 0);
+        else if (strcmp(ir->ss[0], "GOTO") == 0);
+        else if (strcmp(ir->ss[0], "IF") == 0);
+        else if (strcmp(ir->ss[0], "RETURN") == 0);
+        else if (strcmp(ir->ss[0], "DEC") == 0);
+        else if (strcmp(ir->ss[0], "PARAM") == 0);
+        else if (strcmp(ir->ss[0], "ARG") == 0);
+        else if (strcmp(ir->ss[0], "READ") == 0);
+        else if (strcmp(ir->ss[0], "WRITE") == 0)
+        ir = ir->prev;
+    }
     
     return 0;
 }
