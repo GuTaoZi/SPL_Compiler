@@ -78,7 +78,6 @@ void split_str(const char *s)
 
 void del_list(IR_list *p)
 {
-debug_IR_list(p, true);
     if (p->prev != NULL)
     {
         p->prev->next = p->next;
@@ -187,11 +186,31 @@ bool opt_if(IR_list *u)
 
 
 struct _Var;
+typedef enum
+{
+    VAL,
+    PTR,
+    ADDR,
+} Usage;
 typedef struct _Parent
 {
+    Usage usage;
     struct _Var *var;
     IR_list *recent;
 } Parent;
+
+Usage get_usage(char *name)
+{
+    switch (name[0])
+    {
+        case '*':
+            return PTR;
+        case '&':
+            return ADDR;
+        default:
+            return VAL;
+    }
+}
 
 typedef struct _Var
 {
@@ -201,8 +220,6 @@ typedef struct _Var
         CONST,
         FUNC,
     } type;
-
-    // char name[7]; // "?65535\0"
     IR_list *recent;
     int val;
     struct _Parent parent[2];
@@ -217,8 +234,8 @@ Var *new_constant_var(const char *s)
     Var *var = (Var *)malloc(sizeof(Var));
     var->type = CONST;
     var->val = atoi(s);
-    var->parent[0] = (Parent){NULL, NULL};
-    var->parent[1] = (Parent){NULL, NULL};
+    var->parent[0] = (Parent){VAL, NULL, NULL};
+    var->parent[1] = (Parent){VAL, NULL, NULL};
     return var;
 }
 
@@ -244,8 +261,9 @@ bool equal_parent(Parent a, Parent b)
         return true;
     if ((a.var == NULL) + (b.var == NULL) == 1)
         return false;
-    return (a.var == b.var && a.recent == b.recent) ||
-        (a.var->type == CONST && b.var->type == CONST && a.var->val == b.var->val);
+    return  a.usage == b.usage &&
+        ((a.var == b.var && a.recent == b.recent) ||
+        (a.var->type == CONST && b.var->type == CONST && a.var->val == b.var->val));
 }
 
 bool equal_var(Var *a, Var *b) // a and b can't both be & need to be consist of 2 elements
@@ -312,18 +330,17 @@ char *get_name(Var *var)
     return s;
 }
 
-char *get_ptr_name(Var *var)
+char *prefixed_name(char prefix, char *name)
 {
-    char *name = get_name(var);
     char *ret = (char *)malloc(sizeof(char) * (strlen(name) + 1));
-    ret[0] = '*';
+    ret[0] = prefix;
     ret[1] = '\0';
     strcat(ret, name);
     free(name);
     return ret;
 }
 
-Var *seek_parent(Var *var)
+Var *get_parent(Var *var)
 {
     if (var->parent[0].var == NULL)
         return var;
@@ -342,12 +359,10 @@ void find_identity(IR_list *ir) // x is not const
             return;
 
         Var *y = get_var(ir->ss[2]);
-        Var *p = seek_parent(y);
+        Var *p = get_parent(y);
         if (p == y)
             return;
         // *x = y
-fprintf(debug, "*x = y\n");
-fflush(debug);
         if (ir->ss[0][0] == '*')
         {
             if (p->recent->ss[2][0] != '*')
@@ -359,30 +374,24 @@ fflush(debug);
         // x = (*)y
         else
         {
-fprintf(debug, "x = (*)y\n");
-fflush(debug);
             // x = *y
             if (ir->ss[2][0] == '*')
             {
-fprintf(debug, "x = *y\n");
-fflush(debug);
                 if (y->recent->ss[2][0] != '*')
                 {
                     free(ir->ss[2]);
-                    ir->ss[2] = get_ptr_name(p);
+                    ir->ss[2] = prefixed_name('*', get_name(y));
                     x->parent[0] = y->parent[0];
                 }
             }
             // x = y
             else
             {
-fprintf(debug, "x = y\n");
-fflush(debug);
                 free(ir->ss[2]);
                 // y = *z
                 if (y->recent->ss[2][0] == '*')
                 {
-                    ir->ss[2] = get_ptr_name(p);
+                    ir->ss[2] = prefixed_name('*', get_name(y));
                     x->parent[0] = y->parent[0];
                 }
                 // y = z
@@ -397,14 +406,10 @@ fflush(debug);
     // common subexpression
     else
     {
-fprintf(debug, "%s\n", __FUNCTION__);
-fflush(debug);
         if (ir->ss[2][0] == '&' || ir->ss[4][0] == '&')
             return;
         Var *y = get_var(ir->ss[2]), *z = get_var(ir->ss[4]);
-        Var *p[2] = {seek_parent(y), seek_parent(z)};
-fprintf(debug, "%s\n%s %s\n%s %s\n", get_name(x), get_name(y), get_name(z), get_name(p[0]), get_name(p[1]));
-fflush(debug);
+        Var *p[2] = {get_parent(y), get_parent(z)};
         if (p[0] != y)
         {
             x->parent[0] = y->parent[0];
@@ -418,8 +423,6 @@ fflush(debug);
             ir->ss[4] = get_name(p[1]);
         }
 debug_IR_list(ir, false);
-fprintf(debug, "before for\n");
-fflush(debug);
         for (size_t i = 0; i < tmp_cnt; i++)
         {
             y = &t_var[i];
@@ -442,8 +445,8 @@ fflush(debug);
         ir->ss[2] = get_name(y);
         if (ir->ss[0][0] != '*')
         {
-            x->parent[0] = (Parent){y, y->recent};
-            x->parent[1] = (Parent){NULL, NULL};
+            x->parent[0] = (Parent){get_usage(ir->ss[2]), y, y->recent};
+            x->parent[1] = (Parent){VAL, NULL, NULL};
         }
     }
 }
@@ -467,8 +470,8 @@ debug_IR_list(ir, false);
             {
                 x->type = y->type;
                 x->val = y->val;
-                x->parent[0] = (Parent){y, y->recent};
-                x->parent[1] = (Parent){NULL, NULL};
+                x->parent[0] = (Parent){get_usage(ir->ss[2]), y, y->recent};
+                x->parent[1] = (Parent){VAL, NULL, NULL};
             }
             break;
         // x := y ? z
@@ -477,8 +480,8 @@ debug_IR_list(ir, false);
             char op = ir->ss[3][0];
             if (ir->ss[0][0] != '*')
             {
-                x->parent[0] = (Parent){y, y->recent};
-                x->parent[1] = (Parent){z, z->recent};
+                x->parent[0] = (Parent){get_usage(ir->ss[2]), y, y->recent};
+                x->parent[1] = (Parent){get_usage(ir->ss[4]), z, z->recent};
             }
             // #? 
             if (y->type == CONST && z->type == CONST)
@@ -494,8 +497,8 @@ debug_IR_list(ir, false);
                 {
                     x->type = CONST;
                     x->val = val;
-                    x->parent[0] = (Parent){NULL, NULL};
-                    x->parent[1] = (Parent){NULL, NULL};
+                    x->parent[0] = (Parent){VAL, NULL, NULL};
+                    x->parent[1] = (Parent){VAL, NULL, NULL};
                 }
             }
             // #0
@@ -505,8 +508,8 @@ debug_IR_list(ir, false);
             {
                 x->type = CONST;
                 x->val = 0;
-                x->parent[0] = (Parent){NULL, NULL};
-                x->parent[1] = (Parent){NULL, NULL};
+                x->parent[0] = (Parent){VAL, NULL, NULL};
+                x->parent[1] = (Parent){VAL,NULL, NULL};
                 for (size_t i = 2; i <= 4; i++)
                 {
                     free(ir->ss[i]);
@@ -522,7 +525,7 @@ debug_IR_list(ir, false);
                 free(ir->ss[4]);
                 ir->ss[3] = ir->ss[4] = NULL;
                 if (ir->ss[0][0] != '*')
-                    x->parent[1] = (Parent){NULL, NULL};
+                    x->parent[1] = (Parent){VAL, NULL, NULL};
             }
             // #0 + ?
             else if (op == '+' && z->type == CONST && z->val == 0)
@@ -532,7 +535,7 @@ debug_IR_list(ir, false);
                 ir->ss[2] = ir->ss[4];
                 ir->ss[3] = ir->ss[4] = NULL;
                 x->parent[0] = x->parent[1];
-                x->parent[1] = (Parent){NULL, NULL};
+                x->parent[1] = (Parent){VAL, NULL, NULL};
             }
             break;
     }
@@ -555,6 +558,8 @@ bool *get_useful(char *name)
 
 void set_useful(char *name, bool useful)
 {
+fprintf(debug, "Set %s: %s\n", name, useful ? "True" : "False");
+fflush(debug);
     if (name[0] == '#')
         return;
     *(get_useful(name)) = useful;
@@ -562,6 +567,7 @@ void set_useful(char *name, bool useful)
 
 bool opt_exp(IR_list *u)
 {
+    bool optimized = false;
     IR_list *ir = u, *tail;
 
     // pos: simplify const ops
@@ -598,7 +604,7 @@ fflush(debug);
     ir = tail;
     while (ir != NULL)
     {
-debug_IR_list(ir, false);
+// debug_IR_list(ir, false);
         IR_list *next = ir->prev;
         if (strcmp(ir->ss[0], "LABEL") == 0);
         else if (strcmp(ir->ss[0], "FUNCTION") == 0);
@@ -631,7 +637,7 @@ debug_IR_list(ir, false);
                         break;
                     case 5: // (*)x := y + z
                         set_useful(ir->ss[2], true);
-                        set_useful(ir->ss[3], true);
+                        set_useful(ir->ss[4], true);
                         set_useful(ir->ss[0], is_ptr);
                         break;
                 }
