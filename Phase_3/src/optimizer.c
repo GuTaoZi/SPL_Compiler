@@ -20,11 +20,13 @@ typedef struct IR_list
 char ss[10][32768];
 int lss;
 
-void debug_IR_list(IR_list *ir)
+void debug_IR_list(IR_list *ir, bool endl)
 {
     for (int i = 0; ir->ss[i] != NULL; i++)
         fprintf(debug, "%s ", ir->ss[i]);
     fprintf(debug, "\n");
+    if (endl)
+        fputc('\n', debug);
     fflush(debug);
 }
 
@@ -51,11 +53,6 @@ IR_list *new_IR_list(IR_list *prev)
         prev->next = p;
     }
     return p;
-}
-
-inline static char is_ws(const char c)
-{
-    return c == ' ' || c == '\n' || c == '\r' || c == '\t';
 }
 
 void split_str(const char *s)
@@ -210,19 +207,17 @@ typedef struct _Var
     struct _Parent parent[2];
 } Var;
 
-
-
-Var v_var[USHRT_MAX], t_var[USHRT_MAX];
-bool useful_v[USHRT_MAX], useful_t[USHRT_MAX];
-
+#define MAX_VAR_CNT USHRT_MAX
+Var v_var[MAX_VAR_CNT], t_var[MAX_VAR_CNT];
+bool useful_v[MAX_VAR_CNT], useful_t[MAX_VAR_CNT];
 
 Var *new_constant_var(const char *s)
 {
     Var *var = (Var *)malloc(sizeof(Var));
     var->type = CONST;
     var->val = atoi(s);
-    for (size_t i = 0; i < 2; i++)
-        var->parent[i] = (Parent){NULL, NULL};
+    var->parent[0] = (Parent){NULL, NULL};
+    var->parent[1] = (Parent){NULL, NULL};
     return var;
 }
 
@@ -252,14 +247,14 @@ bool equal_parent(Parent a, Parent b)
         (a.var->type == CONST && b.var->type == CONST && a.var->val == b.var->val);
 }
 
-bool equal_var(Var *a, Var *b) // a and b can't both be constant
+bool equal_var(Var *a, Var *b) // a and b can't both be & need to be consist of 2 elements
 {
     return a == b ||
         (equal_parent(a->parent[0], b->parent[0]) && equal_parent(a->parent[1], b->parent[1])) ||
         (equal_parent(a->parent[0], b->parent[1]) && equal_parent(a->parent[1], b->parent[0]));
 }
 
-char *val_to_const(int val)
+char *val_to_const(int val) // #val
 {
     bool neg = val < 0;
     size_t len = mlg10(abs(val)) + neg;
@@ -292,8 +287,17 @@ int calc(int a, int b, char op)
     }
 }
 
-char *get_var_name(char type, size_t idx)
+char *get_name(Var *var)
 {
+    if (var->type == CONST)
+        return val_to_const(var->val);
+    char type = 'v';
+    ll idx = (var - v_var) / sizeof(Var);
+    if (idx < 0 || idx >= MAX_VAR_CNT)
+    {
+        type = 't';
+        idx = (var - t_var) / sizeof(Var);
+    }
     size_t len = mlg10(idx);
     char *s = (char *)malloc(sizeof(char) * (len + 2));
     for (size_t i = 0; i < len; i++)
@@ -301,42 +305,113 @@ char *get_var_name(char type, size_t idx)
         s[i] = idx % 10 + '0';
         idx /= 10;
     }
-    s[len] = 'type';
+    s[len] = type;
     s[len + 1] = '\0';
     reverse_str(s, len + 1);
     return s;
 }
 
-void find_same(IR_list *ir)
+char *get_ptr_name(Var *var)
+{
+    char *name = get_name(var);
+    char *ret = (char *)malloc(sizeof(char) * (strlen(name) + 1));
+    ret[0] = '*';
+    ret[1] = '\0';
+    strcat(ret, name);
+    free(name);
+    return ret;
+}
+
+void find_identity(IR_list *ir) // x is not const
 {
     Var *x = get_var(ir->ss[0]);
-    char type = 't';
-    size_t idx;
-    for (idx = 0; idx < tmp_cnt; idx++)
-        if (&t_var[idx] != x && equal_var(&t_var[idx], x))
-            break;
-    if (idx < tmp_cnt)
+    // one step inherit
+    if (get_list_len(ir) == 3)
     {
-        
-        return;
+        if (ir->ss[2][0] == '&')
+            return;
+
+        Var *y = get_var(ir->ss[2]);
+        if (y->parent[0].var == NULL)
+            return;
+        if (y->parent[1].var == NULL && y->parent[0].recent == y->parent[0].var->recent_ir)
+        {
+            // *x = y
+            if (ir->ss[0][0] == '*')
+                if (y->parent[0].recent->ss[2][0] != '*')
+                {
+                    free(ir->ss[2]);
+                    ir->ss[2] = get_name(y->parent[0].var);
+                }
+            // x = (*)y
+            else
+            {
+                // x = *y
+                if (ir->ss[2][0] == '*')
+                    if (y->recent_ir->ss[2][0] != '*')
+                    {
+                        free(ir->ss[2]);
+                        ir->ss[2] = get_ptr_name(y->parent[0].var);
+                        x->parent[0] = y->parent[0];
+                    }
+                // x = y
+                else
+                {
+                    free(ir->ss[2]);
+                    // y = *z
+                    if (y->recent_ir->ss[2][0] == '*')
+                    {
+                        ir->ss[2] = get_ptr_name(y->parent[0].var);
+                        x->parent[0] = y->parent[0];
+                    }
+                    // y = z
+                    else
+                    {
+                        ir->ss[2] = get_name(y->parent[0].var);
+                        x->parent[0] = y->parent[0];
+                    }
+                }
+            }
+        }
     }
-
-    type = 'v';
-    for (idx = 0; idx < tmp_cnt; idx++)
-        if (&v_var[idx] != x && equal_var(&v_var[idx], x))
-            break;
-    if (idx < var_cnt)
+    // common subexpression
+    else
     {
-
+        Var *y;
+        for (size_t i = 0; i < tmp_cnt; i++)
+        {
+            y = &t_var[i];
+            if (y != x && equal_var(x, y))
+                goto CHEKCOUT;
+        }
+        for (size_t i = 0; i < tmp_cnt; i++)
+        {
+            y = &v_var[i];
+            if (y != x && equal_var(x, y))
+                goto CHEKCOUT;
+        }
         return;
+    CHEKCOUT:
+        for (size_t i = 2; i <= 4; i++)
+        {
+            free(ir->ss[i]);
+            ir->ss[i] = NULL;
+        }
+        ir->ss[2] = get_name(y);
+        if (ir->ss[0][0] != '*')
+        {
+            x->parent[0] = (Parent){y, y->recent_ir};
+            x->parent[1] = (Parent){NULL, NULL};
+        }
     }
 }
 
-void simplify_IR(IR_list *ir)
+void simplify_assign(IR_list *ir)
 {
-    debug_IR_list(ir);
+debug_IR_list(ir, false);
     Var *x = get_var(ir->ss[0]), *y, *z;
     x->recent_ir = ir;
+    x->type = VAR;
     switch (get_list_len(ir))
     {
         // (*)x := (*&)y
@@ -345,42 +420,51 @@ void simplify_IR(IR_list *ir)
                 break;
             y = get_var(ir->ss[2]);
             if (y->type == CONST)
-            {
                 ir->ss[2] = val_to_const(y->val);
-            }
             if (ir->ss[0][0] != '*')
             {
-                x->parent[0] = (Parent){y, y->recent_ir};
-                x->parent[1] = (Parent){NULL, NULL};
                 x->type = y->type;
                 x->val = y->val;
+                x->parent[0] = (Parent){y, y->recent_ir};
+                x->parent[1] = (Parent){NULL, NULL};
             }
             break;
         // x := y ? z
         case 5:
             y = get_var(ir->ss[2]), z = get_var(ir->ss[4]);
             char op = ir->ss[3][0];
-            x->parent[0] = (Parent){y, y->recent_ir};
-            x->parent[1] = (Parent){z, z->recent_ir};
-            // #?
+            if (ir->ss[0][0] != '*')
+            {
+                x->parent[0] = (Parent){y, y->recent_ir};
+                x->parent[1] = (Parent){z, z->recent_ir};
+            }
+            // #? 
             if (y->type == CONST && z->type == CONST)
             {
-                x->type = CONST;
-                x->val = calc(y->val, z->val, op);
                 for (size_t i = 2; i <= 4; i++)
                 {
                     free(ir->ss[i]);
                     ir->ss[i] = NULL;
                 }
-                ir->ss[2] = val_to_const(x->val);
+                int val = calc(y->val, z->val, op);
+                ir->ss[2] = val_to_const(val);
+                if (ir->ss[0][0] != '*')
+                {
+                    x->type = CONST;
+                    x->val = val;
+                    x->parent[0] = (Parent){NULL, NULL};
+                    x->parent[1] = (Parent){NULL, NULL};
+                }
             }
             // #0
             else if ((op == '*' && ((y->type == CONST && y->val == 0) || (z->type == CONST && z->val == 0))) ||
                      (op == '-' && equal_var(y, z)) ||
                      (op == '/' && y->type == CONST && y->val == 0))
             {
-                x->type = true;
+                x->type = CONST;
                 x->val = 0;
+                x->parent[0] = (Parent){NULL, NULL};
+                x->parent[1] = (Parent){NULL, NULL};
                 for (size_t i = 2; i <= 4; i++)
                 {
                     free(ir->ss[i]);
@@ -388,8 +472,31 @@ void simplify_IR(IR_list *ir)
                 }
                 ir->ss[2] = val_to_const(0);
             }
+            // ? + #0, ? - 0
+            else if ((op == '+' && z->type == CONST && z->val == 0) ||
+                op == '-' && z->type == CONST && z->val == 0)
+            {
+                free(ir->ss[3]);
+                free(ir->ss[4]);
+                ir->ss[3] = ir->ss[4] = NULL;
+                if (ir->ss[0][0] != '*')
+                    x->parent[1] = (Parent){NULL, NULL};
+            }
+            // #0 + ?
+            else if (op == '+' && z->type == CONST && z->val == 0)
+            {
+                free(ir->ss[2]);
+                free(ir->ss[3]);
+                ir->ss[2] = ir->ss[4];
+                ir->ss[3] = ir->ss[4] = NULL;
+                x->parent[0] = x->parent[1];
+                x->parent[1] = (Parent){NULL, NULL};
+            }
             break;
     }
+    if (x->type != CONST)
+        find_identity(ir);
+debug_IR_list(ir, true);
 }
 
 char opt_exp(IR_list *u)
@@ -403,9 +510,16 @@ char opt_exp(IR_list *u)
     {
         if (strcmp(ir->ss[1], ":=") == 0)
         {
-            if (strcmp(ir->ss[2], "CALL") == 0);
+            if (strcmp(ir->ss[2], "CALL") == 0)
+            {
+                Var *x = get_var(ir->ss[0]);
+                x->type = VAR;
+                x->recent_ir = ir;
+            }
             else
-                simplify_IR(ir);
+            {
+                simplify_assign(ir);
+            }
         }
 
         if (ir->next == NULL)
@@ -532,8 +646,8 @@ int main(int argc, char **argv)
     FILE *fin = fopen(argv[1], "r");
     FILE *fout = fopen(argv[2], "w");
     // fprintf(debug, "%s %s %s %s %s\n", argv[1], argv[2], argv[3], argv[4], argv[5]);
-    debug = fopen("./test-ex/debug_info.txt", "w");
-    printf("optimizing:\n");
+debug = fopen("./test-tmp/debug_info.txt", "w");
+fprintf(debug, "optimizing:\n");
     if (fin == NULL || fout == NULL)
     {
         fprintf(stderr, "Open file error\n");
