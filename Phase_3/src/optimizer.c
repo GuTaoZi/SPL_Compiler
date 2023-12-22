@@ -17,6 +17,7 @@ typedef struct IR_list
     struct IR_list *next, *prev;
 } IR_list;
 
+IR_list *rootw = NULL;
 char ss[10][32768];
 int lss;
 
@@ -422,7 +423,6 @@ void find_identity(IR_list *ir) // x is not const
             free(ir->ss[4]);
             ir->ss[4] = get_name(p[1]);
         }
-debug_IR_list(ir, false);
         for (size_t i = 0; i < tmp_cnt; i++)
         {
             y = &t_var[i];
@@ -596,6 +596,9 @@ fflush(debug);
         ir = ir->next;
     }
 
+fprintf(debug, "Current IR:\n");
+output_list(rootw, debug);
+
     // neg: remove useless vars
 fprintf(debug, "Neg:\n");
 fflush(debug);
@@ -604,14 +607,19 @@ fflush(debug);
     ir = tail;
     while (ir != NULL)
     {
-// debug_IR_list(ir, false);
         IR_list *next = ir->prev;
         if (strcmp(ir->ss[0], "LABEL") == 0);
         else if (strcmp(ir->ss[0], "FUNCTION") == 0);
         else if (strcmp(ir->ss[0], "GOTO") == 0);
         else if (strcmp(ir->ss[0], "IF") == 0);
         else if (strcmp(ir->ss[0], "RETURN") == 0);
-        else if (strcmp(ir->ss[0], "DEC") == 0);
+        else if (strcmp(ir->ss[0], "DEC") == 0)
+            if (!*(get_useful(ir->ss[2])))
+            {
+                del_list(ir);
+                ir = next;
+                continue;
+            }
         else if (strcmp(ir->ss[0], "PARAM") == 0);
         else if (strcmp(ir->ss[0], "ARG") == 0);
         else if (strcmp(ir->ss[0], "READ") == 0);
@@ -662,7 +670,7 @@ void output_list(const IR_list *u, FILE *fout)
 
 void optimize(FILE *fin, FILE *fout)
 {
-    IR_list *rootw = NULL, *nowp;
+    IR_list *nowp;
     while (fscanf(fin, "%[^\n]", s) != EOF)
     {
         fscanf(fin, "%*c");
@@ -692,47 +700,6 @@ void optimize(FILE *fin, FILE *fout)
     }
 
     output_list(rootw, fout);
-
-    // if (strncmp(s, "LABEL", 5) == 0)
-    // {
-    //     // LABEL
-    // }
-    // else if (strncmp(s, "GOTO", 4) == 0)
-    // {
-    //     // GOTO
-    // }
-    // else if (strncmp(s, "IF", 2) == 0)
-    // {
-    //     // IF
-    // }
-    // else if (strncmp(s, "RETURN", 6) == 0)
-    // {
-    //     // RETURN
-    // }
-    // else if (strncmp(s, "DEC", 3) == 0)
-    // {
-    //     // DEC
-    // }
-    // else if (strncmp(s, "PARAM", 5) == 0)
-    // {
-    //     // PARAM
-    // }
-    // else if (strncmp(s, "ARG", 3) == 0)
-    // {
-    //     // ARG
-    // }
-    // else if (strncmp(s, "READ", 4) == 0)
-    // {
-    //     // READ
-    // }
-    // else if (strncmp(s, "WRITE", 5) == 0)
-    // {
-    //     // WRITE
-    // }
-    // else
-    // {
-    //     // :=
-    // }
 }
 
 int main(int argc, char **argv)
