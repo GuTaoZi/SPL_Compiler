@@ -363,7 +363,7 @@ void find_identity(IR_list *ir) // x is not const
         Var *p = get_parent(y);
         if (p == y)
             return;
-        // *x = y
+        // *x = (*&)y
         if (ir->ss[0][0] == '*')
         {
             if (p->recent->ss[2][0] != '*')
@@ -474,7 +474,7 @@ debug_IR_list(ir, false);
                 x->parent[1] = (Parent){VAL, NULL, NULL};
             }
             break;
-        // x := y ? z
+        // (*)x := (*&)y ? (*&)z
         case 5:
             y = get_var(ir->ss[2]), z = get_var(ir->ss[4]);
             char op = ir->ss[3][0];
@@ -509,7 +509,7 @@ debug_IR_list(ir, false);
                 x->type = CONST;
                 x->val = 0;
                 x->parent[0] = (Parent){VAL, NULL, NULL};
-                x->parent[1] = (Parent){VAL,NULL, NULL};
+                x->parent[1] = (Parent){VAL, NULL, NULL};
                 for (size_t i = 2; i <= 4; i++)
                 {
                     free(ir->ss[i]);
@@ -534,8 +534,11 @@ debug_IR_list(ir, false);
                 free(ir->ss[3]);
                 ir->ss[2] = ir->ss[4];
                 ir->ss[3] = ir->ss[4] = NULL;
-                x->parent[0] = x->parent[1];
-                x->parent[1] = (Parent){VAL, NULL, NULL};
+                if (ir->ss[0][0] != '*')
+                {
+                    x->parent[0] = x->parent[1];
+                    x->parent[1] = (Parent){VAL, NULL, NULL};
+                }
             }
             break;
     }
@@ -543,7 +546,6 @@ debug_IR_list(ir, false);
     if (x->type != CONST)
         find_identity(ir);
 debug_IR_list(ir, true);
-fflush(debug);
 }
 
 bool *get_useful(char *name)
