@@ -78,6 +78,7 @@ void split_str(const char *s)
 
 void del_list(IR_list *p)
 {
+debug_IR_list(p, true);
     if (p->prev != NULL)
     {
         p->prev->next = p->next;
@@ -542,13 +543,32 @@ debug_IR_list(ir, true);
 fflush(debug);
 }
 
-char opt_exp(IR_list *u)
+bool *get_useful(char *name)
 {
-    memset(v_var, 0, sizeof(v_var));
-    memset(t_var, 0, sizeof(t_var));
+    bool sp = name[0] == '*';
+    size_t idx = atoi(name + 1 + sp);
+    if (name[sp] == 'v')
+        return &useful_v[idx];
+    else
+        return &useful_t[idx];
+}
+
+void set_useful(char *name, bool useful)
+{
+    if (name[0] == '#')
+        return;
+    *(get_useful(name)) = useful;
+}
+
+bool opt_exp(IR_list *u)
+{
     IR_list *ir = u, *tail;
 
     // pos: simplify const ops
+fprintf(debug, "Pos:\n");
+fflush(debug);
+    memset(v_var, 0, sizeof(v_var));
+    memset(t_var, 0, sizeof(t_var));
     while (ir != NULL)
     {
         if (strcmp(ir->ss[1], ":=") == 0)
@@ -571,11 +591,16 @@ char opt_exp(IR_list *u)
     }
 
     // neg: remove useless vars
+fprintf(debug, "Neg:\n");
+fflush(debug);
+    memset(useful_v, false, sizeof(useful_v));
+    memset(useful_t, false, sizeof(useful_v));
     ir = tail;
     while (ir != NULL)
     {
-        if (strcmp(ir->ss[1], ":=") == 0);
-        else if (strcmp(ir->ss[0], "LABEL") == 0);
+debug_IR_list(ir, false);
+        IR_list *next = ir->prev;
+        if (strcmp(ir->ss[0], "LABEL") == 0);
         else if (strcmp(ir->ss[0], "FUNCTION") == 0);
         else if (strcmp(ir->ss[0], "GOTO") == 0);
         else if (strcmp(ir->ss[0], "IF") == 0);
@@ -585,10 +610,35 @@ char opt_exp(IR_list *u)
         else if (strcmp(ir->ss[0], "ARG") == 0);
         else if (strcmp(ir->ss[0], "READ") == 0);
         else if (strcmp(ir->ss[0], "WRITE") == 0)
-        ir = ir->prev;
+            set_useful(ir->ss[1], true);
+        else // x := ?
+        {
+            size_t len = get_list_len(ir);
+            bool useful = *get_useful(ir->ss[0]);
+            if (!useful && len != 4)
+            {
+                del_list(ir);
+                ir = next;
+                continue;
+            }
+            bool is_ptr = ir->ss[0][0] == '*';
+            if (useful || is_ptr)
+                switch (len)
+                {
+                    case 3: // (*)x := y
+                        set_useful(ir->ss[2], true);
+                        set_useful(ir->ss[0], is_ptr);
+                        break;
+                    case 5: // (*)x := y + z
+                        set_useful(ir->ss[2], true);
+                        set_useful(ir->ss[3], true);
+                        set_useful(ir->ss[0], is_ptr);
+                        break;
+                }
+        }
+        ir = next;
     }
-    
-    return 0;
+    return false;
 }
 
 void output_list(const IR_list *u, FILE *fout)
@@ -690,7 +740,6 @@ int main(int argc, char **argv)
     FILE *fout = fopen(argv[2], "w");
     // fprintf(debug, "%s %s %s %s %s\n", argv[1], argv[2], argv[3], argv[4], argv[5]);
 debug = fopen("./test-tmp/debug_info.txt", "w");
-fprintf(debug, "optimizing:\n");
     if (fin == NULL || fout == NULL)
     {
         fprintf(stderr, "Open file error\n");

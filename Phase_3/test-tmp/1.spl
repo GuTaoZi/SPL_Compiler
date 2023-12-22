@@ -4,7 +4,7 @@ int main()
     c = a * b + b * a;
     d = (b * a) + a * b;
     b = a;
-    c = b;
     d = c;
+    write(c);
     return 0;
 }
