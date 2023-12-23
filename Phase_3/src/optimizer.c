@@ -32,6 +32,7 @@ void output_list(const IR_list *u, FILE *fout)
         fprintf(fout, "\n");
         u = u->next;
     }
+    fflush(fout);
 }
 
 void debug_IR_list(IR_list *ir, bool endl)
@@ -383,7 +384,7 @@ void find_identity(IR_list *ir) // x is not const
             if (!single_parent(y) || y->parent[0].usage != VAL)
                 return;
             Parent py = y->parent[0];
-            if (py.recent != py.var->recent)
+            if (py.var == NULL || py.recent != py.var->recent)
                 return;
             free(ir->ss[2]);
             ir->ss[2] = prefixed_name(PTR, get_name(py.var));
@@ -396,7 +397,7 @@ void find_identity(IR_list *ir) // x is not const
             if (single_parent(y))
             {
                 Parent py = y->parent[0];
-                if (py.recent != py.var->recent)
+                if (py.var == NULL || py.recent != py.var->recent)
                     return;
                 free(ir->ss[2]);
                 ir->ss[2] = prefixed_name(py.usage, get_name(py.var));
@@ -410,7 +411,7 @@ void find_identity(IR_list *ir) // x is not const
                 if (x->parent[0].usage == PTR)
                     return;
                 // x := y
-                if (py[0].recent != py[0].var->recent || py[1].recent != py[1].var->recent)
+                if (py[0].var == NULL || py[0].recent != py[0].var->recent || py[1].recent != py[1].var->recent)
                     return;
                 free(ir->ss[2]);
                 ir->ss[2] = prefixed_name(py[0].usage, get_name(py[0].var));
@@ -441,7 +442,7 @@ fflush(debug);
                 if (y->parent[0].usage == VAL)
                 {
                     Parent py = y->parent[0];
-                    if (py.recent != py.var->recent)
+                    if (py.var == NULL || py.recent != py.var->recent)
                         return;
                     free(ir->ss[2]);
                     ir->ss[2] = prefixed_name(PTR, get_name(py.var));
@@ -462,7 +463,7 @@ fflush(debug);
                 else
                 {
                     Parent py = y->parent[0];
-                    if (py.recent != py.var->recent)
+                    if (py.var == NULL || py.recent != py.var->recent)
                         return;
                     free(ir->ss[2]);
                     ir->ss[2] = prefixed_name(py.usage, get_name(py.var));
@@ -501,10 +502,10 @@ fflush(debug);
                 else
                 {
                     Parent pz = z->parent[0];
-                    if (pz.recent != pz.var->recent)
+                    if (pz.var == NULL || pz.recent != pz.var->recent)
                         return;
                     free(ir->ss[4]);
-                    ir->ss[2] = prefixed_name(pz.usage, get_name(pz.var));
+                    ir->ss[4] = prefixed_name(pz.usage, get_name(pz.var));
                     if (usage != PTR)
                         x->parent[1] = pz;
                 }
@@ -668,6 +669,7 @@ fflush(debug);
     memset(t_var, 0, sizeof(t_var));
     while (ir != NULL)
     {
+debug_IR_list(ir, false);
         if (strcmp(ir->ss[1], ":=") == 0)
         {
             if (strcmp(ir->ss[2], "CALL") == 0)
@@ -687,8 +689,10 @@ fflush(debug);
         ir = ir->next;
     }
 
-fprintf(debug, "Current IR:\n");
+fprintf(debug, "\nCurrent IR:\n");
 output_list(rootw, debug);
+fprintf(debug, "Finish IR:\n\n");
+fflush(debug);
 
     // neg: remove useless vars
 fprintf(debug, "Neg:\n");
@@ -764,14 +768,11 @@ void optimize(FILE *fin, FILE *fout)
 
     while (1)
     {
-        if (opt_exp(rootw))
-        {
+        output_list(rootw, fout);
+        if (opt_exp(rootw));
             continue;
-        }
         if (opt_if(rootw))
-        {
             continue;
-        }
         break;
     }
 

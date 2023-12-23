@@ -1,13 +1,21 @@
-int gaussEliminate(int gauss[50][50], int n){
-    int i,j,k;
-    for(i=0;i<n;i=i+1){
-        for(k=i+1;k<n;k=k+1){
-            int frac = gauss[k][i]/gauss[i][i];
-        }
+struct mat
+{
+    int data[2][2];
+};
+
+
+int fast_pow(int b)
+{
+    while (b)
+    {
+        
     }
+    return 0;
 }
 
-int main(){
-    
-    return 0;
+int main()
+{
+    struct mat u1;
+    u1.data[0][0] = u1.data[0][1] = 0;
+    u1.data[1][0] = u1.data[1][1] = 1;
 }
