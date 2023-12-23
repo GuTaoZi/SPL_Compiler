@@ -9,3 +9,5 @@ tmp*
 test.out
 test.spl
 **/irsim.log
+Phase_3/test-tmp
+Phase_3/test_tmp.sh

@@ -21,6 +21,19 @@ IR_list *rootw = NULL;
 char ss[10][32768];
 int lss;
 
+void output_list(const IR_list *u, FILE *fout)
+{
+    while (u != NULL)
+    {
+        for (int i = 0; u->ss[i] != NULL; ++i)
+        {
+            fprintf(fout, "%s ", u->ss[i]);
+        }
+        fprintf(fout, "\n");
+        u = u->next;
+    }
+}
+
 void debug_IR_list(IR_list *ir, bool endl)
 {
     for (int i = 0; ir->ss[i] != NULL; i++)
@@ -331,98 +344,174 @@ char *get_name(Var *var)
     return s;
 }
 
-char *prefixed_name(char prefix, char *name)
+char *prefixed_name(Usage usage, char *name)
 {
-    char *ret = (char *)malloc(sizeof(char) * (strlen(name) + 1));
-    ret[0] = prefix;
+    if (usage == VAL)
+        return name;
+    char *ret = (char *)malloc(sizeof(char) * (strlen(name) + usage));
+    ret[0] = usage == PTR ? '*' : '&';
     ret[1] = '\0';
     strcat(ret, name);
-    free(name);
     return ret;
 }
 
-Var *get_parent(Var *var)
-{
-    if (var->parent[0].var == NULL)
-        return var;
-    if (var->parent[1].var == NULL && var->parent[0].recent == var->parent[0].var->recent)
-        return var->parent[0].var;
-    return var;
-}
+// Var *get_parent(Var *var)
+// {
+//     if (var->parent[0].var == NULL)
+//         return var;
+//     if (var->parent[1].var == NULL && var->parent[0].recent == var->parent[0].var->recent)
+//         return var->parent[0].var;
+//     return var;
+// }
+
+bool single_parent(Var *var)
+{ return var->parent[0].var != NULL && var->parent[1].var == NULL; }
 
 void find_identity(IR_list *ir) // x is not const
 {
     Var *x = get_var(ir->ss[0]);
-    // one step inherit
+    Usage usage = get_usage(ir->ss[0]);
+    // (*)x := (*&)y
     if (get_list_len(ir) == 3)
     {
-        if (ir->ss[2][0] == '&')
-            return;
-
         Var *y = get_var(ir->ss[2]);
-        Var *p = get_parent(y);
-        if (p == y)
+        if (ir->ss[2][0] == '&' || y->type == CONST)
             return;
-        // *x = (*&)y
-        if (ir->ss[0][0] == '*')
+        // (*)x := *y
+        if (ir->ss[2][0] == '*')
         {
-            if (p->recent->ss[2][0] != '*')
-            {
-                free(ir->ss[2]);
-                ir->ss[2] = get_name(p);
-            }
+            if (!single_parent(y) || y->parent[0].usage != VAL)
+                return;
+            Parent py = y->parent[0];
+            if (py.recent != py.var->recent)
+                return;
+            free(ir->ss[2]);
+            ir->ss[2] = prefixed_name(PTR, get_name(py.var));
+            if (usage != PTR)
+                x->parent[0] = (Parent){PTR, py.var, py.recent};
         }
-        // x = (*)y
+        // (*)x := (*)y
         else
         {
-            // x = *y
-            if (ir->ss[2][0] == '*')
+            if (single_parent(y))
             {
-                if (y->recent->ss[2][0] != '*')
-                {
-                    free(ir->ss[2]);
-                    ir->ss[2] = prefixed_name('*', get_name(y));
-                    x->parent[0] = y->parent[0];
-                }
+                Parent py = y->parent[0];
+                if (py.recent != py.var->recent)
+                    return;
+                free(ir->ss[2]);
+                ir->ss[2] = prefixed_name(py.usage, get_name(py.var));
+                if (usage != PTR)
+                    x->parent[0] = py;
             }
-            // x = y
             else
             {
+                Parent py[2] = {y->parent[0], y->parent[1]};
+                // x := *y
+                if (x->parent[0].usage == PTR)
+                    return;
+                // x := y
+                if (py[0].recent != py[0].var->recent || py[1].recent != py[1].var->recent)
+                    return;
                 free(ir->ss[2]);
-                // y = *z
-                if (y->recent->ss[2][0] == '*')
+                ir->ss[2] = prefixed_name(py[0].usage, get_name(py[0].var));
+                ir->ss[4] = prefixed_name(py[1].usage, get_name(py[1].var));
+                ir->ss[3] = (char *)malloc(sizeof(char) * 2);
+                ir->ss[3][0] = y->recent->ss[3][0];
+                ir->ss[3][1] = '\0';
+                if (usage != PTR)
                 {
-                    ir->ss[2] = prefixed_name('*', get_name(y));
-                    x->parent[0] = y->parent[0];
-                }
-                // y = z
-                else
-                {
-                    ir->ss[2] = get_name(p);
-                    x->parent[0] = y->parent[0];
+                    x->parent[0] = py[0];
+                    x->parent[0] = py[1];
                 }
             }
         }
     }
-    // common subexpression
+    // (*)x := (*&)y ? (*&)z
     else
     {
-        if (ir->ss[2][0] == '&' || ir->ss[4][0] == '&')
-            return;
         Var *y = get_var(ir->ss[2]), *z = get_var(ir->ss[4]);
-        Var *p[2] = {get_parent(y), get_parent(z)};
-        if (p[0] != y)
+fprintf(debug, "%s: %s %d %p %p\n", __FUNCTION__, ir->ss[4], z->type, z->parent[0].var, z->parent[1].var);
+fflush(debug);
+        // optimize (*)y
+        if (ir->ss[2][0] != '&' && single_parent(y))
         {
-            x->parent[0] = y->parent[0];
-            free(ir->ss[2]);
-            ir->ss[2] = get_name(p[0]);
+            // *y
+            if (ir->ss[2][0] == '*')
+            {
+                if (y->parent[0].usage == VAL)
+                {
+                    Parent py = y->parent[0];
+                    if (py.recent != py.var->recent)
+                        return;
+                    free(ir->ss[2]);
+                    ir->ss[2] = prefixed_name(PTR, get_name(py.var));
+                    if (usage != PTR)
+                        x->parent[0] = (Parent){PTR, py.var, py.recent};
+                }
+            }
+            // y
+            else
+            {
+                if (y->type == CONST)
+                {
+                    free(ir->ss[2]);
+                    ir->ss[2] = val_to_const(y->val);
+                    if (usage != PTR)
+                        x->parent[0] = (Parent){PTR, new_constant_var(ir->ss[2]), NULL};
+                }
+                else
+                {
+                    Parent py = y->parent[0];
+                    if (py.recent != py.var->recent)
+                        return;
+                    free(ir->ss[2]);
+                    ir->ss[2] = prefixed_name(py.usage, get_name(py.var));
+                    if (usage != PTR)
+                        x->parent[0] = py;
+                }
+            }
         }
-        if (p[1] != z)
+        // optimize z
+        if (ir->ss[4][0] != '&' && single_parent(z))
         {
-            x->parent[1] = z->parent[0];
-            free(ir->ss[4]);
-            ir->ss[4] = get_name(p[1]);
+            // *z
+            if (ir->ss[4][0] == '*')
+            {
+                if (z->parent[0].usage == VAL)
+                {
+                    Parent pz = z->parent[0];
+                    if (pz.recent != pz.var->recent)
+                        return;
+                    free(ir->ss[4]);
+                    ir->ss[4] = prefixed_name(PTR, get_name(pz.var));
+                    if (usage != PTR)
+                        x->parent[1] = (Parent){PTR, pz.var, pz.recent};
+                }
+            }
+            // z
+            else
+            {
+                if (z->type == CONST)
+                {
+                    free(ir->ss[4]);
+                    ir->ss[4] = val_to_const(z->val);
+                    if (usage != PTR)
+                        x->parent[1] = (Parent){PTR, new_constant_var(ir->ss[4]), NULL};
+                }
+                else
+                {
+                    Parent pz = z->parent[0];
+                    if (pz.recent != pz.var->recent)
+                        return;
+                    free(ir->ss[4]);
+                    ir->ss[2] = prefixed_name(pz.usage, get_name(pz.var));
+                    if (usage != PTR)
+                        x->parent[1] = pz;
+                }
+            }
         }
+        
+        // common subexpression
         for (size_t i = 0; i < tmp_cnt; i++)
         {
             y = &t_var[i];
@@ -497,7 +586,7 @@ debug_IR_list(ir, false);
                 {
                     x->type = CONST;
                     x->val = val;
-                    x->parent[0] = (Parent){VAL, NULL, NULL};
+                    x->parent[0] = (Parent){VAL, get_var(ir->ss[2]), NULL};
                     x->parent[1] = (Parent){VAL, NULL, NULL};
                 }
             }
@@ -616,12 +705,10 @@ fflush(debug);
         else if (strcmp(ir->ss[0], "IF") == 0);
         else if (strcmp(ir->ss[0], "RETURN") == 0);
         else if (strcmp(ir->ss[0], "DEC") == 0)
+        {
             if (!*(get_useful(ir->ss[2])))
-            {
-                del_list(ir);
-                ir = next;
-                continue;
-            }
+                goto DEL_IR; 
+        }
         else if (strcmp(ir->ss[0], "PARAM") == 0);
         else if (strcmp(ir->ss[0], "ARG") == 0);
         else if (strcmp(ir->ss[0], "READ") == 0);
@@ -631,43 +718,30 @@ fflush(debug);
         {
             size_t len = get_list_len(ir);
             bool useful = *get_useful(ir->ss[0]);
-            if (!useful && len != 4)
-            {
-                del_list(ir);
-                ir = next;
-                continue;
-            }
-            bool is_ptr = ir->ss[0][0] == '*';
-            if (useful || is_ptr)
+            Usage usage = get_usage(ir->ss[0]);
+            if (!useful && len != 4 && usage != PTR)
+                goto DEL_IR;
+            if (useful || usage == PTR)
                 switch (len)
                 {
-                    case 3: // (*)x := y
+                    case 3: // (*)x := (*&)y
+                        set_useful(ir->ss[0], usage == PTR);
                         set_useful(ir->ss[2], true);
-                        set_useful(ir->ss[0], is_ptr);
                         break;
-                    case 5: // (*)x := y + z
+                    case 5: // (*)x := (*&)y + (*&)z
+                        set_useful(ir->ss[0], usage == PTR);
                         set_useful(ir->ss[2], true);
                         set_useful(ir->ss[4], true);
-                        set_useful(ir->ss[0], is_ptr);
                         break;
                 }
         }
         ir = next;
+        continue;;
+    DEL_IR:
+        del_list(ir);
+        ir = next;
     }
     return false;
-}
-
-void output_list(const IR_list *u, FILE *fout)
-{
-    while (u != NULL)
-    {
-        for (int i = 0; u->ss[i] != NULL; ++i)
-        {
-            fprintf(fout, "%s ", u->ss[i]);
-        }
-        fprintf(fout, "\n");
-        u = u->next;
-    }
 }
 
 void optimize(FILE *fin, FILE *fout)

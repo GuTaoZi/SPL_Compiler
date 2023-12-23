@@ -1,12 +1,13 @@
-int fun(int a, int b)
-{
-    
-    return 0;
+int gaussEliminate(int gauss[50][50], int n){
+    int i,j,k;
+    for(i=0;i<n;i=i+1){
+        for(k=i+1;k<n;k=k+1){
+            int frac = gauss[k][i]/gauss[i][i];
+        }
+    }
 }
 
-int main()
-{
-    int a[4];
-    a[1] = 1;
+int main(){
+    
     return 0;
 }
