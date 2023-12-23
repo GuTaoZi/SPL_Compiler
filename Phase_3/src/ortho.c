@@ -118,19 +118,22 @@ orthoNode *current_scope_seek(const char *name)
 
 orthoNode *global_scope_seek(const char *name)
 {
-    orthoStack *sit = S;
-    while (sit)
-    {
-        orthoNode *it = sit->top;
-        while (it)
-        {
-            if (strncmp(name, it->name, 31) == 0)
-            {
-                return it;
-            }
-            it = it->next[1];
-        }
-        sit = sit->next;
-    }
-    return NULL;
+    // orthoStack *sit = S;
+    // while (sit)
+    // {
+    //     orthoNode *it = sit->top;
+    //     while (it)
+    //     {
+    //         if (strncmp(name, it->name, 31) == 0)
+    //         {
+    //             return it;
+    //         }
+    //         it = it->next[1];
+    //     }
+    //     sit = sit->next;
+    // }
+    // return NULL;
+    hashNode *hash_head;
+    HASH_FIND_STR(H, name, hash_head);
+    return hash_head->head;
 }

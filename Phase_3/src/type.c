@@ -476,9 +476,12 @@ void calcArraySize(Array *p)
     p->typesize = p->base->typesize * p->size;
 }
 
-size_t get_offset(const FieldList *p, const char *name){
-    while(p != NULL){
-        if(strcmp(p->varname, name) == 0){
+size_t get_offset(const FieldList *p, const char *name)
+{
+    while (p != NULL)
+    {
+        if (strcmp(p->varname, name) == 0)
+        {
             return p->typesize - p->type->typesize;
         }
         p = p->next;
@@ -486,16 +489,26 @@ size_t get_offset(const FieldList *p, const char *name){
     return -1;
 }
 
-size_t get_offset_Struct(const Type *p, const char* name){
-    if(p->category != STRUCTURE){return -1;}
-    else{
+size_t get_offset_Struct(const Type *p, const char *name)
+{
+    if (p->category != STRUCTURE)
+    {
+        return -1;
+    }
+    else
+    {
         return get_offset(p->structure->data, name);
     }
 }
 
-size_t get_array_size(const Type *p){
-    if(p->category != ARRAY){return -1;}
-    else{
+size_t get_array_size(const Type *p)
+{
+    if (p->category != ARRAY)
+    {
+        return -1;
+    }
+    else
+    {
         return p->array->base->typesize;
     }
 }

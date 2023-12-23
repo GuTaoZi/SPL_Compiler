@@ -1,7 +1,7 @@
 #include "IRgen.h"
-#include "type.h"
-#include "IRortho.h"
 #include "GAS_utility.h"
+#include "IRortho.h"
+#include "type.h"
 
 #include <assert.h>
 #include <stdarg.h>
@@ -445,7 +445,7 @@ IR_tree *build_stmt_IR_tree(const treeNode *u, const char *lloop_head, const cha
 
             sprintf(ttmp, "LABEL %s :", falselabel);
             IR_tree *c5 = new_IR_node(ttmp);
-            
+
             IR_tree *c6 = build_stmt_IR_tree(tntmp->next->next, lloop_head, lloop_end);
 
             sprintf(ttmp, "LABEL %s :", endlabel);
@@ -913,7 +913,8 @@ IR_tree *build_ref_IR_tree(const treeNode *u, bool is_ptr)
         IR_tree *p;
         IR_tree *c1 = build_ref_IR_tree(u->child, true);
         char *tname = alloc_tmpvar();
-        sprintf(ttmp, "%s := %s + #%zu", tname, c1->stmt, get_offset_Struct(u->child->inheridata, u->child->next->next->val));
+        sprintf(ttmp, "%s := %s + #%zu", tname, c1->stmt,
+                get_offset_Struct(u->child->inheridata, u->child->next->next->val));
         IR_tree *c2 = new_IR_node(ttmp);
         addIRn(p, 2, c1, c2);
         if (!is_ptr)
