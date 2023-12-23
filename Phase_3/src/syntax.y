@@ -304,7 +304,7 @@ void yyerror(const char *s)
     // fprintf(stderr, "YYERROR: %s\n", s);
 }
 
-static char my_ttmp[66000];
+static char my_ttmp[65550];
 static char ofname[32768];
 static char optname[32768];
 
@@ -364,7 +364,8 @@ int main(int argc, char **argv)
     char need_optmize = false;
     if (!has_error)
     {
-        if (root != NULL){
+        if (root != NULL)
+        {
             IR_tree *IRroot = build_IR_tree(root);
             output_IR_tree(IRroot, file_out);
             need_optmize = true;
@@ -380,16 +381,20 @@ int main(int argc, char **argv)
     }
     fclose(file_in);
     fclose(file_out);
-    if(need_optmize){
+    if (need_optmize)
+    {
         int pos = 0, i = 0;
-        while(argv[0][i] != 0){
-            if(argv[0][i] == '/' || argv[0][i] == '\\'){
-                pos=i;
+        while (argv[0][i] != 0)
+        {
+            if (argv[0][i] == '/' || argv[0][i] == '\\')
+            {
+                pos = i;
             }
             i++;
         }
         argv[0][pos] = 0;
-        sprintf(my_ttmp, "%s/optimizer %s %s %zu %zu %zu", argv[0], ofname, optname,label_cnt, tmp_val_cnt, var_val_cnt);
+        sprintf(my_ttmp, "%s/optimizer %s %s %zu %zu %zu", argv[0], ofname, optname, label_cnt, tmp_val_cnt,
+                var_val_cnt);
         printf("%s\n", my_ttmp);
         system(my_ttmp);
     }
