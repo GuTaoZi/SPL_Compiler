@@ -30,6 +30,12 @@ splcd:
 	cd $(SRC_DIR) && $(FLEX) lex.l
 	cd $(SRC_DIR) && $(CC) $(SRCS1) -lfl -o ../bin/splc
 	cd $(SRC_DIR) && $(CC) $(SRCS2) -o ../bin/optimizer
+splct:
+	cd $(SRC_DIR) && $(BISON) -d syntax.y
+	cd $(SRC_DIR) && $(FLEX) lex.l
+	cd $(SRC_DIR) && tcc $(SRCS1) -lfl -o ../bin/splc
+	cd $(SRC_DIR) && tcc $(SRCS2) -o ../bin/optimizer
+	cd $(SRC_DIR) && rm -f lex.yy.c syntax.tab.c syntax.tab.h *.out
 clean:
 	cd $(SRC_DIR) && rm -f lex.yy.c syntax.tab.c syntax.tab.h *.out
 	rm -f ./bin/splc
