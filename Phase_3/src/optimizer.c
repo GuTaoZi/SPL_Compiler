@@ -373,6 +373,7 @@ bool find_identity(IR_list *ir) // x is not const
     bool optimized = false;
     Var *x = get_var(ir->ss[0]);
     Usage usage = get_usage(ir->ss[0]);
+// fprintf(debug, "usage: %d\n", usage);
     // (*)x := (*&)y
     if (get_list_len(ir) == 3)
     {
@@ -380,7 +381,7 @@ bool find_identity(IR_list *ir) // x is not const
         if (not_tmp(y) || ir->ss[2][0] == '&')
             return optimized;
         // (*)x := *y
-        if (ir->ss[2][0] == '*')
+        if (ir->ss[2][0] != '*')
         {
             if (!single_parent(y) || y->parent[0].usage != VAL)
                 return optimized;
@@ -390,7 +391,9 @@ bool find_identity(IR_list *ir) // x is not const
             free(ir->ss[2]);
             ir->ss[2] = prefixed_name(PTR, get_name(py.var));
             if (usage != PTR)
+            {
                 x->parent[0] = (Parent){PTR, py.var, py.recent};
+            }
             optimized = true;
         }
         // (*)x := (&)y
@@ -559,7 +562,6 @@ bool find_identity(IR_list *ir) // x is not const
 bool simplify_assign(IR_list *ir)
 {
     bool optimized = false;
-    debug_IR_list(ir, false);
     Var *x = get_var(ir->ss[0]), *y, *z;
     
     Usage usage = get_usage(ir->ss[0]);
@@ -575,7 +577,7 @@ bool simplify_assign(IR_list *ir)
             if (ir->ss[2][0] == '&' || ir->ss[2][0] == '*')
                 break;
             y = get_var(ir->ss[2]);
-            if (ir->ss[0][0] != '*')
+            if (usage != PTR)
             {
                 x->type = y->type;
                 x->val = y->val;
@@ -593,11 +595,8 @@ bool simplify_assign(IR_list *ir)
         case 5:
             y = get_var(ir->ss[2]), z = get_var(ir->ss[4]);
             char op = ir->ss[3][0];
-            if (ir->ss[0][0] != '*')
-            {
-                x->parent[0] = (Parent){get_usage(ir->ss[2]), y, y->recent};
-                x->parent[1] = (Parent){get_usage(ir->ss[4]), z, z->recent};
-            }
+            x->parent[0] = (Parent){get_usage(ir->ss[2]), y, y->recent};
+            x->parent[1] = (Parent){get_usage(ir->ss[4]), z, z->recent};
             // #? 
             if (!not_tmp(y) && !not_tmp(z) && y->type == CONST && z->type == CONST)
             {
@@ -639,9 +638,8 @@ bool simplify_assign(IR_list *ir)
                 free(ir->ss[3]);
                 free(ir->ss[4]);
                 ir->ss[3] = ir->ss[4] = NULL;
+                x->parent[1] = (Parent){VAL, NULL, NULL};
                 optimized = true;
-                if (ir->ss[0][0] != '*')
-                    x->parent[1] = (Parent){VAL, NULL, NULL};
             }
             // #0 + ?
             else if (!not_tmp(y) && op == '+' && z->type == CONST && z->val == 0)
@@ -656,9 +654,10 @@ bool simplify_assign(IR_list *ir)
             }
             break;
     }
+// debug_IR_list(ir, false);
     if (x->type != CONST)
         optimized |= find_identity(ir);
-debug_IR_list(ir, true);
+// debug_IR_list(ir, true);
     return optimized;
 }
 
