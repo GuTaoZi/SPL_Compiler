@@ -1,8 +1,70 @@
-int main(){
-    int i;
-    for(i=0;i<10;i=i+1){
-        if(i==2) continue;
-        if(i==5) break;
-        write(i);
+struct mat
+{
+    int data[2][2];
+};
+
+int is_odd(int a)
+{
+    return a - 2 * (a / 2);
+}
+
+int matmul(struct mat ans, struct mat a, struct mat b)
+{
+    int i, j, k;
+    for (i = 0; i < 2; i = i + 1)
+    {
+        for (j = 0; j < 2; j = j + 1)
+        {
+            ans.data[i][j] = 0;
+            for (k = 0; k < 2; k = k + 1)
+            {
+                ans.data[i][j] = ans.data[i][j] + a.data[i][k] * b.data[k][j];
+            }
+        }
     }
+}
+
+int matcopy(struct mat dist, struct mat src)
+{
+    int i, j;
+    for (i = 0; i < 2; i = i + 1)
+    {
+        for (j = 0; j < 2; j = j + 1)
+        {
+            dist.data[i][j] = src.data[i][j];
+        }
+    }
+}
+
+int fast_pow(struct mat ans, struct mat a, int b)
+{
+    struct mat inter;
+    ans.data[0][0] = ans.data[1][1] = 1;
+    ans.data[0][1] = ans.data[1][0] = 0;
+    while (b)
+    {
+        if (is_odd(b))
+        {
+            matmul(inter, ans, a);
+            matcopy(ans, inter);
+        }
+        matmul(inter, a, a);
+        matcopy(a, inter);
+        b = b / 2;
+    }
+}
+
+int main()
+{
+    struct mat u1;
+    int n = read();
+    struct mat u2;
+    struct mat u3;
+    u1.data[0][0] = u1.data[0][1] = 0;
+    u1.data[1][0] = u1.data[1][1] = 1;
+    u2.data[0][0] = 0;
+    u2.data[1][0] = u2.data[1][1] = u2.data[0][1] = 1;
+    fast_pow(u3, u2, n);
+    matmul(u2, u1, u3);
+    write(u2.data[1][0]);
 }
