@@ -93,6 +93,8 @@ void split_str(const char *s)
 
 void del_list(IR_list *p)
 {
+fprintf(debug, "del: ");
+debug_IR_list(p, false);
     if (p->prev != NULL)
     {
         p->prev->next = p->next;
@@ -373,15 +375,16 @@ bool find_identity(IR_list *ir) // x is not const
     bool optimized = false;
     Var *x = get_var(ir->ss[0]);
     Usage usage = get_usage(ir->ss[0]);
-// fprintf(debug, "usage: %d\n", usage);
     // (*)x := (*&)y
     if (get_list_len(ir) == 3)
     {
+fprintf(debug, "len = 3\n");
         Var *y = get_var(ir->ss[2]);
         if (not_tmp(y) || ir->ss[2][0] == '&')
             return optimized;
         // (*)x := *y
-        if (ir->ss[2][0] != '*')
+fprintf(debug, "y is singel? %d\n", single_parent(y));
+        if (ir->ss[2][0] == '*')
         {
             if (!single_parent(y) || y->parent[0].usage != VAL)
                 return optimized;
@@ -403,6 +406,7 @@ bool find_identity(IR_list *ir) // x is not const
                 return optimized;
             if (single_parent(y))
             {
+fprintf(debug, "single, (&)y\n");
                 Parent py = y->parent[0];
                 if (py.var == NULL || py.recent != py.var->recent)
                     return optimized;
@@ -439,10 +443,12 @@ bool find_identity(IR_list *ir) // x is not const
     // (*)x := (*&)y ? (*&)z
     else
     {
+fprintf(debug, "(*)x := (*&)y ? (*&)z\n");
         Var *y = get_var(ir->ss[2]), *z = get_var(ir->ss[4]);
         // optimize (*)y
         if (!not_tmp(y) && ir->ss[2][0] != '&' && single_parent(y))
         {
+fprintf(debug, "y is single\n");
             // *y
             if (ir->ss[2][0] == '*')
             {
@@ -462,6 +468,7 @@ bool find_identity(IR_list *ir) // x is not const
             // y
             else
             {
+fprintf(debug, "y is not a PTR\n");
                 if (y->type == CONST)
                 {
                     free(ir->ss[2]);
@@ -473,8 +480,10 @@ bool find_identity(IR_list *ir) // x is not const
                 else
                 {
                     Parent py = y->parent[0];
+fprintf(debug, "y is not a CONST\n");
                     if (py.recent == py.var->recent)
                     {
+fprintf(debug, "py: %d %s\n", py.usage, get_name(py.var));
                         free(ir->ss[2]);
                         ir->ss[2] = prefixed_name(py.usage, get_name(py.var));
                         if (usage != PTR)
@@ -570,18 +579,21 @@ bool simplify_assign(IR_list *ir)
         x->recent = ir;
         x->type = VAR;
     }
+fprintf(debug, "in sa(): %d\n", get_list_len(ir));
+debug_IR_list(ir, false);
     switch (get_list_len(ir))
     {
         // (*)x := (*&)y
         case 3:
-            if (ir->ss[2][0] == '&' || ir->ss[2][0] == '*')
-                break;
+            // if (ir->ss[2][0] == '&' || ir->ss[2][0] == '*')
+            //     break;
             y = get_var(ir->ss[2]);
             if (usage != PTR)
             {
                 x->type = y->type;
                 x->val = y->val;
                 x->parent[0] = (Parent){get_usage(ir->ss[2]), y, y->recent};
+// fprintf(debug, "in sa(): case 3: %d %s", get_usage(ir->ss[2]), ir->ss[2]);
                 x->parent[1] = (Parent){VAL, NULL, NULL};
             }
             if (!not_tmp(y) && y->type == CONST)
@@ -597,6 +609,7 @@ bool simplify_assign(IR_list *ir)
             char op = ir->ss[3][0];
             x->parent[0] = (Parent){get_usage(ir->ss[2]), y, y->recent};
             x->parent[1] = (Parent){get_usage(ir->ss[4]), z, z->recent};
+fprintf(debug, "in sa(): case 5: %d %s\n", x->parent[0].usage, ir->ss[2]);
             // #? 
             if (!not_tmp(y) && !not_tmp(z) && y->type == CONST && z->type == CONST)
             {
@@ -635,6 +648,7 @@ bool simplify_assign(IR_list *ir)
                 ((op == '+' && z->type == CONST && z->val == 0) ||
                 (op == '-' && z->type == CONST && z->val == 0)))
             {
+fprintf(debug, "+- 0\n");
                 free(ir->ss[3]);
                 free(ir->ss[4]);
                 ir->ss[3] = ir->ss[4] = NULL;
@@ -654,10 +668,10 @@ bool simplify_assign(IR_list *ir)
             }
             break;
     }
-// debug_IR_list(ir, false);
+debug_IR_list(ir, false);
     if (x->type != CONST)
         optimized |= find_identity(ir);
-// debug_IR_list(ir, true);
+debug_IR_list(ir, true);
     return optimized;
 }
 
