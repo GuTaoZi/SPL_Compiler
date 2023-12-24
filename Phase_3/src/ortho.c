@@ -6,11 +6,10 @@ static hashNode *H = NULL;
 
 static orthoStack *S = NULL;
 
-static orthoNode *new_ortho_node(const char *name, Type *val)
+static orthoNode *new_ortho_node(TN name, Type *val)
 {
     orthoNode *p = (orthoNode *)malloc(sizeof(orthoNode));
-    strncpy(p->name, name, 31);
-    p->name[31] = 0;
+    p->name = name;
     p->val = val;
     p->next[0] = p->next[1] = NULL;
     return p;
@@ -42,16 +41,15 @@ orthoStack *pop_stack()
     hashNode *hash_head; // the hashNode containing it.
     while (it)
     {
-        HASH_FIND_STR(H, it->name, hash_head);
+        HASH_FIND_INT(H, it->name, hash_head);
         HASH_DEL(H, hash_head);
         // deleteType(it->val);
         if (it->next[0])
         {
             hashNode *hn = (hashNode *)malloc(sizeof(hashNode));
-            strncpy(hn->name, it->name, 31);
-            hn->name[31] = 0;
+            hn->name = it->name;
             hn->head = it->next[0];
-            HASH_ADD_STR(H, name, hn);
+            HASH_ADD_INT(H, name, hn);
             // change the head of hashNode to the next orthoNode
         }
         else
@@ -72,7 +70,7 @@ orthoNode *stack_top()
 }
 
 // TODO: check if redefinition here, or maybe outside?
-orthoNode *add_ortho_node(const char *name, Type *val)
+orthoNode *add_ortho_node(TN name, Type *val)
 {
     if (!S)
     {
@@ -82,7 +80,7 @@ orthoNode *add_ortho_node(const char *name, Type *val)
     orthoNode *p = new_ortho_node(name, val);
     hashNode *hn = (hashNode *)malloc(sizeof(hashNode));
     hashNode *old_hash_head;
-    HASH_FIND_STR(H, name, old_hash_head);
+    HASH_FIND_INT(H, name, old_hash_head);
     if (old_hash_head)
     {
         p->next[0] = old_hash_head->head;
@@ -95,20 +93,19 @@ orthoNode *add_ortho_node(const char *name, Type *val)
         p->next[1] = S->top;
         S->top = p;
     }
-    strncpy(hn->name, name, 31);
-    hn->name[31] = 0;
+    hn->name = name;
     hn->head = p;
-    HASH_ADD_STR(H, name, hn);
+    HASH_ADD_INT(H, name, hn);
     // add the new map <name, hashNode(containing orthoNode)>
     return NULL;
 }
 
-orthoNode *current_scope_seek(const char *name)
+orthoNode *current_scope_seek(TN name)
 {
     orthoNode *it = S->top;
     while (it)
     {
-        if (strncmp(name, it->name, 32) == 0)
+        if (it->name==name)
         {
             return it;
         }
@@ -117,7 +114,7 @@ orthoNode *current_scope_seek(const char *name)
     return NULL;
 }
 
-orthoNode *global_scope_seek(const char *name)
+orthoNode *global_scope_seek(TN name)
 {
     // orthoStack *sit = S;
     // while (sit)
@@ -135,6 +132,6 @@ orthoNode *global_scope_seek(const char *name)
     // }
     // return NULL;
     hashNode *hash_head;
-    HASH_FIND_STR(H, name, hash_head);
+    HASH_FIND_INT(H, name, hash_head);
     return hash_head->head;
 }
