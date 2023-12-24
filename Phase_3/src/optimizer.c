@@ -854,7 +854,7 @@ bool opt_read_func(IR_list *root)
         if (strcmp(ir->ss[0], "READ") == 0)
         {
             IR_list *next = ir->next;
-            if (strcmp(next->ss[1], ":=") == 0 && strcmp(ir->ss[1], next->ss[2]) == 0 && next->ss[3] == NULL)
+            if (strcmp(next->ss[1], ":=") == 0 && next->ss[0][0] != '*' && strcmp(ir->ss[1], next->ss[2]) == 0 && next->ss[3] == NULL)
             {
                 free(ir->ss[1]);
                 ir->ss[1] = (char *)malloc(sizeof(char) * strlen(next->ss[0] + 1));
