@@ -276,7 +276,6 @@ Var *get_var(const char *name)
         case '*':
             return get_var(name + 1);
     }
-    return NULL;
 }
 
 bool equal_parent(Parent a, Parent b)
@@ -329,7 +328,6 @@ int calc(int a, int b, char op)
         case '/':
             return a / b;
     }
-    return -123456789;
 }
 
 char *get_name(Var *var)
@@ -370,10 +368,9 @@ char *prefixed_name(Usage usage, char *name)
 bool single_parent(Var *var)
 { return var->parent[1].var == NULL; }
 
-void find_identity(IR_list *ir) // x is not const
+bool find_identity(IR_list *ir) // x is not const
 {
-fprintf(debug, "%s\n", __FUNCTION__);
-fflush(debug);
+    bool optimized = false;
     Var *x = get_var(ir->ss[0]);
     Usage usage = get_usage(ir->ss[0]);
     // (*)x := (*&)y
@@ -381,56 +378,49 @@ fflush(debug);
     {
         Var *y = get_var(ir->ss[2]);
         if (not_tmp(y) || ir->ss[2][0] == '&')
-            return;
+            return optimized;
         // (*)x := *y
-fprintf(debug, "%c: %s\n", ir->ss[2][0], __FUNCTION__);
-fflush(debug);
         if (ir->ss[2][0] == '*')
         {
-fprintf(debug, "*%s\n", __FUNCTION__);
-fflush(debug);
             if (!single_parent(y) || y->parent[0].usage != VAL)
-                return;
+                return optimized;
             Parent py = y->parent[0];
             if (py.var == NULL || py.recent != py.var->recent)
-                return;
+                return optimized;
             free(ir->ss[2]);
             ir->ss[2] = prefixed_name(PTR, get_name(py.var));
             if (usage != PTR)
                 x->parent[0] = (Parent){PTR, py.var, py.recent};
+            optimized = true;
         }
         // (*)x := (&)y
         else
         {
             if (not_tmp(y))
-                return;
+                return optimized;
             if (single_parent(y))
             {
                 Parent py = y->parent[0];
                 if (py.var == NULL || py.recent != py.var->recent)
-                    return;
+                    return optimized;
                 free(ir->ss[2]);
                 ir->ss[2] = prefixed_name(py.usage, get_name(py.var));
                 if (usage != PTR)
                     x->parent[0] = py;
+                optimized = true;
             }
             else
             {
                 if (usage == PTR)
-                    return;
+                    return optimized;
                 Parent py[2] = {y->parent[0], y->parent[1]};
                 // x := *y
                 if (x->parent[0].usage == PTR)
-                    return;
+                    return optimized;
                 // x := y
-                // if (py[0].var == NULL || py[0].recent != py[0].var->recent || py[1].recent != py[1].var->recent)
-                //     return;
                 free(ir->ss[2]);
                 ir->ss[2] = prefixed_name(py[0].usage, get_name(py[0].var));
                 ir->ss[4] = prefixed_name(py[1].usage, get_name(py[1].var));
-Var *var = py[1].var;
-fprintf(debug, "x := y: %p = %d\n", var, var->val);
-fflush(debug);
                 ir->ss[3] = (char *)malloc(sizeof(char) * 2);
                 ir->ss[3][0] = y->recent->ss[3][0];
                 ir->ss[3][1] = '\0';
@@ -439,6 +429,7 @@ fflush(debug);
                     x->parent[0] = py[0];
                     x->parent[1] = py[1];
                 }
+                optimized = true;
             }
         }
     }
@@ -450,8 +441,6 @@ fflush(debug);
         if (!not_tmp(y) && ir->ss[2][0] != '&' && single_parent(y))
         {
             // *y
-fprintf(debug, "5: usage: %d %d\n", x->parent[0].usage, x->parent[1].usage);
-fflush(debug);
             if (ir->ss[2][0] == '*')
             {
                 if (y->parent[0].usage == VAL)
@@ -463,6 +452,7 @@ fflush(debug);
                         ir->ss[2] = prefixed_name(PTR, get_name(py.var));
                         if (usage != PTR)
                             x->parent[0] = (Parent){PTR, py.var, py.recent};
+                        optimized = true;
                     }
                 }
             }
@@ -473,10 +463,9 @@ fflush(debug);
                 {
                     free(ir->ss[2]);
                     ir->ss[2] = val_to_const(y->val);
-fprintf(debug, "add const for y\n");
-fflush(debug);
                     if (usage != PTR)
                         x->parent[0] = (Parent){VAL, new_constant_var(ir->ss[2]), NULL};
+                    optimized = true;
                 }
                 else
                 {
@@ -487,6 +476,7 @@ fflush(debug);
                         ir->ss[2] = prefixed_name(py.usage, get_name(py.var));
                         if (usage != PTR)
                             x->parent[0] = py;
+                        optimized = true;
                     }
                 }
             }
@@ -506,6 +496,7 @@ fflush(debug);
                         ir->ss[4] = prefixed_name(PTR, get_name(pz.var));
                         if (usage != PTR)
                             x->parent[1] = (Parent){PTR, pz.var, pz.recent};
+                        optimized = true;
                     }
                 }
             }
@@ -518,8 +509,7 @@ fflush(debug);
                     ir->ss[4] = val_to_const(z->val);
                     if (usage != PTR)
                         x->parent[1] = (Parent){VAL, new_constant_var(ir->ss[4]), NULL};
-fprintf(debug, "add const for z: %s at %p = %d\n", ir->ss[4], x->parent[1].var, x->parent[1].var->val);
-fflush(debug);
+                    optimized = true;
                 }
                 else
                 {
@@ -530,6 +520,7 @@ fflush(debug);
                         ir->ss[4] = prefixed_name(pz.usage, get_name(pz.var));
                         if (usage != PTR)
                             x->parent[1] = pz;
+                        optimized = true;
                     }
                 }
             }
@@ -547,7 +538,7 @@ fflush(debug);
         //     if (y != x && equal_var(x, y))
         //         goto CHEKCOUT;
         // }
-        return;
+        return optimized;
     CHEKCOUT:
         for (size_t i = 2; i <= 4; i++)
         {
@@ -560,7 +551,9 @@ fflush(debug);
             x->parent[0] = (Parent){get_usage(ir->ss[2]), y, y->recent};
             x->parent[1] = (Parent){VAL, NULL, NULL};
         }
+        optimized = true;
     }
+    return optimized;
 }
 
 bool simplify_assign(IR_list *ir)
@@ -663,15 +656,10 @@ bool simplify_assign(IR_list *ir)
             }
             break;
     }
-debug_IR_list(ir, false);
-fprintf(debug, " %s->type = %d\n", ir->ss[0], x->type);
-fprintf(debug, "usage: %d %d\n", x->parent[0].usage, x->parent[1].usage);
-fflush(debug);
     if (x->type != CONST)
-        find_identity(ir);
-fprintf(debug, "usage: %d %d\n", x->parent[0].usage, x->parent[1].usage);
-fflush(debug);
+        optimized |= find_identity(ir);
 debug_IR_list(ir, true);
+    return optimized;
 }
 
 bool *get_useful(char *name)
@@ -686,8 +674,6 @@ bool *get_useful(char *name)
 
 void set_useful(char *name, bool useful)
 {
-fprintf(debug, "set %s: %d\n", name, useful);
-fflush(debug);
     if (name[0] == '#')
         return;
     *(get_useful(name)) = useful;
@@ -727,7 +713,7 @@ bool opt_exp(IR_list *u)
                 }
             }
             else
-                optimized = simplify_assign(ir);
+                optimized |= simplify_assign(ir);
         }
         else if (strcmp(ir->ss[0], "READ") == 0)
         {
@@ -857,7 +843,7 @@ bool opt_label(IR_list *rootw){
     return flg;
 }
 
-bool opt_read_func(int root)
+bool opt_read_func(IR_list *root)
 {
     // t := ...
     // x := t 
@@ -868,7 +854,7 @@ bool opt_read_func(int root)
         if (strcmp(ir->ss[0], "READ") == 0)
         {
             IR_list *next = ir->next;
-            if (strcmp(next->ss[1], ":=") == 0 && next->ss[3] == NULL)
+            if (strcmp(next->ss[1], ":=") == 0 && strcmp(ir->ss[1], next->ss[2]) == 0 && next->ss[3] == NULL)
             {
                 free(ir->ss[1]);
                 ir->ss[1] = (char *)malloc(sizeof(char) * strlen(next->ss[0] + 1));
@@ -880,7 +866,7 @@ bool opt_read_func(int root)
         else if (strcmp(ir->ss[1], ":=") == 0 && strcmp(ir->ss[2], "CALL") == 0)
         {
             IR_list *next = ir->next;
-            if (strcmp(next->ss[1], ":=") == 0 && next->ss[3] == NULL)
+            if (strcmp(next->ss[1], ":=") == 0 && strcmp(ir->ss[0], next->ss[2]) == 0 && next->ss[3] == NULL)
             {
                 free(ir->ss[0]);
                 ir->ss[0] = (char *)malloc(sizeof(char) * strlen(next->ss[0] + 1));
@@ -914,8 +900,7 @@ void optimize(FILE *fin, FILE *fout)
 
     while (1)
     {
-        if (opt_exp(rootw))
-            continue;
+        opt_exp(rootw);
         if (opt_if(rootw))
             continue;
         if (opt_label(rootw))
