@@ -391,7 +391,7 @@ void find_identity(IR_list *ir) // x is not const
             if (usage != PTR)
                 x->parent[0] = (Parent){PTR, py.var, py.recent};
         }
-        // (*)x := (*)y
+        // (*)x := y
         else
         {
             if (single_parent(y))
@@ -406,6 +406,8 @@ void find_identity(IR_list *ir) // x is not const
             }
             else
             {
+                if (usage == PTR)
+                    return;
                 Parent py[2] = {y->parent[0], y->parent[1]};
                 // x := *y
                 if (x->parent[0].usage == PTR)
@@ -548,10 +550,7 @@ bool not_tmp(Var *x)
 void simplify_assign(IR_list *ir)
 {
     Var *x = get_var(ir->ss[0]), *y, *z;
-
-if (not_tmp(x))
-    return;
-
+    
     Usage usage = get_usage(ir->ss[0]);
     if (usage != PTR)
     {
@@ -565,6 +564,8 @@ if (not_tmp(x))
             if (ir->ss[2][0] == '&' || ir->ss[2][0] == '*')
                 break;
             y = get_var(ir->ss[2]);
+if (not_tmp(y))
+    return;
             if (y->type == CONST)
                 ir->ss[2] = val_to_const(y->val);
             if (ir->ss[0][0] != '*')
@@ -578,6 +579,8 @@ if (not_tmp(x))
         // (*)x := (*&)y ? (*&)z
         case 5:
             y = get_var(ir->ss[2]), z = get_var(ir->ss[4]);
+if (not_tmp(y) || not_tmp(z))
+    return;
             char op = ir->ss[3][0];
             if (ir->ss[0][0] != '*')
             {
@@ -710,7 +713,8 @@ bool opt_exp(IR_list *u)
             set_useful(ir->ss[1], true);
             set_useful(ir->ss[3], true);
         }
-        else if (strcmp(ir->ss[0], "RETURN") == 0);
+        else if (strcmp(ir->ss[0], "RETURN") == 0)
+            set_useful(ir->ss[1], true);
         else if (strcmp(ir->ss[0], "DEC") == 0)
         {
             if (!*(get_useful(ir->ss[2])))
