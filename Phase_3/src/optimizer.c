@@ -662,6 +662,8 @@ bool *get_useful(char *name)
 
 void set_useful(char *name, bool useful)
 {
+fprintf("set %s: %d\n", name, useful);
+fflush(debug);
     if (name[0] == '#')
         return;
     *(get_useful(name)) = useful;
@@ -717,11 +719,12 @@ bool opt_exp(IR_list *u)
             set_useful(ir->ss[1], true);
         else if (strcmp(ir->ss[0], "DEC") == 0)
         {
-            if (!*(get_useful(ir->ss[2])))
-                goto DEL_IR; 
+            // if (!*(get_useful(ir->ss[2])))
+            //     goto DEL_IR; 
         }
         else if (strcmp(ir->ss[0], "PARAM") == 0);
-        else if (strcmp(ir->ss[0], "ARG") == 0);
+        else if (strcmp(ir->ss[0], "ARG") == 0)
+            set_useful(ir->ss[1], true);
         else if (strcmp(ir->ss[0], "READ") == 0);
         else if (strcmp(ir->ss[0], "WRITE") == 0)
             set_useful(ir->ss[1], true);
@@ -731,7 +734,17 @@ bool opt_exp(IR_list *u)
             size_t len = get_list_len(ir);
             bool useful = *get_useful(ir->ss[0]);
             Usage usage = get_usage(ir->ss[0]);
-            if (!not_tmp(x) && !useful && len != 4 && usage != PTR)
+for (size_t i = 0; i <= 4; i += 2)
+{
+    if (ir->ss[i] == NULL)
+        break;
+    if (not_tmp(get_var(ir->ss[i])))
+    {
+        useful = true;
+        break;
+    }
+}
+            if (!useful && len != 4 && usage != PTR)
                 goto DEL_IR;
             if (useful || usage == PTR)
                 switch (len)
