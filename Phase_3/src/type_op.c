@@ -160,7 +160,7 @@ void add_identifier(treeNode *p)
 {
     // outputType(p->inheridata);
     calcTypeSize(p->inheridata);
-    if (strcmp(p->name, "VarDec") == 0)
+    if (p->name==VarDec)
     {
         output_tree_array(p, tree_output_tmp);
         sprintf(type_error_tmp, "variable \'%s\' is redefined in the same scope.", tree_output_tmp);

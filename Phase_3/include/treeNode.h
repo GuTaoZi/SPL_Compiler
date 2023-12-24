@@ -3,11 +3,12 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "GAS_utility.h"
 
 extern FILE *yyout;
 
 // These TOKENs need to output its value
-extern const char *need_output[];
+extern const TN need_output[];
 extern const int lno;
 
 //// add a tree node with its children ////
@@ -38,7 +39,7 @@ extern const int lno;
 
 typedef struct _treeNode
 {
-    const char *name;
+    TN name;
     char *val;
     size_t child_cnt, lineno;
     struct _treeNode *child;
@@ -50,7 +51,7 @@ typedef struct _treeNode
 /**
  * create a new node pointer.
  */
-treeNode *new_node(const char *name, const char *val, size_t lino);
+treeNode *new_node(TN name, const char *val, size_t lino);
 
 /**
  * free a node

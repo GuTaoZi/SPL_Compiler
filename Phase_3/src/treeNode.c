@@ -6,13 +6,13 @@
 
 // #define TREE_OUTPUT
 
-const char *need_output[] = {"INT", "FLOAT", "CHAR", "STRING", "TYPE", "ID", "INCLUDE"};
+const TN need_output[] = {UINT, FLOAT, CHAR, STRING, TYPE, ID, INCLUDE};
 const int lno = 7;
 
-treeNode *new_node(const char *name, const char *val, size_t lino)
+treeNode *new_node(TN name, const char *val, size_t lino)
 {
 #ifdef TREE_OUTPUT
-    fprintf(yyout, "NODE GET:%s - %s\n", name, val);
+    fprintf(yyout, "NODE GET:%s - %s\n", enum2str(name), val);
     fflush(yyout);
 #endif
     treeNode *p = (treeNode *)malloc(sizeof(treeNode));
@@ -42,7 +42,7 @@ void output_line(const treeNode *u, size_t spaceno)
     {
         for (size_t i = 0; i < spaceno; i++)
             fprintf(yyout, " ");
-        fprintf(yyout, "%s (%zu)\n", u->name, u->lineno);
+        fprintf(yyout, "%s (%zu)\n", enum2str(u->name), u->lineno);
     }
     else if (u->val != NULL)
     {
@@ -51,16 +51,16 @@ void output_line(const treeNode *u, size_t spaceno)
         int flg = 1;
         for (int i = 0; i < lno; i++)
         {
-            if (strcmp(u->name, need_output[i]) == 0)
+            if (u->name == need_output[i])
             {
                 flg = 0;
                 break;
             }
         }
         if (flg)
-            fprintf(yyout, "%s\n", u->name);
+            fprintf(yyout, "%s\n", enum2str(u->name));
         else
-            fprintf(yyout, "%s: %s\n", u->name, u->val);
+            fprintf(yyout, "%s: %s\n", enum2str(u->name), u->val);
     }
 }
 
@@ -136,7 +136,6 @@ treeNode *get_child(const treeNode *u, size_t id)
 
 bool is_lvalue(const treeNode *u)
 {
-    return (u->child_cnt == 1 && !strcmp(u->child->name, "ID")) ||
-           (u->child_cnt == 3 && !strcmp(get_child(u, 1)->name, "DOT")) ||
-           (u->child_cnt == 4 && !strcmp(get_child(u, 1)->name, "LB"));
+    return (u->child_cnt == 1 && (u->child->name == ID)) || (u->child_cnt == 3 && (get_child(u, 1)->name == DOT)) ||
+           (u->child_cnt == 4 && (get_child(u, 1)->name == LB));
 }

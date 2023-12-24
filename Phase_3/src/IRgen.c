@@ -78,7 +78,7 @@ char ttmp[32768];
 IR_tree *build_ExtDecList_tree(const treeNode *u)
 {
 #ifdef DEBUG_OUTPUT
-    printf("%s: %s\n", __FUNCTION__, u->name);
+    printf("%s: %s\n", __FUNCTION__, enum2str(u->name));
 #endif
     // u: ExtDecList
     // TODO DEC x typesize
@@ -109,7 +109,7 @@ IR_tree *build_ExtDecList_tree(const treeNode *u)
 IR_tree *build_Dec_tree(const treeNode *u)
 {
 #ifdef DEBUG_OUTPUT
-    printf("%s: %s\n", __FUNCTION__, u->name);
+    printf("%s: %s\n", __FUNCTION__, enum2str(u->name));
 #endif
     char *vname = alloc_varval();
     IR_tree *p;
@@ -158,7 +158,7 @@ IR_tree *build_Dec_tree(const treeNode *u)
 IR_tree *build_DecList_tree(const treeNode *u)
 {
 #ifdef DEBUG_OUTPUT
-    printf("%s: %s\n", __FUNCTION__, u->name);
+    printf("%s: %s\n", __FUNCTION__, enum2str(u->name));
 #endif
     // u: DecList
     IR_tree *p;
@@ -176,7 +176,7 @@ IR_tree *build_DecList_tree(const treeNode *u)
 IR_tree *build_paramDec_IR_tree(const treeNode *u)
 {
 #ifdef DEBUG_OUTPUT
-    printf("%s: %s\n", __FUNCTION__, u->name);
+    printf("%s: %s\n", __FUNCTION__, enum2str(u->name));
 #endif
     // u: ParamDec
     char *vname = alloc_varval();
@@ -192,7 +192,7 @@ IR_tree *build_paramDec_IR_tree(const treeNode *u)
 IR_tree *build_params_IR_tree(const treeNode *u)
 {
 #ifdef DEBUG_OUTPUT
-    printf("%s: %s\n", __FUNCTION__, u->name);
+    printf("%s: %s\n", __FUNCTION__, enum2str(u->name));
 #endif
     // u: VarList
     if (u->child_cnt == 1)
@@ -212,7 +212,7 @@ IR_tree *build_params_IR_tree(const treeNode *u)
 IR_tree *build_assign_IR_tree(const char *result, const treeNode *u)
 {
 #ifdef DEBUG_OUTPUT
-    printf("%s: %s\n", __FUNCTION__, u->name);
+    printf("%s: %s\n", __FUNCTION__, enum2str(u->name));
 #endif
     // u: Exp
     // return result := xxx
@@ -237,7 +237,7 @@ IR_tree *build_arg_IR_tree(const char *varname)
 IR_tree *build_args_IR_tree(const treeNode *u)
 {
 #ifdef DEBUG_OUTPUT
-    printf("%s: %s\n", __FUNCTION__, u->name);
+    printf("%s: %s\n", __FUNCTION__, enum2str(u->name));
 #endif
     // u: Args
     IR_tree *p;
@@ -267,7 +267,7 @@ IR_tree *build_args_IR_tree(const treeNode *u)
 IR_tree *build_FunDec_IR_tree(const treeNode *u)
 {
 #ifdef DEBUG_OUTPUT
-    printf("%s: %s\n", __FUNCTION__, u->name);
+    printf("%s: %s\n", __FUNCTION__, enum2str(u->name));
 #endif
     // u: ExtDef
     IR_tree *p;
@@ -293,7 +293,7 @@ IR_tree *build_FunDec_IR_tree(const treeNode *u)
 IR_tree *build_CompSt_IR_tree(const treeNode *u, const char *lloop_head, const char *lloop_end)
 {
 #ifdef DEBUG_OUTPUT
-    printf("%s: %s\n", __FUNCTION__, u->name);
+    printf("%s: %s\n", __FUNCTION__, enum2str(u->name));
 #endif
     // All Stmts go here
     // Called by build_FunDec
@@ -314,7 +314,7 @@ IR_tree *build_CompSt_IR_tree(const treeNode *u, const char *lloop_head, const c
 IR_tree *build_defList_IR_tree(const treeNode *u)
 {
 #ifdef DEBUG_OUTPUT
-    printf("%s: %s\n", __FUNCTION__, u->name);
+    printf("%s: %s\n", __FUNCTION__, enum2str(u->name));
 #endif
     if (u->child_cnt == 2)
     {
@@ -335,7 +335,7 @@ IR_tree *build_defList_IR_tree(const treeNode *u)
 IR_tree *build_stmtList_IR_tree(const treeNode *u, const char *lloop_head, const char *lloop_end)
 {
 #ifdef DEBUG_OUTPUT
-    printf("%s: %s\n", __FUNCTION__, u->name);
+    printf("%s: %s\n", __FUNCTION__, enum2str(u->name));
 #endif
     if (u->child_cnt == 2)
     {
@@ -364,30 +364,30 @@ IR_tree *build_def_IR_tree(const treeNode *u)
 IR_tree *build_stmt_IR_tree(const treeNode *u, const char *lloop_head, const char *lloop_end)
 {
 #ifdef DEBUG_OUTPUT
-    printf("%s: %s\n", __FUNCTION__, u->name);
+    printf("%s: %s\n", __FUNCTION__, enum2str(u->name));
 #endif
     // from CompSt
     // u: Stmt
-    if (strcmp(u->child->name, "CompSt") == 0)
+    if (u->child->name == CompSt)
     {
         return build_CompSt_IR_tree(u->child, lloop_head, lloop_end);
     }
-    else if (strcmp(u->child->name, "SEMI") == 0)
+    else if (u->child->name == SEMI)
     {
         return new_IR_node("");
     }
     else if (u->child_cnt == 2)
     {
-        if (strcmp(u->child->name, "Exp") == 0)
+        if (u->child->name == Exp)
         {
             return build_normExp_IR_tree(u->child);
         }
-        else if (strcmp(u->child->name, "BREAK") == 0)
+        else if (u->child->name == BREAK)
         {
             sprintf(ttmp, "GOTO %s", lloop_end);
             return new_IR_node(ttmp);
         }
-        else if (strcmp(u->child->name, "CONTINUE") == 0)
+        else if (u->child->name == CONTINUE)
         {
             sprintf(ttmp, "GOTO %s", lloop_head);
             return new_IR_node(ttmp);
@@ -398,7 +398,7 @@ IR_tree *build_stmt_IR_tree(const treeNode *u, const char *lloop_head, const cha
             return new_IR_node("error := #1");
         }
     }
-    else if (strcmp(u->child->name, "RETURN") == 0)
+    else if (u->child->name == RETURN)
     {
         IR_tree *p;
         IR_tree *c1 = build_normExp_IR_tree(u->child->next);
@@ -407,7 +407,7 @@ IR_tree *build_stmt_IR_tree(const treeNode *u, const char *lloop_head, const cha
         addIRn(p, 2, c1, c2);
         return p;
     }
-    else if (strcmp(u->child->name, "IF") == 0)
+    else if (u->child->name == IF)
     {
         if (u->child_cnt == 5) // No else
         {
@@ -457,7 +457,7 @@ IR_tree *build_stmt_IR_tree(const treeNode *u, const char *lloop_head, const cha
             return p;
         }
     }
-    else if (strcmp(u->child->name, "WHILE") == 0)
+    else if (u->child->name == WHILE)
     {
         char *nloop_head = alloc_label();
         char *nloop_body = alloc_label();
@@ -483,7 +483,7 @@ IR_tree *build_stmt_IR_tree(const treeNode *u, const char *lloop_head, const cha
         free(nloop_head);
         return p;
     }
-    else if (strcmp(u->child->name, "FOR") == 0)
+    else if (u->child->name == FOR)
     {
         IR_tree *p;
         char *nloop_head = alloc_label();
@@ -533,7 +533,7 @@ char tttt[65536];
 IR_tree *build_normExp_IR_tree(const treeNode *u)
 {
 #ifdef DEBUG_OUTPUT
-    printf("%s: %s\n", __FUNCTION__, u->name);
+    printf("%s: %s\n", __FUNCTION__, enum2str(u->name));
 #ifdef DEBUG_MUCH_OUTPUT
     output_tree_array(u, tttt);
     printf("%s\n", tttt);
@@ -546,7 +546,7 @@ IR_tree *build_normExp_IR_tree(const treeNode *u)
     if (u->child_cnt == 1)
     {
         treeNode *uc = u->child;
-        if (strcmp(uc->name, "ID") == 0)
+        if (uc->name == ID)
         {
             char *vname;
             IR_orthoNode *iron = IR_global_scope_seek(uc->val);
@@ -565,7 +565,7 @@ IR_tree *build_normExp_IR_tree(const treeNode *u)
                 free(vname);
             return p;
         }
-        else if (!strcmp(uc->name, "STRING"))
+        else if (uc->name == STRING)
         {
             sprintf(ttmp, "\"%s\"", uc->child->val);
             p = new_IR_node(ttmp);
@@ -584,11 +584,11 @@ IR_tree *build_normExp_IR_tree(const treeNode *u)
     {
         treeNode *opc = u->child;
         treeNode *expc = u->child->next;
-        if (!strcmp(opc->name, "PLUS"))
+        if (opc->name == PLUS)
         {
             return p = build_normExp_IR_tree(expc);
         }
-        else if (!strcmp(opc->name, "MINUS"))
+        else if (opc->name == MINUS)
         {
             IR_tree *c1 = build_normExp_IR_tree(expc);
             char *tname = alloc_tmpvar();
@@ -599,7 +599,7 @@ IR_tree *build_normExp_IR_tree(const treeNode *u)
             free(tname);
             return p;
         }
-        else if (!strcmp(opc->name, "NOT"))
+        else if (opc->name == NOT)
         {
             IR_tree *c1 = build_normExp_IR_tree(expc);
             char *tname = alloc_tmpvar();
@@ -616,9 +616,9 @@ IR_tree *build_normExp_IR_tree(const treeNode *u)
         treeNode *u1 = u->child;
         treeNode *u2 = u1->next;
         treeNode *u3 = u2->next;
-        if ((!strcmp(u1->name, "Exp")) && (!strcmp(u3->name, "Exp")))
+        if ((u1->name == Exp) && (u3->name == Exp))
         {
-            if (!strcmp(u2->name, "ASSIGN"))
+            if (u2->name == ASSIGN)
             {
                 IR_tree *c1 = build_ref_IR_tree(u1, false);
                 IR_tree *c2 = build_normExp_IR_tree(u3);
@@ -628,7 +628,7 @@ IR_tree *build_normExp_IR_tree(const treeNode *u)
                 add_IR_stmt(p, c1->stmt);
                 return p;
             }
-            else if (!strcmp(u2->name, "AND"))
+            else if (u2->name == AND)
             {
                 IR_tree *c1 = build_normExp_IR_tree(u1);
                 IR_tree *c2 = build_normExp_IR_tree(u3);
@@ -640,7 +640,7 @@ IR_tree *build_normExp_IR_tree(const treeNode *u)
                 free(tname);
                 return p;
             }
-            else if (!strcmp(u2->name, "OR"))
+            else if (u2->name == OR)
             {
                 IR_tree *c1 = build_normExp_IR_tree(u1);
                 IR_tree *c2 = build_normExp_IR_tree(u3);
@@ -652,7 +652,7 @@ IR_tree *build_normExp_IR_tree(const treeNode *u)
                 free(tname);
                 return p;
             }
-            else if (!strcmp(u2->name, "PLUS"))
+            else if (u2->name == PLUS)
             {
                 IR_tree *c1 = build_normExp_IR_tree(u1);
                 IR_tree *c2 = build_normExp_IR_tree(u3);
@@ -664,7 +664,7 @@ IR_tree *build_normExp_IR_tree(const treeNode *u)
                 free(tname);
                 return p;
             }
-            else if (!strcmp(u2->name, "MINUS"))
+            else if (u2->name == MINUS)
             {
                 IR_tree *c1 = build_normExp_IR_tree(u1);
                 IR_tree *c2 = build_normExp_IR_tree(u3);
@@ -676,7 +676,7 @@ IR_tree *build_normExp_IR_tree(const treeNode *u)
                 free(tname);
                 return p;
             }
-            else if (!strcmp(u2->name, "MUL"))
+            else if (u2->name == MUL)
             {
                 IR_tree *c1 = build_normExp_IR_tree(u1);
                 IR_tree *c2 = build_normExp_IR_tree(u3);
@@ -688,7 +688,7 @@ IR_tree *build_normExp_IR_tree(const treeNode *u)
                 free(tname);
                 return p;
             }
-            else if (!strcmp(u2->name, "DIV"))
+            else if (u2->name == DIV)
             {
                 IR_tree *c1 = build_normExp_IR_tree(u1);
                 IR_tree *c2 = build_normExp_IR_tree(u3);
@@ -701,11 +701,11 @@ IR_tree *build_normExp_IR_tree(const treeNode *u)
                 return p;
             }
         }
-        else if ((!strcmp(u1->name, "LP")) && (!strcmp(u3->name, "RP"))) // LP Exp RP
+        else if ((u1->name == LP) && (u3->name == RP)) // LP Exp RP
         {
             return p = build_normExp_IR_tree(u2);
         }
-        else if ((!strcmp(u1->name, "ID")) /*&& (!strcmp(u2->name, "LP")) && (!strcmp(u3->name, "RP"))*/) // ID LP RP
+        else if (u1->name == ID) // ID LP RP
         {
             char *tname = alloc_tmpvar();
             if (strcmp(u1->val, "read") == 0)
@@ -729,7 +729,7 @@ IR_tree *build_normExp_IR_tree(const treeNode *u)
     }
     else if (u->child_cnt == 4)
     {
-        if (!strcmp(u->child->name, "ID")) // ID LP Args RP
+        if (u->child->name == ID) // ID LP Args RP
         {
             if (strcmp(u->child->val, "write") == 0)
             {
@@ -764,14 +764,14 @@ IR_tree *build_normExp_IR_tree(const treeNode *u)
 IR_tree *build_ifExp_IR_tree(const treeNode *u, const char *ltrue, const char *lfalse, const char *lend)
 {
 #ifdef DEBUG_OUTPUT
-    printf("%s: %s\n", __FUNCTION__, u->name);
+    printf("%s: %s\n", __FUNCTION__, enum2str(u->name));
 #endif
     // Called by `if` or `loop` stmt
     // u: Exp
     IR_tree *p;
     if (u->child_cnt == 2)
     {
-        if (strcmp(u->child->name, "NOT") == 0)
+        if (u->child->name == NOT)
         {
             return build_ifExp_IR_tree(u->child->next, lfalse, ltrue, lend);
         }
@@ -785,11 +785,11 @@ IR_tree *build_ifExp_IR_tree(const treeNode *u, const char *ltrue, const char *l
         treeNode *u1 = u->child;
         treeNode *u2 = u1->next;
         treeNode *u3 = u2->next;
-        if (strcmp(u1->name, "LP") == 0 && strcmp(u3->name, "RP") == 0)
+        if (u1->name == LP && u3->name == RP)
         {
             return build_ifExp_IR_tree(u2, ltrue, lfalse, lend);
         }
-        else if (strcmp(u2->name, "AND") == 0)
+        else if (u2->name == AND)
         {
             char *lptrue = alloc_label();
             IR_tree *c1 = build_ifExp_IR_tree(u1, lptrue, lfalse, lend);
@@ -800,7 +800,7 @@ IR_tree *build_ifExp_IR_tree(const treeNode *u, const char *ltrue, const char *l
             free(lptrue);
             return p;
         }
-        else if (strcmp(u2->name, "OR") == 0)
+        else if (u2->name == OR)
         {
             char *lpfalse = alloc_label();
             IR_tree *c1 = build_ifExp_IR_tree(u1, ltrue, lpfalse, lend);
@@ -811,7 +811,7 @@ IR_tree *build_ifExp_IR_tree(const treeNode *u, const char *ltrue, const char *l
             free(lpfalse);
             return p;
         }
-        else if (strcmp(u2->name, "LT") == 0)
+        else if (u2->name == LT)
         {
             IR_tree *c1 = build_normExp_IR_tree(u1);
             IR_tree *c2 = build_normExp_IR_tree(u3);
@@ -822,7 +822,7 @@ IR_tree *build_ifExp_IR_tree(const treeNode *u, const char *ltrue, const char *l
             addIRn(p, 4, c1, c2, c3, c4);
             return p;
         }
-        else if (strcmp(u2->name, "LE") == 0)
+        else if (u2->name == LE)
         {
             IR_tree *c1 = build_normExp_IR_tree(u1);
             IR_tree *c2 = build_normExp_IR_tree(u3);
@@ -833,7 +833,7 @@ IR_tree *build_ifExp_IR_tree(const treeNode *u, const char *ltrue, const char *l
             addIRn(p, 4, c1, c2, c3, c4);
             return p;
         }
-        else if (strcmp(u2->name, "GT") == 0)
+        else if (u2->name == GT)
         {
             IR_tree *c1 = build_normExp_IR_tree(u1);
             IR_tree *c2 = build_normExp_IR_tree(u3);
@@ -844,7 +844,7 @@ IR_tree *build_ifExp_IR_tree(const treeNode *u, const char *ltrue, const char *l
             addIRn(p, 4, c1, c2, c3, c4);
             return p;
         }
-        else if (strcmp(u2->name, "GE") == 0)
+        else if (u2->name == GE)
         {
             IR_tree *c1 = build_normExp_IR_tree(u1);
             IR_tree *c2 = build_normExp_IR_tree(u3);
@@ -855,7 +855,7 @@ IR_tree *build_ifExp_IR_tree(const treeNode *u, const char *ltrue, const char *l
             addIRn(p, 4, c1, c2, c3, c4);
             return p;
         }
-        else if (strcmp(u2->name, "NE") == 0)
+        else if (u2->name == NE)
         {
             IR_tree *c1 = build_normExp_IR_tree(u1);
             IR_tree *c2 = build_normExp_IR_tree(u3);
@@ -866,7 +866,7 @@ IR_tree *build_ifExp_IR_tree(const treeNode *u, const char *ltrue, const char *l
             addIRn(p, 4, c1, c2, c3, c4);
             return p;
         }
-        else if (strcmp(u2->name, "EQ") == 0)
+        else if (u2->name == EQ)
         {
             IR_tree *c1 = build_normExp_IR_tree(u1);
             IR_tree *c2 = build_normExp_IR_tree(u3);
@@ -903,7 +903,7 @@ default_if:;
 IR_tree *build_ref_IR_tree(const treeNode *u, bool is_ptr)
 {
 #ifdef DEBUG_OUTPUT
-    printf("%s: %s\n", __FUNCTION__, u->name);
+    printf("%s: %s\n", __FUNCTION__, enum2str(u->name));
 #endif
     if (u->child_cnt == 1)
     {
@@ -979,7 +979,7 @@ IR_tree *build_default_IR_tree(const treeNode *u)
 IR_tree *build_IR_tree(const treeNode *u)
 {
 #ifdef DEBUG_OUTPUT
-    printf("%s: %s\n", __FUNCTION__, u->name);
+    printf("%s: %s\n", __FUNCTION__, enum2str(u->name));
 #endif
     IR_tree *p;
     if (u == NULL)
@@ -988,14 +988,14 @@ IR_tree *build_IR_tree(const treeNode *u)
         p->should_print = false;
         return p;
     }
-    if (strcmp(u->name, "ExtDef") == 0)
+    if (u->name == ExtDef)
     {
-        if (strcmp(u->child->name, "Specifier") == 0 && strcmp(u->child->next->name, "ExtDecList") == 0)
+        if (u->child->name == Specifier && u->child->next->name == ExtDecList)
         {
             IR_tree *c1 = build_ExtDecList_tree(u->child->next);
             addIR1(p, 1, c1);
         }
-        else if (strcmp(u->child->next->name, "FunDec") == 0)
+        else if (u->child->next->name == FunDec)
         {
             IR_tree *c1 = build_FunDec_IR_tree(u);
             addIR1(p, 1, c1);
@@ -1006,24 +1006,21 @@ IR_tree *build_IR_tree(const treeNode *u)
             p->should_print = false;
         }
 #ifdef DEBUG_OUTPUT
-        printf("leave: %s: %s\n", __FUNCTION__, u->name);
+        printf("leave: %s: %s\n", __FUNCTION__, enum2str(u->name));
 #endif
         return p;
     }
-    else if (strcmp(u->name, "Def") == 0)
+    else if (u->name == Def)
     {
         // Similar as above
         // Be aware of Dec: VarDec ASSIGN Exp
         return p = build_def_IR_tree(u);
     }
-    else if (strcmp(u->name, "Program") == 0)
+    else if (u->name == Program)
     {
         IR_push_stack();
         p = new_IR_node(NULL);
         p->child = build_default_IR_tree(u);
-    }
-    else if (strcmp(u->name, "") == 0)
-    {
     }
     else
     {
@@ -1036,7 +1033,7 @@ IR_tree *build_IR_tree(const treeNode *u)
         }
     }
 #ifdef DEBUG_OUTPUT
-    printf("leave: %s: %s\n", __FUNCTION__, u->name);
+    printf("leave: %s: %s\n", __FUNCTION__, enum2str(u->name));
 #endif
     return p;
 }
