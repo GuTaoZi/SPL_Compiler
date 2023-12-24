@@ -276,6 +276,7 @@ Var *get_var(const char *name)
         case '*':
             return get_var(name + 1);
     }
+    return NULL;
 }
 
 bool equal_parent(Parent a, Parent b)
@@ -328,6 +329,7 @@ int calc(int a, int b, char op)
         case '/':
             return a / b;
     }
+    return -123456789;
 }
 
 char *get_name(Var *var)
@@ -821,7 +823,6 @@ char opt_label(IR_list *rootw){
                 p=p->next;
                 del_list(p->prev);
                 flg = 1;
-                printf("LL: %d %d\n",l1,l2);
             }
         }
         p=p->next;

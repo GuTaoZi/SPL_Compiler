@@ -229,6 +229,7 @@ char checkTypeEqual(const Type *a, const Type *b)
         return checkStructEqual(a->structure, b->structure);
     if (a->category == FUNCTION)
         return checkFunctionEqual(a->func, b->func);
+    return 0;
 }
 
 #ifdef IMPLICIT_CONVERT
@@ -345,6 +346,7 @@ Type *getTypeAfterOp(Type *a, Type *b, const char *op)
             return makeErrorType();
         }
     }
+    return makeErrorType();
 }
 
 Type *findNameInField(FieldList *a, const char *name)

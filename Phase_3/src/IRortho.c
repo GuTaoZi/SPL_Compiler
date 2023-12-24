@@ -96,6 +96,7 @@ IR_orthoNode *IR_add_ortho_node(const char *name, const char *vname)
     hn->head = p;
     HASH_ADD_STR(IR_H, name, hn);
     // add the new map <name, IR_hashNode(containing IR_orthoNode)>
+    return NULL;
 }
 
 IR_orthoNode *IR_current_scope_seek(const char *name)

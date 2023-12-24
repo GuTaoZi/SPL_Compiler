@@ -758,6 +758,7 @@ IR_tree *build_normExp_IR_tree(const treeNode *u)
             return p = build_ref_IR_tree(u, false);
         }
     }
+    return new_IR_node(NULL);
 }
 
 IR_tree *build_ifExp_IR_tree(const treeNode *u, const char *ltrue, const char *lfalse, const char *lend)

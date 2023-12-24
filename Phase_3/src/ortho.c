@@ -100,6 +100,7 @@ orthoNode *add_ortho_node(const char *name, Type *val)
     hn->head = p;
     HASH_ADD_STR(H, name, hn);
     // add the new map <name, hashNode(containing orthoNode)>
+    return NULL;
 }
 
 orthoNode *current_scope_seek(const char *name)
