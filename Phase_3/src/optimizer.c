@@ -718,6 +718,11 @@ bool opt_exp(IR_list *u)
             else
                 simplify_assign(ir);
         }
+        else if (strcmp(ir->ss[0], "READ") == 0)
+        {
+            Var *var = get_var(ir->ss[1]);
+            var->parent[0] = (Parent){VAL, var, ir};
+        }
 
         if (ir->next == NULL)
             tail = ir;
