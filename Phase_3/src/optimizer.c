@@ -649,7 +649,7 @@ if (not_tmp(x))
 
 bool *get_useful(char *name)
 {
-    bool sp = name[0] == '*';
+    bool sp = name[0] == '*' || name[0] == '&';
     size_t idx = atoi(name + 1 + sp);
     if (name[sp] == 'v')
         return &useful_v[idx];
@@ -705,7 +705,11 @@ bool opt_exp(IR_list *u)
         if (strcmp(ir->ss[0], "LABEL") == 0);
         else if (strcmp(ir->ss[0], "FUNCTION") == 0);
         else if (strcmp(ir->ss[0], "GOTO") == 0);
-        else if (strcmp(ir->ss[0], "IF") == 0);
+        else if (strcmp(ir->ss[0], "IF") == 0)
+        {
+            set_useful(ir->ss[1], true);
+            set_useful(ir->ss[3], true);
+        }
         else if (strcmp(ir->ss[0], "RETURN") == 0);
         else if (strcmp(ir->ss[0], "DEC") == 0)
         {
@@ -719,10 +723,11 @@ bool opt_exp(IR_list *u)
             set_useful(ir->ss[1], true);
         else // x := ?
         {
+            Var *x = get_var(ir->ss[0]);
             size_t len = get_list_len(ir);
             bool useful = *get_useful(ir->ss[0]);
             Usage usage = get_usage(ir->ss[0]);
-            if (!useful && len != 4 && usage != PTR)
+            if (!not_tmp(x) && !useful && len != 4 && usage != PTR)
                 goto DEL_IR;
             if (useful || usage == PTR)
                 switch (len)
