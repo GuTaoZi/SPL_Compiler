@@ -539,9 +539,19 @@ void find_identity(IR_list *ir) // x is not const
     }
 }
 
+bool not_tmp(Var *x)
+{
+    ll offset = ((ll)x - (ll)v_var) / sizeof(Var);
+    return offset >= 0 && offset < MAX_VAR_CNT;
+}
+
 void simplify_assign(IR_list *ir)
 {
     Var *x = get_var(ir->ss[0]), *y, *z;
+
+if (not_tmp(x))
+    return;
+
     Usage usage = get_usage(ir->ss[0]);
     if (usage != PTR)
     {
@@ -669,13 +679,14 @@ bool opt_exp(IR_list *u)
             if (strcmp(ir->ss[2], "CALL") == 0)
             {
                 Var *x = get_var(ir->ss[0]);
-                x->type = VAR;
-                x->recent = ir;
+                if (get_usage(ir->ss[0]) != PTR)
+                {
+                    x->type = VAR;
+                    x->recent = ir;
+                }
             }
             else
-            {
                 simplify_assign(ir);
-            }
         }
 
         if (ir->next == NULL)
