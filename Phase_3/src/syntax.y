@@ -1,5 +1,5 @@
 %{
-    #define YYSTYPE treeNode*
+    #define YYSTYPE struct _treeNode*
     #include <stddef.h>
     #include <string.h>
     #include "utstack.h"
@@ -373,12 +373,12 @@ int main(int argc, char **argv)
         }
         else
         {
-            print_B_error("root", -1, "There is error somewhere...");
+            print_B_error(INVALID, -1, "There is error somewhere...");
         }
     }
     else if (last_error_lineno == -1)
     {
-        print_B_error("root", -1, "There is error somewhere...");
+        print_B_error(INVALID, -1, "There is error somewhere...");
     }
     fclose(file_in);
     fclose(file_out);

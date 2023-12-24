@@ -1,16 +1,16 @@
 #ifndef ORTHO_H
 #define ORTHO_H
 
-#include "GAS_utility.h"
+#include "type.h"
 #include "uthash.h"
+
 #include <stdio.h>
-#include <type.h>
 
 extern FILE *yyout;
 
 typedef struct _orthoNode
 {
-    TN name;
+    char name[32];
     struct _orthoNode *next[2];
     // next[0]: ptr to next node with same name(hash)
     // next[1]: ptr to next node within same scope(stack)
@@ -20,7 +20,7 @@ typedef struct _orthoNode
 
 typedef struct _hashNode
 {
-    TN name;
+    char name[32];
     orthoNode *head;
     UT_hash_handle hh;
 } hashNode;
@@ -55,20 +55,20 @@ orthoNode *stack_top();
  * @param {Type} *val type of the orthoNode
  * @return {*}
  */
-orthoNode *add_ortho_node(TN name, Type *val);
+orthoNode *add_ortho_node(const char *name, Type *val);
 
 /**
  * @description: Look for orthoNode with given name within the current scope.
  * @param {char} *name
  * @return {*} An orthoNode with given name, NULL for 404
  */
-orthoNode *current_scope_seek(TN name);
+orthoNode *current_scope_seek(const char *name);
 
 /**
  * @description: Look for the "nearest" orthoNode with given name in all valid scopes.
  * @param {char} *name
  * @return {*} An orthoNode with given name, NULL for 404
  */
-orthoNode *global_scope_seek(TN name);
+orthoNode *global_scope_seek(const char *name);
 
 #endif

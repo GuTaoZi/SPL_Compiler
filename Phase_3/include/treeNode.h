@@ -8,7 +8,7 @@
 extern FILE *yyout;
 
 // These TOKENs need to output its value
-extern const char *need_output[];
+extern const TN need_output[];
 extern const int lno;
 
 //// add a tree node with its children ////

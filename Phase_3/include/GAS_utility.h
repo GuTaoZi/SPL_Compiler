@@ -1,6 +1,7 @@
 #ifndef __GAS_UTILITY_H__
 #define __GAS_UTILITY_H__
 
+#include <../src/syntax.tab.h>
 #include <limits.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -9,52 +10,7 @@
 
 enum kwtype
 {
-    INVALID = 258,
-    TYPE = 259,
-    STRUCT = 260,
-    IF = 261,
-    ELSE = 262,
-    WHILE = 263,
-    FOR = 264,
-    RETURN = 265,
-    INCLUDE = 266,
-    BREAK = 267,
-    CONTINUE = 268,
-    DOT = 269,
-    SEMI = 270,
-    COLON = 271,
-    COMMA = 272,
-    ASSIGN = 273,
-    LT = 274,
-    LE = 275,
-    GT = 276,
-    GE = 277,
-    NE = 278,
-    EQ = 279,
-    PLUS = 280,
-    MINUS = 281,
-    MUL = 282,
-    DIV = 283,
-    AND = 284,
-    OR = 285,
-    NOT = 286,
-    LP = 287,
-    RP = 288,
-    LB = 289,
-    RB = 290,
-    LC = 291,
-    RC = 292,
-    ID = 293,
-    UINT = 294,
-    FLOAT = 295,
-    CHAR = 296,
-    STRING = 297,
-    SINGLE_LINE_COMMENT = 298,
-    MULTI_LINE_COMMENT = 299,
-    LOWER_ELSE = 300,
-    LOWER_FOR = 301,
-    UPPER_FOR = 302,
-    Program,
+    Program = UPPER_FOR + 1,
     HeaderDefList,
     Headers,
     ExtDefList,
@@ -75,7 +31,7 @@ enum kwtype
     Dec,
     Exp,
     Args,
-    Var
+    VARs
 };
 
 typedef long long ll;
