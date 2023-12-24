@@ -1,21 +1,8 @@
-struct mat
-{
-    int data[2][2];
-};
-
-
-int fast_pow(int b)
-{
-    while (b)
-    {
-        
+int main(){
+    int i;
+    for(i=0;i<10;i=i+1){
+        if(i==2) continue;
+        if(i==5) break;
+        write(i);
     }
-    return 0;
-}
-
-int main()
-{
-    struct mat u1;
-    u1.data[0][0] = u1.data[0][1] = 0;
-    u1.data[1][0] = u1.data[1][1] = 1;
 }
