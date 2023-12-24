@@ -254,6 +254,12 @@ Var *new_constant_var(const char *s)
     return var;
 }
 
+bool not_tmp(Var *x)
+{
+    ll offset = ((ll)x - (ll)v_var) / sizeof(Var);
+    return offset >= 0 && offset < MAX_VAR_CNT;
+}
+
 Var *get_var(const char *name)
 {
     switch (name[0])
@@ -274,7 +280,7 @@ bool equal_parent(Parent a, Parent b)
 {
     if (a.var == NULL && b.var == NULL)
         return true;
-    if ((a.var == NULL) + (b.var == NULL) == 1)
+    if (!not_tmp(a.var) || !not_tmp(b.var) || (a.var == NULL) + (b.var == NULL) == 1)
         return false;
     return  a.usage == b.usage &&
         ((a.var == b.var && a.recent == b.recent) ||
@@ -283,7 +289,7 @@ bool equal_parent(Parent a, Parent b)
 
 bool equal_var(Var *a, Var *b) // a and b can't both be & need to be consist of 2 elements
 {
-    return a == b ||
+    return a == b || 
         (equal_parent(a->parent[0], b->parent[0]) && equal_parent(a->parent[1], b->parent[1])) ||
         (equal_parent(a->parent[0], b->parent[1]) && equal_parent(a->parent[1], b->parent[0]));
 }
@@ -323,7 +329,7 @@ int calc(int a, int b, char op)
 
 char *get_name(Var *var)
 {
-    if (var->type == CONST)
+    if (!not_tmp(var) && var->type == CONST)
         return val_to_const(var->val);
     char type = 'v';
     ll idx = ((ll)var - (ll)v_var) / (ll)sizeof(Var);
@@ -377,6 +383,7 @@ void find_identity(IR_list *ir) // x is not const
     {
         Var *y = get_var(ir->ss[2]);
         if (ir->ss[2][0] == '&' || y->type == CONST)
+        if (not_tmp(y))
             return;
         // (*)x := *y
         if (ir->ss[2][0] == '*')
@@ -391,9 +398,11 @@ void find_identity(IR_list *ir) // x is not const
             if (usage != PTR)
                 x->parent[0] = (Parent){PTR, py.var, py.recent};
         }
-        // (*)x := y
+        // (*)x := (*)y
         else
         {
+            if (not_tmp(y))
+                return;
             if (single_parent(y))
             {
                 Parent py = y->parent[0];
@@ -434,7 +443,7 @@ void find_identity(IR_list *ir) // x is not const
     {
         Var *y = get_var(ir->ss[2]), *z = get_var(ir->ss[4]);
         // optimize (*)y
-        if (ir->ss[2][0] != '&' && single_parent(y))
+        if (!not_tmp(y) && ir->ss[2][0] != '&' && single_parent(y))
         {
             // *y
             if (ir->ss[2][0] == '*')
@@ -473,7 +482,7 @@ void find_identity(IR_list *ir) // x is not const
             }
         }
         // optimize z
-        if (ir->ss[4][0] != '&' && single_parent(z))
+        if (!not_tmp(z) && ir->ss[4][0] != '&' && single_parent(z))
         {
             // *z
             if (ir->ss[4][0] == '*')
@@ -519,12 +528,12 @@ void find_identity(IR_list *ir) // x is not const
             if (y != x && equal_var(x, y))
                 goto CHEKCOUT;
         }
-        for (size_t i = 0; i < tmp_cnt; i++)
-        {
-            y = &v_var[i];
-            if (y != x && equal_var(x, y))
-                goto CHEKCOUT;
-        }
+        // for (size_t i = 0; i < var_cnt; i++)
+        // {
+        //     y = &v_var[i];
+        //     if (y != x && equal_var(x, y))
+        //         goto CHEKCOUT;
+        // }
         return;
     CHEKCOUT:
         for (size_t i = 2; i <= 4; i++)
@@ -541,14 +550,9 @@ void find_identity(IR_list *ir) // x is not const
     }
 }
 
-bool not_tmp(Var *x)
-{
-    ll offset = ((ll)x - (ll)v_var) / sizeof(Var);
-    return offset >= 0 && offset < MAX_VAR_CNT;
-}
-
 void simplify_assign(IR_list *ir)
 {
+    debug_IR_list(ir, false);
     Var *x = get_var(ir->ss[0]), *y, *z;
     
     Usage usage = get_usage(ir->ss[0]);
@@ -564,10 +568,6 @@ void simplify_assign(IR_list *ir)
             if (ir->ss[2][0] == '&' || ir->ss[2][0] == '*')
                 break;
             y = get_var(ir->ss[2]);
-if (not_tmp(y))
-    return;
-            if (y->type == CONST)
-                ir->ss[2] = val_to_const(y->val);
             if (ir->ss[0][0] != '*')
             {
                 x->type = y->type;
@@ -575,12 +575,15 @@ if (not_tmp(y))
                 x->parent[0] = (Parent){get_usage(ir->ss[2]), y, y->recent};
                 x->parent[1] = (Parent){VAL, NULL, NULL};
             }
+            if (!not_tmp(y) && y->type == CONST)
+            {
+                ir->ss[2] = val_to_const(y->val);
+                x->parent[0] = (Parent){VAL, new_constant_var(ir->ss[2]), NULL};
+            }
             break;
-        // (*)x := (*&)y ? (*&)z
+        // x := (*&)y ? (*&)z
         case 5:
             y = get_var(ir->ss[2]), z = get_var(ir->ss[4]);
-if (not_tmp(y) || not_tmp(z))
-    return;
             char op = ir->ss[3][0];
             if (ir->ss[0][0] != '*')
             {
@@ -588,7 +591,7 @@ if (not_tmp(y) || not_tmp(z))
                 x->parent[1] = (Parent){get_usage(ir->ss[4]), z, z->recent};
             }
             // #? 
-            if (y->type == CONST && z->type == CONST)
+            if (!not_tmp(y) && !not_tmp(z) && y->type == CONST && z->type == CONST)
             {
                 for (size_t i = 2; i <= 4; i++)
                 {
@@ -597,18 +600,15 @@ if (not_tmp(y) || not_tmp(z))
                 }
                 int val = calc(y->val, z->val, op);
                 ir->ss[2] = val_to_const(val);
-                if (ir->ss[0][0] != '*')
-                {
                     x->type = CONST;
                     x->val = val;
                     x->parent[0] = (Parent){VAL, get_var(ir->ss[2]), NULL};
                     x->parent[1] = (Parent){VAL, NULL, NULL};
-                }
             }
             // #0
-            else if ((op == '*' && ((y->type == CONST && y->val == 0) || (z->type == CONST && z->val == 0))) ||
-                     (op == '-' && equal_var(y, z)) ||
-                     (op == '/' && y->type == CONST && y->val == 0))
+            else if ((op == '*' && ((!not_tmp(y) && y->type == CONST && y->val == 0) || (!not_tmp(z) && z->type == CONST && z->val == 0))) ||
+                     (op == '-' && ((!not_tmp(y) && !not_tmp(z) && equal_var(y, z)) || (y == z))) ||
+                     (op == '/' && !not_tmp(z) && y->type == CONST && y->val == 0))
             {
                 x->type = CONST;
                 x->val = 0;
@@ -638,16 +638,15 @@ if (not_tmp(y) || not_tmp(z))
                 free(ir->ss[3]);
                 ir->ss[2] = ir->ss[4];
                 ir->ss[3] = ir->ss[4] = NULL;
-                if (ir->ss[0][0] != '*')
-                {
-                    x->parent[0] = x->parent[1];
-                    x->parent[1] = (Parent){VAL, NULL, NULL};
-                }
+                x->parent[0] = x->parent[1];
+                x->parent[1] = (Parent){VAL, NULL, NULL};
             }
             break;
     }
+debug_IR_list(ir, false);
     if (x->type != CONST)
         find_identity(ir);
+debug_IR_list(ir, true);
 }
 
 bool *get_useful(char *name)
