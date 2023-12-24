@@ -299,6 +299,7 @@ bool equal_var(Var *a, Var *b) // a and b can't both be & need to be consist of 
 char *val_to_const(int val) // #val
 {
     bool neg = val < 0;
+    val = abs(val);
     size_t len = mlg10(abs(val)) + neg;
     char *s = (char *)malloc(sizeof(char) * (len + 2));
     for (size_t i = 0; i < len; i++)
@@ -532,12 +533,13 @@ fflush(debug);
             }
         }
         // common subexpression
-        for (size_t i = 0; i < tmp_cnt; i++)
-        {
-            y = &t_var[i];
-            if (y != x && equal_var(x, y))
-                goto CHEKCOUT;
-        }
+        // for (size_t i = 0; i < tmp_cnt; i++)
+        // {
+        //     y = &t_var[i];
+        
+        //     if (y != x && equal_var(x, y))
+        //         goto CHEKCOUT;
+        // }
         // for (size_t i = 0; i < var_cnt; i++)
         // {
         //     y = &v_var[i];
