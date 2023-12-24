@@ -790,6 +790,63 @@ bool opt_exp(IR_list *u)
     return false;
 }
 
+int label_trans[65536];
+int getlf(int u){
+    return (label_trans[u] == u) ? u : (label_trans[u] = getlf(label_trans[u]));
+}
+void mergel(int x, int y){
+    label_trans[getlf(x)] = getlf(y);
+}
+
+char opt_label_tmp[256];
+char opt_label(IR_list *rootw){
+    for(int i=0;i<65536;++i) label_trans[i] = i;
+    IR_list *p = rootw;
+    char flg = 0;
+    while(p != NULL){
+        if(p->next != NULL){
+            if(strcmp(p->ss[0], "LABEL") == 0 && strcmp(p->next->ss[0], "GOTO") == 0){
+                int l1 = atoi(p->ss[1]+1);
+                int l2 = atoi(p->next->ss[1]+1);
+                mergel(l1, l2);
+                p=p->next;
+                del_list(p->prev);
+                flg = 1;
+            } else if(strcmp(p->ss[0], "LABEL") == 0 && strcmp(p->next->ss[0], "LABEL") == 0){
+                int l1 = atoi(p->ss[1]+1);
+                int l2 = atoi(p->next->ss[1]+1);
+                mergel(l1, l2);
+                p=p->next;
+                del_list(p->prev);
+                flg = 1;
+                printf("LL: %d %d\n",l1,l2);
+            }
+        }
+        p=p->next;
+    }
+    p = rootw;
+    while(p != NULL){
+        if(strcmp(p->ss[0], "IF") == 0){
+            int lll = atoi(p->ss[5]+1);
+            free(p->ss[5]);
+            p->ss[5] = (char*)malloc(mlg10(label_trans[lll])+2);
+            sprintf(p->ss[5], "l%d", label_trans[lll]);
+        } else if(strcmp(p->ss[0], "LABEL") == 0){
+            int lll = atoi(p->ss[1]+1);
+            free(p->ss[1]);
+            p->ss[1] = (char*)malloc(mlg10(label_trans[lll])+2);
+            sprintf(p->ss[1], "l%d", label_trans[lll]);
+        } else if(strcmp(p->ss[0], "GOTO") == 0){
+            int lll = atoi(p->ss[1]+1);
+            free(p->ss[1]);
+            p->ss[1] = (char*)malloc(mlg10(label_trans[lll])+2);
+            sprintf(p->ss[1], "l%d", label_trans[lll]);
+        }
+        p=p->next;
+    }
+    return flg;
+}
+
 void optimize(FILE *fin, FILE *fout)
 {
     IR_list *nowp;
@@ -813,6 +870,8 @@ void optimize(FILE *fin, FILE *fout)
         if (opt_exp(rootw))
             continue;
         if (opt_if(rootw))
+            continue;
+        if (opt_label(rootw))
             continue;
         break;
     }
