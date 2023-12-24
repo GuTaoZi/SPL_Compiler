@@ -116,6 +116,7 @@ size_t get_list_len(IR_list *ir)
 
 bool opt_if(IR_list *u)
 {
+printf("opt_if\n");
     bool flg = false;
     while (u != NULL)
     {
@@ -370,11 +371,15 @@ bool single_parent(Var *var)
 
 void find_identity(IR_list *ir) // x is not const
 {
+fprintf(debug, "%s\n", __FUNCTION__);
+fflush(debug);
     Var *x = get_var(ir->ss[0]);
     Usage usage = get_usage(ir->ss[0]);
     // (*)x := (*&)y
     if (get_list_len(ir) == 3)
     {
+fprintf(debug, " len = 3\n");
+fflush(debug);
         Var *y = get_var(ir->ss[2]);
         if (ir->ss[2][0] == '&' || y->type == CONST)
             return;
@@ -394,6 +399,8 @@ void find_identity(IR_list *ir) // x is not const
         // (*)x := (*)y
         else
         {
+fprintf(debug, " (*)x := (*)y\n");
+fflush(debug);
             if (single_parent(y))
             {
                 Parent py = y->parent[0];
@@ -406,6 +413,8 @@ void find_identity(IR_list *ir) // x is not const
             }
             else
             {
+fprintf(debug, " has parents\n");
+fflush(debug);
                 Parent py[2] = {y->parent[0], y->parent[1]};
                 // x := *y
                 if (x->parent[0].usage == PTR)
@@ -413,10 +422,15 @@ void find_identity(IR_list *ir) // x is not const
                 // x := y
                 if (py[0].var == NULL || py[0].recent != py[0].var->recent || py[1].recent != py[1].var->recent)
                     return;
+fprintf(debug, " didn't return\n");
+fflush(debug);
                 free(ir->ss[2]);
                 ir->ss[2] = prefixed_name(py[0].usage, get_name(py[0].var));
                 ir->ss[4] = prefixed_name(py[1].usage, get_name(py[1].var));
+fprintf(debug, " finish var\n");
+fflush(debug);
                 ir->ss[3] = (char *)malloc(sizeof(char) * 2);
+debug_IR_list(y->recent, false);
                 ir->ss[3][0] = y->recent->ss[3][0];
                 ir->ss[3][1] = '\0';
                 if (usage != PTR)
@@ -545,8 +559,14 @@ void simplify_assign(IR_list *ir)
 {
 debug_IR_list(ir, false);
     Var *x = get_var(ir->ss[0]), *y, *z;
-    x->recent = ir;
-    x->type = VAR;
+    Usage usage = get_usage(ir->ss[0]);
+    if (usage != PTR)
+    {
+fprintf(debug, " not ptr usage\n");
+fflush(debug);
+        x->recent = ir;
+        x->type = VAR;
+    }
     switch (get_list_len(ir))
     {
         // (*)x := (*&)y
@@ -663,7 +683,7 @@ bool opt_exp(IR_list *u)
     IR_list *ir = u, *tail;
 
     // pos: simplify const ops
-fprintf(debug, "Pos:\n");
+fprintf(debug, "\nPos:\n");
 fflush(debug);
     memset(v_var, 0, sizeof(v_var));
     memset(t_var, 0, sizeof(t_var));
@@ -690,7 +710,6 @@ debug_IR_list(ir, false);
     }
 
 fprintf(debug, "\nCurrent IR:\n");
-output_list(rootw, debug);
 fprintf(debug, "Finish IR:\n\n");
 fflush(debug);
 
@@ -768,8 +787,7 @@ void optimize(FILE *fin, FILE *fout)
 
     while (1)
     {
-        output_list(rootw, fout);
-        if (opt_exp(rootw));
+        if (opt_exp(rootw))
             continue;
         if (opt_if(rootw))
             continue;
