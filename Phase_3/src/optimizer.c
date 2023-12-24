@@ -246,12 +246,20 @@ bool useful_v[MAX_VAR_CNT], useful_t[MAX_VAR_CNT];
 
 Var *new_constant_var(const char *s)
 {
+    if (s[0] == '#')
+        s = s + 1;
     Var *var = (Var *)malloc(sizeof(Var));
     var->type = CONST;
     var->val = atoi(s);
     var->parent[0] = (Parent){VAL, NULL, NULL};
     var->parent[1] = (Parent){VAL, NULL, NULL};
     return var;
+}
+
+bool not_tmp(Var *x)
+{
+    ll offset = ((ll)x - (ll)v_var) / sizeof(Var);
+    return offset >= 0 && offset < MAX_VAR_CNT;
 }
 
 Var *get_var(const char *name)
@@ -274,7 +282,7 @@ bool equal_parent(Parent a, Parent b)
 {
     if (a.var == NULL && b.var == NULL)
         return true;
-    if ((a.var == NULL) + (b.var == NULL) == 1)
+    if (!not_tmp(a.var) || !not_tmp(b.var) || (a.var == NULL) + (b.var == NULL) == 1)
         return false;
     return  a.usage == b.usage &&
         ((a.var == b.var && a.recent == b.recent) ||
@@ -283,7 +291,7 @@ bool equal_parent(Parent a, Parent b)
 
 bool equal_var(Var *a, Var *b) // a and b can't both be & need to be consist of 2 elements
 {
-    return a == b ||
+    return a == b || 
         (equal_parent(a->parent[0], b->parent[0]) && equal_parent(a->parent[1], b->parent[1])) ||
         (equal_parent(a->parent[0], b->parent[1]) && equal_parent(a->parent[1], b->parent[0]));
 }
@@ -323,7 +331,7 @@ int calc(int a, int b, char op)
 
 char *get_name(Var *var)
 {
-    if (var->type == CONST)
+    if (!not_tmp(var) && var->type == CONST)
         return val_to_const(var->val);
     char type = 'v';
     ll idx = ((ll)var - (ll)v_var) / (ll)sizeof(Var);
@@ -356,31 +364,28 @@ char *prefixed_name(Usage usage, char *name)
     return ret;
 }
 
-// Var *get_parent(Var *var)
-// {
-//     if (var->parent[0].var == NULL)
-//         return var;
-//     if (var->parent[1].var == NULL && var->parent[0].recent == var->parent[0].var->recent)
-//         return var->parent[0].var;
-//     return var;
-// }
-
 bool single_parent(Var *var)
-{ return var->parent[0].var != NULL && var->parent[1].var == NULL; }
+{ return var->parent[1].var == NULL; }
 
 void find_identity(IR_list *ir) // x is not const
 {
+fprintf(debug, "%s\n", __FUNCTION__);
+fflush(debug);
     Var *x = get_var(ir->ss[0]);
     Usage usage = get_usage(ir->ss[0]);
     // (*)x := (*&)y
     if (get_list_len(ir) == 3)
     {
         Var *y = get_var(ir->ss[2]);
-        if (ir->ss[2][0] == '&' || y->type == CONST)
+        if (not_tmp(y) || ir->ss[2][0] == '&')
             return;
         // (*)x := *y
+fprintf(debug, "%c: %s\n", ir->ss[2][0], __FUNCTION__);
+fflush(debug);
         if (ir->ss[2][0] == '*')
         {
+fprintf(debug, "*%s\n", __FUNCTION__);
+fflush(debug);
             if (!single_parent(y) || y->parent[0].usage != VAL)
                 return;
             Parent py = y->parent[0];
@@ -391,9 +396,11 @@ void find_identity(IR_list *ir) // x is not const
             if (usage != PTR)
                 x->parent[0] = (Parent){PTR, py.var, py.recent};
         }
-        // (*)x := y
+        // (*)x := (&)y
         else
         {
+            if (not_tmp(y))
+                return;
             if (single_parent(y))
             {
                 Parent py = y->parent[0];
@@ -413,18 +420,21 @@ void find_identity(IR_list *ir) // x is not const
                 if (x->parent[0].usage == PTR)
                     return;
                 // x := y
-                if (py[0].var == NULL || py[0].recent != py[0].var->recent || py[1].recent != py[1].var->recent)
-                    return;
+                // if (py[0].var == NULL || py[0].recent != py[0].var->recent || py[1].recent != py[1].var->recent)
+                //     return;
                 free(ir->ss[2]);
                 ir->ss[2] = prefixed_name(py[0].usage, get_name(py[0].var));
                 ir->ss[4] = prefixed_name(py[1].usage, get_name(py[1].var));
+Var *var = py[1].var;
+fprintf(debug, "x := y: %p = %d\n", var, var->val);
+fflush(debug);
                 ir->ss[3] = (char *)malloc(sizeof(char) * 2);
                 ir->ss[3][0] = y->recent->ss[3][0];
                 ir->ss[3][1] = '\0';
                 if (usage != PTR)
                 {
                     x->parent[0] = py[0];
-                    x->parent[0] = py[1];
+                    x->parent[1] = py[1];
                 }
             }
         }
@@ -434,20 +444,23 @@ void find_identity(IR_list *ir) // x is not const
     {
         Var *y = get_var(ir->ss[2]), *z = get_var(ir->ss[4]);
         // optimize (*)y
-        if (ir->ss[2][0] != '&' && single_parent(y))
+        if (!not_tmp(y) && ir->ss[2][0] != '&' && single_parent(y))
         {
             // *y
+fprintf(debug, "5: usage: %d %d\n", x->parent[0].usage, x->parent[1].usage);
+fflush(debug);
             if (ir->ss[2][0] == '*')
             {
                 if (y->parent[0].usage == VAL)
                 {
                     Parent py = y->parent[0];
-                    if (py.var == NULL || py.recent != py.var->recent)
-                        return;
-                    free(ir->ss[2]);
-                    ir->ss[2] = prefixed_name(PTR, get_name(py.var));
-                    if (usage != PTR)
-                        x->parent[0] = (Parent){PTR, py.var, py.recent};
+                    if (py.recent == py.var->recent)
+                    {
+                        free(ir->ss[2]);
+                        ir->ss[2] = prefixed_name(PTR, get_name(py.var));
+                        if (usage != PTR)
+                            x->parent[0] = (Parent){PTR, py.var, py.recent};
+                    }
                 }
             }
             // y
@@ -457,23 +470,26 @@ void find_identity(IR_list *ir) // x is not const
                 {
                     free(ir->ss[2]);
                     ir->ss[2] = val_to_const(y->val);
+fprintf(debug, "add const for y\n");
+fflush(debug);
                     if (usage != PTR)
-                        x->parent[0] = (Parent){PTR, new_constant_var(ir->ss[2]), NULL};
+                        x->parent[0] = (Parent){VAL, new_constant_var(ir->ss[2]), NULL};
                 }
                 else
                 {
                     Parent py = y->parent[0];
-                    if (py.var == NULL || py.recent != py.var->recent)
-                        return;
-                    free(ir->ss[2]);
-                    ir->ss[2] = prefixed_name(py.usage, get_name(py.var));
-                    if (usage != PTR)
-                        x->parent[0] = py;
+                    if (py.recent == py.var->recent)
+                    {
+                        free(ir->ss[2]);
+                        ir->ss[2] = prefixed_name(py.usage, get_name(py.var));
+                        if (usage != PTR)
+                            x->parent[0] = py;
+                    }
                 }
             }
         }
         // optimize z
-        if (ir->ss[4][0] != '&' && single_parent(z))
+        if (!not_tmp(z) && ir->ss[4][0] != '&' && single_parent(z))
         {
             // *z
             if (ir->ss[4][0] == '*')
@@ -481,12 +497,13 @@ void find_identity(IR_list *ir) // x is not const
                 if (z->parent[0].usage == VAL)
                 {
                     Parent pz = z->parent[0];
-                    if (pz.recent != pz.var->recent)
-                        return;
-                    free(ir->ss[4]);
-                    ir->ss[4] = prefixed_name(PTR, get_name(pz.var));
-                    if (usage != PTR)
-                        x->parent[1] = (Parent){PTR, pz.var, pz.recent};
+                    if (pz.recent == pz.var->recent)
+                    {
+                        free(ir->ss[4]);
+                        ir->ss[4] = prefixed_name(PTR, get_name(pz.var));
+                        if (usage != PTR)
+                            x->parent[1] = (Parent){PTR, pz.var, pz.recent};
+                    }
                 }
             }
             // z
@@ -497,21 +514,23 @@ void find_identity(IR_list *ir) // x is not const
                     free(ir->ss[4]);
                     ir->ss[4] = val_to_const(z->val);
                     if (usage != PTR)
-                        x->parent[1] = (Parent){PTR, new_constant_var(ir->ss[4]), NULL};
+                        x->parent[1] = (Parent){VAL, new_constant_var(ir->ss[4]), NULL};
+fprintf(debug, "add const for z: %s at %p = %d\n", ir->ss[4], x->parent[1].var, x->parent[1].var->val);
+fflush(debug);
                 }
                 else
                 {
                     Parent pz = z->parent[0];
-                    if (pz.var == NULL || pz.recent != pz.var->recent)
-                        return;
-                    free(ir->ss[4]);
-                    ir->ss[4] = prefixed_name(pz.usage, get_name(pz.var));
-                    if (usage != PTR)
-                        x->parent[1] = pz;
+                    if (pz.recent == pz.var->recent)
+                    {
+                        free(ir->ss[4]);
+                        ir->ss[4] = prefixed_name(pz.usage, get_name(pz.var));
+                        if (usage != PTR)
+                            x->parent[1] = pz;
+                    }
                 }
             }
         }
-        
         // common subexpression
         for (size_t i = 0; i < tmp_cnt; i++)
         {
@@ -519,12 +538,12 @@ void find_identity(IR_list *ir) // x is not const
             if (y != x && equal_var(x, y))
                 goto CHEKCOUT;
         }
-        for (size_t i = 0; i < tmp_cnt; i++)
-        {
-            y = &v_var[i];
-            if (y != x && equal_var(x, y))
-                goto CHEKCOUT;
-        }
+        // for (size_t i = 0; i < var_cnt; i++)
+        // {
+        //     y = &v_var[i];
+        //     if (y != x && equal_var(x, y))
+        //         goto CHEKCOUT;
+        // }
         return;
     CHEKCOUT:
         for (size_t i = 2; i <= 4; i++)
@@ -541,14 +560,9 @@ void find_identity(IR_list *ir) // x is not const
     }
 }
 
-bool not_tmp(Var *x)
-{
-    ll offset = ((ll)x - (ll)v_var) / sizeof(Var);
-    return offset >= 0 && offset < MAX_VAR_CNT;
-}
-
 void simplify_assign(IR_list *ir)
 {
+    debug_IR_list(ir, false);
     Var *x = get_var(ir->ss[0]), *y, *z;
     
     Usage usage = get_usage(ir->ss[0]);
@@ -564,10 +578,6 @@ void simplify_assign(IR_list *ir)
             if (ir->ss[2][0] == '&' || ir->ss[2][0] == '*')
                 break;
             y = get_var(ir->ss[2]);
-if (not_tmp(y))
-    return;
-            if (y->type == CONST)
-                ir->ss[2] = val_to_const(y->val);
             if (ir->ss[0][0] != '*')
             {
                 x->type = y->type;
@@ -575,12 +585,15 @@ if (not_tmp(y))
                 x->parent[0] = (Parent){get_usage(ir->ss[2]), y, y->recent};
                 x->parent[1] = (Parent){VAL, NULL, NULL};
             }
+            if (!not_tmp(y) && y->type == CONST)
+            {
+                ir->ss[2] = val_to_const(y->val);
+                x->parent[0] = (Parent){VAL, new_constant_var(ir->ss[2]), NULL};
+            }
             break;
-        // (*)x := (*&)y ? (*&)z
+        // x := (*&)y ? (*&)z
         case 5:
             y = get_var(ir->ss[2]), z = get_var(ir->ss[4]);
-if (not_tmp(y) || not_tmp(z))
-    return;
             char op = ir->ss[3][0];
             if (ir->ss[0][0] != '*')
             {
@@ -588,7 +601,7 @@ if (not_tmp(y) || not_tmp(z))
                 x->parent[1] = (Parent){get_usage(ir->ss[4]), z, z->recent};
             }
             // #? 
-            if (y->type == CONST && z->type == CONST)
+            if (!not_tmp(y) && !not_tmp(z) && y->type == CONST && z->type == CONST)
             {
                 for (size_t i = 2; i <= 4; i++)
                 {
@@ -597,22 +610,19 @@ if (not_tmp(y) || not_tmp(z))
                 }
                 int val = calc(y->val, z->val, op);
                 ir->ss[2] = val_to_const(val);
-                if (ir->ss[0][0] != '*')
-                {
                     x->type = CONST;
                     x->val = val;
                     x->parent[0] = (Parent){VAL, get_var(ir->ss[2]), NULL};
                     x->parent[1] = (Parent){VAL, NULL, NULL};
-                }
             }
             // #0
-            else if ((op == '*' && ((y->type == CONST && y->val == 0) || (z->type == CONST && z->val == 0))) ||
-                     (op == '-' && equal_var(y, z)) ||
-                     (op == '/' && y->type == CONST && y->val == 0))
+            else if ((op == '*' && ((!not_tmp(y) && y->type == CONST && y->val == 0) || (!not_tmp(z) && z->type == CONST && z->val == 0))) ||
+                     (op == '-' && ((!not_tmp(y) && !not_tmp(z) && equal_var(y, z)) || (y == z))) ||
+                     (op == '/' && !not_tmp(z) && y->type == CONST && y->val == 0))
             {
                 x->type = CONST;
                 x->val = 0;
-                x->parent[0] = (Parent){VAL, NULL, NULL};
+                x->parent[0] = (Parent){VAL, new_constant_var("#0"), NULL};
                 x->parent[1] = (Parent){VAL, NULL, NULL};
                 for (size_t i = 2; i <= 4; i++)
                 {
@@ -638,16 +648,20 @@ if (not_tmp(y) || not_tmp(z))
                 free(ir->ss[3]);
                 ir->ss[2] = ir->ss[4];
                 ir->ss[3] = ir->ss[4] = NULL;
-                if (ir->ss[0][0] != '*')
-                {
-                    x->parent[0] = x->parent[1];
-                    x->parent[1] = (Parent){VAL, NULL, NULL};
-                }
+                x->parent[0] = x->parent[1];
+                x->parent[1] = (Parent){VAL, NULL, NULL};
             }
             break;
     }
+debug_IR_list(ir, false);
+fprintf(debug, " %s->type = %d\n", ir->ss[0], x->type);
+fprintf(debug, "usage: %d %d\n", x->parent[0].usage, x->parent[1].usage);
+fflush(debug);
     if (x->type != CONST)
         find_identity(ir);
+fprintf(debug, "usage: %d %d\n", x->parent[0].usage, x->parent[1].usage);
+fflush(debug);
+debug_IR_list(ir, true);
 }
 
 bool *get_useful(char *name)
@@ -662,7 +676,7 @@ bool *get_useful(char *name)
 
 void set_useful(char *name, bool useful)
 {
-fprintf("set %s: %d\n", name, useful);
+fprintf(debug, "set %s: %d\n", name, useful);
 fflush(debug);
     if (name[0] == '#')
         return;
@@ -677,6 +691,17 @@ bool opt_exp(IR_list *u)
     // pos: simplify const ops
     memset(v_var, 0, sizeof(v_var));
     memset(t_var, 0, sizeof(t_var));
+    for (size_t i = 0; i < var_cnt; i++)
+    {
+        v_var[i].parent[0] = (Parent){VAL, new_constant_var("#0"), NULL};
+        v_var[i].parent[1] = (Parent){VAL, NULL, NULL};
+    }
+    for (size_t i = 0; i < tmp_cnt; i++)
+    {
+        t_var[i].parent[0] = (Parent){VAL, new_constant_var("#0"), NULL};
+        t_var[i].parent[1] = (Parent){VAL, NULL, NULL};
+    }
+    
     while (ir != NULL)
     {
         if (strcmp(ir->ss[1], ":=") == 0)
@@ -688,10 +713,16 @@ bool opt_exp(IR_list *u)
                 {
                     x->type = VAR;
                     x->recent = ir;
+                    x->parent[0] = (Parent){VAL, x, ir};
                 }
             }
             else
                 simplify_assign(ir);
+        }
+        else if (strcmp(ir->ss[0], "READ") == 0)
+        {
+            Var *x = get_var(ir->ss[1]);
+            x->parent[0] = (Parent){VAL, x, ir};
         }
 
         if (ir->next == NULL)
@@ -732,18 +763,8 @@ bool opt_exp(IR_list *u)
         {
             Var *x = get_var(ir->ss[0]);
             size_t len = get_list_len(ir);
-            bool useful = *get_useful(ir->ss[0]);
+            bool useful = not_tmp(x) || *get_useful(ir->ss[0]);
             Usage usage = get_usage(ir->ss[0]);
-for (size_t i = 0; i <= 4; i += 2)
-{
-    if (ir->ss[i] == NULL)
-        break;
-    if (not_tmp(get_var(ir->ss[i])))
-    {
-        useful = true;
-        break;
-    }
-}
             if (!useful && len != 4 && usage != PTR)
                 goto DEL_IR;
             if (useful || usage == PTR)
