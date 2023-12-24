@@ -563,8 +563,9 @@ fflush(debug);
     }
 }
 
-void simplify_assign(IR_list *ir)
+bool simplify_assign(IR_list *ir)
 {
+    bool optimized = false;
     debug_IR_list(ir, false);
     Var *x = get_var(ir->ss[0]), *y, *z;
     
@@ -592,6 +593,7 @@ void simplify_assign(IR_list *ir)
             {
                 ir->ss[2] = val_to_const(y->val);
                 x->parent[0] = (Parent){VAL, new_constant_var(ir->ss[2]), NULL};
+                optimized = true;
             }
             break;
         // x := (*&)y ? (*&)z
@@ -613,10 +615,11 @@ void simplify_assign(IR_list *ir)
                 }
                 int val = calc(y->val, z->val, op);
                 ir->ss[2] = val_to_const(val);
-                    x->type = CONST;
-                    x->val = val;
-                    x->parent[0] = (Parent){VAL, get_var(ir->ss[2]), NULL};
-                    x->parent[1] = (Parent){VAL, NULL, NULL};
+                x->type = CONST;
+                x->val = val;
+                x->parent[0] = (Parent){VAL, get_var(ir->ss[2]), NULL};
+                x->parent[1] = (Parent){VAL, NULL, NULL};
+                optimized = true;
             }
             // #0
             else if ((op == '*' && ((!not_tmp(y) && y->type == CONST && y->val == 0) || (!not_tmp(z) && z->type == CONST && z->val == 0))) ||
@@ -633,6 +636,7 @@ void simplify_assign(IR_list *ir)
                     ir->ss[i] = NULL;
                 }
                 ir->ss[2] = val_to_const(0);
+                optimized = true;
             }
             // ? + 0, ? - 0
             else if (!not_tmp(z) &&
@@ -642,6 +646,7 @@ void simplify_assign(IR_list *ir)
                 free(ir->ss[3]);
                 free(ir->ss[4]);
                 ir->ss[3] = ir->ss[4] = NULL;
+                optimized = true;
                 if (ir->ss[0][0] != '*')
                     x->parent[1] = (Parent){VAL, NULL, NULL};
             }
@@ -654,6 +659,7 @@ void simplify_assign(IR_list *ir)
                 ir->ss[3] = ir->ss[4] = NULL;
                 x->parent[0] = x->parent[1];
                 x->parent[1] = (Parent){VAL, NULL, NULL};
+                optimized = true;
             }
             break;
     }
@@ -721,7 +727,7 @@ bool opt_exp(IR_list *u)
                 }
             }
             else
-                simplify_assign(ir);
+                optimized = simplify_assign(ir);
         }
         else if (strcmp(ir->ss[0], "READ") == 0)
         {
@@ -786,12 +792,13 @@ bool opt_exp(IR_list *u)
                 }
         }
         ir = next;
-        continue;;
+        continue;
     DEL_IR:
         del_list(ir);
         ir = next;
+        optimized = true;
     }
-    return false;
+    return optimized;
 }
 
 int label_trans[65536];
@@ -803,7 +810,7 @@ void mergel(int x, int y){
 }
 
 char opt_label_tmp[256];
-char opt_label(IR_list *rootw){
+bool opt_label(IR_list *rootw){
     for(int i=0;i<65536;++i) label_trans[i] = i;
     IR_list *p = rootw;
     char flg = 0;
@@ -850,6 +857,43 @@ char opt_label(IR_list *rootw){
     return flg;
 }
 
+bool opt_read_func(int root)
+{
+    // t := ...
+    // x := t 
+    IR_list *ir = root;
+    bool optimized = false;
+    while (ir != NULL)
+    {
+        if (strcmp(ir->ss[0], "READ") == 0)
+        {
+            IR_list *next = ir->next;
+            if (strcmp(next->ss[1], ":=") == 0 && next->ss[3] == NULL)
+            {
+                free(ir->ss[1]);
+                ir->ss[1] = (char *)malloc(sizeof(char) * strlen(next->ss[0] + 1));
+                strcpy(ir->ss[1], next->ss[0]);
+                del_list(ir->next);
+                optimized = true;
+            }
+        }
+        else if (strcmp(ir->ss[1], ":=") == 0 && strcmp(ir->ss[2], "CALL") == 0)
+        {
+            IR_list *next = ir->next;
+            if (strcmp(next->ss[1], ":=") == 0 && next->ss[3] == NULL)
+            {
+                free(ir->ss[0]);
+                ir->ss[0] = (char *)malloc(sizeof(char) * strlen(next->ss[0] + 1));
+                strcpy(ir->ss[0], next->ss[0]);
+                del_list(ir->next);
+                optimized = true;
+            }
+        }
+        ir = ir->next;
+    }
+    return optimized;
+}
+
 void optimize(FILE *fin, FILE *fout)
 {
     IR_list *nowp;
@@ -875,6 +919,8 @@ void optimize(FILE *fin, FILE *fout)
         if (opt_if(rootw))
             continue;
         if (opt_label(rootw))
+            continue;
+        if (opt_read_func(rootw))
             continue;
         break;
     }
