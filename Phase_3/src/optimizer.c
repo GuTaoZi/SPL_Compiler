@@ -536,7 +536,6 @@ fflush(debug);
         // for (size_t i = 0; i < tmp_cnt; i++)
         // {
         //     y = &t_var[i];
-        
         //     if (y != x && equal_var(x, y))
         //         goto CHEKCOUT;
         // }
@@ -620,7 +619,7 @@ void simplify_assign(IR_list *ir)
             // #0
             else if ((op == '*' && ((!not_tmp(y) && y->type == CONST && y->val == 0) || (!not_tmp(z) && z->type == CONST && z->val == 0))) ||
                      (op == '-' && ((!not_tmp(y) && !not_tmp(z) && equal_var(y, z)) || (y == z))) ||
-                     (op == '/' && !not_tmp(z) && y->type == CONST && y->val == 0))
+                     (op == '/' && !not_tmp(y) && y->type == CONST && y->val == 0))
             {
                 x->type = CONST;
                 x->val = 0;
@@ -633,9 +632,10 @@ void simplify_assign(IR_list *ir)
                 }
                 ir->ss[2] = val_to_const(0);
             }
-            // ? + #0, ? - 0
-            else if ((op == '+' && z->type == CONST && z->val == 0) ||
-                op == '-' && z->type == CONST && z->val == 0)
+            // ? + 0, ? - 0
+            else if (!not_tmp(z) &&
+                ((op == '+' && z->type == CONST && z->val == 0) ||
+                (op == '-' && z->type == CONST && z->val == 0)))
             {
                 free(ir->ss[3]);
                 free(ir->ss[4]);
@@ -644,7 +644,7 @@ void simplify_assign(IR_list *ir)
                     x->parent[1] = (Parent){VAL, NULL, NULL};
             }
             // #0 + ?
-            else if (op == '+' && z->type == CONST && z->val == 0)
+            else if (!not_tmp(y) && op == '+' && z->type == CONST && z->val == 0)
             {
                 free(ir->ss[2]);
                 free(ir->ss[3]);
