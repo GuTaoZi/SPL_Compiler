@@ -713,6 +713,7 @@ bool opt_exp(IR_list *u)
                 {
                     x->type = VAR;
                     x->recent = ir;
+                    x->parent[0] = (Parent){VAL, x, ir};
                 }
             }
             else
@@ -720,8 +721,8 @@ bool opt_exp(IR_list *u)
         }
         else if (strcmp(ir->ss[0], "READ") == 0)
         {
-            Var *var = get_var(ir->ss[1]);
-            var->parent[0] = (Parent){VAL, var, ir};
+            Var *x = get_var(ir->ss[1]);
+            x->parent[0] = (Parent){VAL, x, ir};
         }
 
         if (ir->next == NULL)
