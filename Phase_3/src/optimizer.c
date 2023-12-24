@@ -370,8 +370,8 @@ bool single_parent(Var *var)
 
 void find_identity(IR_list *ir) // x is not const
 {
-fprintf(debug, "%s\n", __FUNCTION__);
-fflush(debug);
+// fprintf(debug, "%s\n", __FUNCTION__);
+// fflush(debug);
     Var *x = get_var(ir->ss[0]);
     Usage usage = get_usage(ir->ss[0]);
     // (*)x := (*&)y
@@ -381,12 +381,12 @@ fflush(debug);
         if (not_tmp(y) || ir->ss[2][0] == '&')
             return;
         // (*)x := *y
-fprintf(debug, "%c: %s\n", ir->ss[2][0], __FUNCTION__);
-fflush(debug);
+// fprintf(debug, "%c: %s\n", ir->ss[2][0], __FUNCTION__);
+// fflush(debug);
         if (ir->ss[2][0] == '*')
         {
-fprintf(debug, "*%s\n", __FUNCTION__);
-fflush(debug);
+// fprintf(debug, "*%s\n", __FUNCTION__);
+// fflush(debug);
             if (!single_parent(y) || y->parent[0].usage != VAL)
                 return;
             Parent py = y->parent[0];
@@ -426,9 +426,9 @@ fflush(debug);
                 free(ir->ss[2]);
                 ir->ss[2] = prefixed_name(py[0].usage, get_name(py[0].var));
                 ir->ss[4] = prefixed_name(py[1].usage, get_name(py[1].var));
-Var *var = py[1].var;
-fprintf(debug, "x := y: %p = %d\n", var, var->val);
-fflush(debug);
+// Var *var = py[1].var;
+// fprintf(debug, "x := y: %p = %d\n", var, var->val);
+// fflush(debug);
                 ir->ss[3] = (char *)malloc(sizeof(char) * 2);
                 ir->ss[3][0] = y->recent->ss[3][0];
                 ir->ss[3][1] = '\0';
@@ -448,8 +448,8 @@ fflush(debug);
         if (!not_tmp(y) && ir->ss[2][0] != '&' && single_parent(y))
         {
             // *y
-fprintf(debug, "5: usage: %d %d\n", x->parent[0].usage, x->parent[1].usage);
-fflush(debug);
+// fprintf(debug, "5: usage: %d %d\n", x->parent[0].usage, x->parent[1].usage);
+// fflush(debug);
             if (ir->ss[2][0] == '*')
             {
                 if (y->parent[0].usage == VAL)
@@ -471,8 +471,8 @@ fflush(debug);
                 {
                     free(ir->ss[2]);
                     ir->ss[2] = val_to_const(y->val);
-fprintf(debug, "add const for y\n");
-fflush(debug);
+// fprintf(debug, "add const for y\n");
+// fflush(debug);
                     if (usage != PTR)
                         x->parent[0] = (Parent){VAL, new_constant_var(ir->ss[2]), NULL};
                 }
@@ -516,8 +516,8 @@ fflush(debug);
                     ir->ss[4] = val_to_const(z->val);
                     if (usage != PTR)
                         x->parent[1] = (Parent){VAL, new_constant_var(ir->ss[4]), NULL};
-fprintf(debug, "add const for z: %s at %p = %d\n", ir->ss[4], x->parent[1].var, x->parent[1].var->val);
-fflush(debug);
+// fprintf(debug, "add const for z: %s at %p = %d\n", ir->ss[4], x->parent[1].var, x->parent[1].var->val);
+// fflush(debug);
                 }
                 else
                 {
@@ -563,7 +563,7 @@ fflush(debug);
 
 void simplify_assign(IR_list *ir)
 {
-    debug_IR_list(ir, false);
+    // debug_IR_list(ir, false);
     Var *x = get_var(ir->ss[0]), *y, *z;
     
     Usage usage = get_usage(ir->ss[0]);
@@ -655,15 +655,15 @@ void simplify_assign(IR_list *ir)
             }
             break;
     }
-debug_IR_list(ir, false);
-fprintf(debug, " %s->type = %d\n", ir->ss[0], x->type);
-fprintf(debug, "usage: %d %d\n", x->parent[0].usage, x->parent[1].usage);
-fflush(debug);
+// debug_IR_list(ir, false);
+// fprintf(debug, " %s->type = %d\n", ir->ss[0], x->type);
+// fprintf(debug, "usage: %d %d\n", x->parent[0].usage, x->parent[1].usage);
+// fflush(debug);
     if (x->type != CONST)
         find_identity(ir);
-fprintf(debug, "usage: %d %d\n", x->parent[0].usage, x->parent[1].usage);
-fflush(debug);
-debug_IR_list(ir, true);
+// fprintf(debug, "usage: %d %d\n", x->parent[0].usage, x->parent[1].usage);
+// fflush(debug);
+// debug_IR_list(ir, true);
 }
 
 bool *get_useful(char *name)
@@ -678,8 +678,8 @@ bool *get_useful(char *name)
 
 void set_useful(char *name, bool useful)
 {
-fprintf(debug, "set %s: %d\n", name, useful);
-fflush(debug);
+// fprintf(debug, "set %s: %d\n", name, useful);
+// fflush(debug);
     if (name[0] == '#')
         return;
     *(get_useful(name)) = useful;
