@@ -20,3 +20,8 @@ void reverse_str(char *s, size_t len)
         s[len - 1 - i] = t;
     }
 }
+
+bool is_ws(const char c)
+{
+    return c == ' ' || c == '\n' || c == '\r' || c == '\t';
+}
