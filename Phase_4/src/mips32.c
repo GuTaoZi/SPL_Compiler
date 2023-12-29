@@ -3,9 +3,22 @@
 /* the output file descriptor, may not be explicitly used */
 FILE *fd;
 
-#define _tac_kind(tac) (((tac)->code).kind)
-#define _tac_quadruple(tac) (((tac)->code).tac)
+#define _tac_kind(vtac) (((vtac)->code).kind)
+#define _tac_quadruple(vtac) (((vtac)->code).vtac)
 #define _reg_name(reg) regs[reg].name
+
+struct VarDesc *get_memory_addr(char varname[8])
+{
+    struct VarDesc *u = vars;
+    while (u != NULL)
+    {
+        if (u->reg == zero && strncmp(varname, u->var, 8) == 0)
+        {
+            return u;
+        }
+    }
+    return NULL;
+}
 
 Register get_register(tac_opd *opd)
 {
@@ -26,6 +39,20 @@ Register get_register_w(tac_opd *opd)
 void spill_register(Register reg)
 {
     /* COMPLETE the register spilling */
+    struct VarDesc *result = get_memory_addr(regs[reg].var);
+    if (result == NULL)
+    {
+        _mips_printf("Im Angry!!");
+    }
+    else if (result->is_stack)
+    {
+        _mips_printf("ST %d($sp), %s", result->offset, _reg_name(reg));
+    }
+    else
+    {
+        _mips_printf("ST %d($gp), %s", result->offset, _reg_name(reg));
+    }
+    regs[reg].dirty = false;
 }
 
 void _mips_printf(const char *fmt, ...)
@@ -342,10 +369,10 @@ void emit_write_function()
     _mips_iprintf("jr $ra");
 }
 
-static tac *(*emitter[])(tac *) = {emit_label, emit_function, emit_assign, emit_add,   emit_sub,  emit_mul,
-                                   emit_div,   emit_addr,     emit_fetch,  emit_deref, emit_goto, emit_iflt,
-                                   emit_ifle,  emit_ifgt,     emit_ifge,   emit_ifne,  emit_ifeq, emit_return,
-                                   emit_dec,   emit_arg,      emit_call,   emit_param, emit_read, emit_write};
+static tac *(*emitter[])(tac *) = {emit_label, emit_function, emit_assign, emit_add, emit_sub, emit_mul,
+                                   emit_div, emit_addr, emit_fetch, emit_deref, emit_goto, emit_iflt,
+                                   emit_ifle, emit_ifgt, emit_ifge, emit_ifne, emit_ifeq, emit_return,
+                                   emit_dec, emit_arg, emit_call, emit_param, emit_read, emit_write};
 
 tac *emit_code(tac *head)
 {
