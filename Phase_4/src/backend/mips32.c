@@ -7,6 +7,10 @@ FILE *fd;
 #define _tac_quadruple(vtac) (((vtac)->code).vtac)
 #define _reg_name(reg) regs[reg].name
 
+void add_gp_addr(const char *varname, int offset){
+    /* COMPLETE */
+}
+
 struct VarDesc *get_memory_addr(char varname[8])
 {
     struct VarDesc *u = vars;
@@ -246,49 +250,87 @@ tac *emit_goto(tac *goto_)
 
 tac *emit_iflt(tac *iflt)
 {
-    /* COMPLETE emit function */
+    /* COMPLETED emit function */
+    Register x, y;
+    x = get_register(_tac_quadruple(iflt).c1);
+    y = get_register(_tac_quadruple(iflt).c2);
+    _mips_iprintf("blt %s, %s, label%d", _reg_name(x), _reg_name(y), _tac_quadruple(iflt).labelno->int_val);
     return iflt->next;
 }
 
 tac *emit_ifle(tac *ifle)
 {
-    /* COMPLETE emit function */
+    /* COMPLETED emit function */
+    Register x, y;
+    x = get_register(_tac_quadruple(ifle).c1);
+    y = get_register(_tac_quadruple(ifle).c2);
+    _mips_iprintf("ble %s, %s, label%d", _reg_name(x), _reg_name(y), _tac_quadruple(ifle).labelno->int_val);
     return ifle->next;
 }
 
 tac *emit_ifgt(tac *ifgt)
 {
-    /* COMPLETE emit function */
+    /* COMPLETED emit function */
+    Register x, y;
+    x = get_register(_tac_quadruple(ifgt).c1);
+    y = get_register(_tac_quadruple(ifgt).c2);
+    _mips_iprintf("bgt %s, %s, label%d", _reg_name(x), _reg_name(y), _tac_quadruple(ifgt).labelno->int_val);
     return ifgt->next;
 }
 
 tac *emit_ifge(tac *ifge)
 {
-    /* COMPLETE emit function */
+    /* COMPLETED emit function */
+    Register x, y;
+    x = get_register(_tac_quadruple(ifge).c1);
+    y = get_register(_tac_quadruple(ifge).c2);
+    _mips_iprintf("bge %s, %s, label%d", _reg_name(x), _reg_name(y), _tac_quadruple(ifge).labelno->int_val);
     return ifge->next;
 }
 
 tac *emit_ifne(tac *ifne)
 {
-    /* COMPLETE emit function */
+    /* COMPLETED emit function */
+    Register x, y;
+    x = get_register(_tac_quadruple(ifne).c1);
+    y = get_register(_tac_quadruple(ifne).c2);
+    _mips_iprintf("bne %s, %s, label%d", _reg_name(x), _reg_name(y), _tac_quadruple(ifne).labelno->int_val);
     return ifne->next;
 }
 
 tac *emit_ifeq(tac *ifeq)
 {
-    /* COMPLETE emit function */
+    /* COMPLETED emit function */
+    Register x, y;
+    x = get_register(_tac_quadruple(ifeq).c1);
+    y = get_register(_tac_quadruple(ifeq).c2);
+    _mips_iprintf("beq %s, %s, label%d", _reg_name(x), _reg_name(y), _tac_quadruple(ifeq).labelno->int_val);
     return ifeq->next;
 }
 
 tac *emit_return(tac *return_)
 {
     /* COMPLETE emit function */
+    Register x;
+    if (_tac_quadruple(return_).var->kind == OP_CONSTANT){
+        _mips_iprintf("li $v0, %d", _tac_quadruple(return_).var->int_val);
+    } else if (_tac_quadruple(return_).var->kind == OP_VARIABLE) {
+        x = get_register(_tac_quadruple(return_).var);
+        _mips_iprintf("move $v0, %s", x);
+    } else {
+        _mips_iprintf("Too Naive.");
+    }
     return return_->next;
 }
+
+int deced_size = -32768;
 
 tac *emit_dec(tac *dec)
 {
     /* NO NEED TO IMPLEMENT */
+    /* Sorry we did. */
+    add_gp_addr(_tac_quadruple(dec).var->char_val, deced_size);
+    deced_size += _tac_quadruple(dec).size;
     return dec->next;
 }
 
@@ -300,7 +342,11 @@ tac *emit_arg(tac *arg)
 
 tac *emit_call(tac *call)
 {
-    /* COMPLETE emit function */
+    /* COMPLETED emit function */
+    _mips_iprintf("jal %s", _tac_quadruple(call).funcname);
+    Register x;
+    x = get_register_w(_tac_quadruple(call).ret);
+    _mips_iprintf("move %s, $v0", _reg_name(x));
     return call->next;
 }
 
