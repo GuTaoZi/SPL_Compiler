@@ -1,18 +1,21 @@
-CC=gcc
-TCC=tcc
-SRC_DIR = ./src
-INC_DIR = ../include
-BIN_DIR=../bin
-SRC=main.c tac.c mips32.c
+.PHONY: all clean
 
-tcg: clean
-	@mkdir -p bin
-	cd $(SRC_DIR) && $(CC) -I$(INC_DIR) $(SRC) -o $(BIN_DIR)/tcg
+all: front back
 
-tcgt: clean
-	@mkdir -p bin
-	cd $(SRC_DIR) && $(TCC) -I$(INC_DIR) $(SRC) -o $(BIN_DIR)/tcg
+allt: frontt backt
+
+front:
+	@cd src/frontend && make
+
+frontt:
+	@cd src/frontend && make splct
+
+back:
+	@cd src/backend && make
+
+backt:
+	@cd src/backend && make optt && make tcgt
 
 clean:
-	@rm -rf $(BIN)/tcg
-.PHONY: tcg clean
+	@cd src/backend && make clean
+	@cd src/frontend && make clean
