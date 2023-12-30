@@ -66,7 +66,7 @@ struct VarDesc *get_memory_addr(char varname[8]);
 
 /**
  * varname in offset($gp)
-*/
+ */
 void add_gp_addr(const char *varname, int offset);
 
 #endif // MIPS_H

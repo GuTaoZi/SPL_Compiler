@@ -28,7 +28,45 @@ struct VarDesc *get_memory_addr(char varname[8])
 Register get_register(tac_opd *opd)
 {
     assert(opd->kind == OP_VARIABLE);
-    char *var = opd->char_val;
+    char *varname = opd->char_val;
+    struct VarDesc *u = vars, *tail;
+    while (u != NULL)
+    {
+        if (strncmp(varname, u->var, 8) == 0)
+        {
+            return u->reg;
+        }
+        if (!u->next)
+        {
+            tail = u;
+        }
+    }
+    for (Register i = t0; i <= t9; i++)
+    {
+        if (!strncmp(regs[i].var, "", 8))
+        {
+            strcpy(regs[i].var, varname);
+            u = (struct VarDesc *)malloc(sizeof(struct VarDesc));
+            strncpy(tail->var, _reg_name(i), 8);
+            u->reg = i;
+            u->next = NULL;
+            u->offset = ? ;
+            u->is_stack = true;
+            tail->next = u;
+            return i;
+        }
+    }
+    // I guess I need to add a member to the Register struct
+    // to record the line number where it is last used.
+    Register victim = ? ;
+    spill_register(victim);
+    u = (struct VarDesc *)malloc(sizeof(struct VarDesc));
+    strncpy(tail->var, _reg_name(victim), 8);
+    u->reg = victim;
+    u->next = NULL;
+    u->offset = ? ;
+    u->is_stack = true;
+    tail->next = u;
     /* COMPLETE the register allocation */
     return t0;
 }
@@ -38,6 +76,19 @@ Register get_register_w(tac_opd *opd)
     assert(opd->kind == OP_VARIABLE);
     char *var = opd->char_val;
     /* COMPLETE the register allocation (for write) */
+    /*
+    If $sx is available
+        directly allocate it to the var
+        - update var.reg
+        - update reg.var
+    Else
+        find a victim register
+        spill the victim register
+        save value of variables binding to the victim into memory
+        allocate it to the var
+        - update var.reg
+        - update reg.var
+    */
     return s0;
 }
 
@@ -51,11 +102,11 @@ void spill_register(Register reg)
     }
     else if (result->is_stack)
     {
-        _mips_printf("ST %d($sp), %s", result->offset, _reg_name(reg));
+        _mips_printf("sw %d($sp), %s", result->offset, _reg_name(reg));
     }
     else
     {
-        _mips_printf("ST %d($gp), %s", result->offset, _reg_name(reg));
+        _mips_printf("sw %d($gp), %s", result->offset, _reg_name(reg));
     }
     regs[reg].dirty = false;
 }
@@ -140,7 +191,8 @@ tac *read_params(tac *param)
 
 tac *_save_args(tac *arg, int params_num)
 {
-    if (arg->code.kind != ARG){
+    if (arg->code.kind != ARG)
+    {
         if (params_num > 4)
         {
             _mips_iprintf("addi $sp, $sp, -%d", 4 * (params_num - 4));
@@ -429,7 +481,8 @@ tac *emit_dec(tac *dec)
 tac *emit_arg(tac *arg)
 {
     /* COMPLETED emit function */
-    if(arg->prev->code.kind == ARG) {
+    if (arg->prev->code.kind == ARG)
+    {
         _mips_iprintf("That shouldn't happen");
         return arg->next;
     }
@@ -512,10 +565,10 @@ void emit_write_function()
     _mips_iprintf("jr $ra");
 }
 
-static tac *(*emitter[])(tac *) = {emit_label, emit_function, emit_assign, emit_add, emit_sub, emit_mul,
-                                   emit_div, emit_addr, emit_fetch, emit_deref, emit_goto, emit_iflt,
-                                   emit_ifle, emit_ifgt, emit_ifge, emit_ifne, emit_ifeq, emit_return,
-                                   emit_dec, emit_arg, emit_call, emit_param, emit_read, emit_write};
+static tac *(*emitter[])(tac *) = {emit_label, emit_function, emit_assign, emit_add,   emit_sub,  emit_mul,
+                                   emit_div,   emit_addr,     emit_fetch,  emit_deref, emit_goto, emit_iflt,
+                                   emit_ifle,  emit_ifgt,     emit_ifge,   emit_ifne,  emit_ifeq, emit_return,
+                                   emit_dec,   emit_arg,      emit_call,   emit_param, emit_read, emit_write};
 
 tac *emit_code(tac *head)
 {
