@@ -7,8 +7,9 @@ FILE *fd;
 #define _tac_quadruple(vtac) (((vtac)->code).vtac)
 #define _reg_name(reg) regs[reg].name
 
-void add_gp_addr(const char *varname, int offset){
-    /* COMPLETE */
+void add_gp_addr(const char *varname, int offset)
+{
+    /* COMPLETE this new variable will be saved on offset($gp) through out all program*/
 }
 
 struct VarDesc *get_memory_addr(char varname[8])
@@ -59,6 +60,18 @@ void spill_register(Register reg)
     regs[reg].dirty = false;
 }
 
+void save_sp()
+{
+    _mips_iprintf("sw $v1, 0($sp)");
+    _mips_iprintf("move $v1, $sp");
+    _mips_iprintf("addi $sp, $sp, -4");
+}
+void restore_sp()
+{
+    _mips_iprintf("move $sp, $v1");
+    _mips_iprintf("lw $v1, 0($sp)");
+}
+
 void _mips_printf(const char *fmt, ...)
 {
     va_list args;
@@ -87,10 +100,82 @@ tac *emit_label(tac *label)
     return label->next;
 }
 
+tac *_read_params(tac *param, int *params_num)
+{
+    if (param->code.kind != PARAM)
+        return param;
+    tac *ret = _read_params(param->next, params_num);
+
+    Register x = get_register_w(_tac_quadruple(param).p);
+    if (*params_num < 4)
+    {
+        _mips_iprintf("move %s, %s", _reg_name(x), _reg_name(a0 + (*params_num)));
+    }
+    else
+    {
+        _mips_iprintf("lw %s, %d($sp)", _reg_name(x), 4 * ((*params_num) - 3));
+    }
+    if (*params_num == 0)
+    {
+        _mips_iprintf("move $v1, $sp");
+    }
+    (*params_num) += 1;
+
+    return ret;
+}
+
+tac *read_params(tac *param)
+{
+    int *p = (int)malloc(sizeof(int));
+    (*p) = 0;
+    tac *ret = _read_params(param, p);
+    if ((*p) > 4)
+    {
+        _mips_iprintf("addi $sp, $sp, %d", 4 * ((*p) - 4));
+    }
+    free(p);
+    save_sp();
+    return ret;
+}
+
+tac *_save_args(tac *arg, int params_num)
+{
+    if (arg->code.kind != ARG){
+        if (params_num > 4)
+        {
+            _mips_iprintf("addi $sp, $sp, -%d", 4 * (params_num - 4));
+        }
+        return arg;
+    }
+    Register x = get_register(_tac_quadruple(arg).var);
+    if (params_num < 4)
+    {
+        _mips_iprintf("move %s, %s", _reg_name(a0 + params_num), _reg_name(x));
+    }
+    else
+    {
+        _mips_iprintf("sw %s, -%d($sp)", _reg_name(x), 4 * (params_num - 3));
+    }
+    return _save_args(arg->next, params_num + 1);
+}
+
+tac *save_args(tac *arg)
+{
+    return _save_args(arg, 0);
+}
+
 tac *emit_function(tac *function)
 {
     _mips_printf("%s:", _tac_quadruple(function).funcname);
-    return function->next;
+    if (function->next->code.kind != PARAM)
+    {
+        save_sp();
+        return function->next;
+    }
+    else
+    {
+        return read_params(function->next);
+    }
 }
 
 tac *emit_assign(tac *assign)
@@ -310,16 +395,23 @@ tac *emit_ifeq(tac *ifeq)
 
 tac *emit_return(tac *return_)
 {
-    /* COMPLETE emit function */
+    /* COMPLETED emit function */
     Register x;
-    if (_tac_quadruple(return_).var->kind == OP_CONSTANT){
+    if (_tac_quadruple(return_).var->kind == OP_CONSTANT)
+    {
         _mips_iprintf("li $v0, %d", _tac_quadruple(return_).var->int_val);
-    } else if (_tac_quadruple(return_).var->kind == OP_VARIABLE) {
+    }
+    else if (_tac_quadruple(return_).var->kind == OP_VARIABLE)
+    {
         x = get_register(_tac_quadruple(return_).var);
         _mips_iprintf("move $v0, %s", x);
-    } else {
+    }
+    else
+    {
         _mips_iprintf("Too Naive.");
     }
+    restore_sp();
+    _mips_iprintf("jr $ra");
     return return_->next;
 }
 
@@ -336,8 +428,12 @@ tac *emit_dec(tac *dec)
 
 tac *emit_arg(tac *arg)
 {
-    /* COMPLETE emit function */
-    return arg->next;
+    /* COMPLETED emit function */
+    if(arg->prev->code.kind == ARG) {
+        _mips_iprintf("That shouldn't happen");
+        return arg->next;
+    }
+    return save_args(arg);
 }
 
 tac *emit_call(tac *call)
@@ -352,7 +448,8 @@ tac *emit_call(tac *call)
 
 tac *emit_param(tac *param)
 {
-    /* COMPLETE emit function */
+    /* COMPLETED emit function */
+    _mips_iprintf("No you shouldn't call me.");
     return param->next;
 }
 
