@@ -9,6 +9,20 @@ FILE *fd;
 
 tac_opd *gp_tac_opd = NULL;
 
+/* get LRU victim from t1 - t9 */
+Register get_LRU_victim()
+{
+    Register victim = t1;
+    for (Register t = t1; t <= t9; t++)
+    {
+        if (!regs[t].dirty)
+            return t;
+        else if (regs[t].recent < regs[victim].recent)
+            victim = t;
+    }
+    return victim;
+}
+
 VarMemInfo *get_memory_addr(char varname[8])
 {
     VarMemInfo *u = varmem;
@@ -57,7 +71,7 @@ Register get_register(tac_opd *opd)
     }
     // I guess I need to add a member to the Register struct
     // to record the line number where it is last used.
-    Register victim = ? ;
+    Register victim = get_LRU_victim() ;
     spill_register(victim);
     u = (struct VarDesc *)malloc(sizeof(struct VarDesc));
     strncpy(tail->var, _reg_name(victim), 8);

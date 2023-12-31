@@ -48,6 +48,7 @@ struct RegDesc
     char var[8];
     bool dirty; // value updated but not stored
     /* add other fields as you need */
+    size_t recent;
 } regs[NUM_REGS];
 
 struct VarDesc
