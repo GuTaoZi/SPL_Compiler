@@ -12,17 +12,24 @@ This project is developed in 4 phases. For more details, please check the report
 
   A semantic analyzer for SPL, introducing the symbol table and features including type checking.
 
+- [Phase 3: Intermediate Code Generator](https://github.com/GuTaoZi/SPL_Parser/blob/main/Phase_3/report/12110524-12111624-12112012-phase3.pdf)
+
+  An intermediate code generator, compile the SPL code into intermediate code which could be run with [IR simulator](https://github.com/GuTaoZi/SPL_Parser/blob/main/Phase_3/irsim_linux-x86_64.zip)
+
 ## Environment
 
 |   Tool    | Version |
 | :-------: | :-----: |
-|     C     |   C11   |
+|     C     |   C99   |
 | GNU Bison | 3.0.4+  |
 |   Flex    |  2.6.4  |
 
 ## Usage Guide
 
-1. Move to the directory of one of the phases.
-2. Run `make splc` in the root directory to generate a parser executable `bin/splc`.
-3. Run the parser by `splc test/filename.spl`, the output of the parser will be saved in `test/filename.out`.
+For usage guide of each phase, please refer to the **How to Run** section in the corresponding report.
 
+1. [Parser](https://github.com/GuTaoZi/SPL_Parser/blob/main/Phase_1/report/12110524-12111624-12112012-phase1.pdf)
+
+2. [Semantic Analyzer](https://github.com/GuTaoZi/SPL_Parser/blob/main/Phase_2/report/12110524-12111624-12112012-phase2.pdf)
+
+3. [Intermediate Code Generator](https://github.com/GuTaoZi/SPL_Parser/blob/main/Phase_3/report/12110524-12111624-12112012-phase3.pdf)

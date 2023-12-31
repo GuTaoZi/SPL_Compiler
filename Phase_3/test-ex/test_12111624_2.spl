@@ -31,7 +31,8 @@ int dfs(int x, int y, struct map mp)
     {
         return 0;
     }
-    if(mp.data[x][y]==2) return 1;
+    if (mp.data[x][y] == 2)
+        return 1;
     mp.data[x][y] = 1;
     for (i = 0; i < ls; i = i + 1)
         if (dfs(x + dx[i], y + dy[i], mp))
