@@ -9,12 +9,12 @@ FILE *fd;
 
 tac_opd *gp_tac_opd = NULL;
 
-struct VarDesc *get_memory_addr(char varname[8])
+VarMemInfo *get_memory_addr(char varname[8])
 {
-    struct VarDesc *u = vars;
+    VarMemInfo *u = varmem;
     while (u != NULL)
     {
-        if (u->reg == zero && strncmp(varname, u->var, 8) == 0)
+        if (strncmp(varname, u->var, 8) == 0)
         {
             return u;
         }
@@ -93,8 +93,8 @@ Register get_register_w(tac_opd *opd)
 
 void spill_register(Register reg)
 {
-    /* COMPLETE the register spilling */
-    struct VarDesc *result = get_memory_addr(regs[reg].var);
+    /* COMPLETED the register spilling */
+    VarMemInfo *result = get_memory_addr(regs[reg].var);
     if (result == NULL)
     {
         _mips_printf("Im Angry!!");
@@ -105,7 +105,8 @@ void spill_register(Register reg)
     }
     else
     {
-        _mips_printf("sw %d($gp), %s", result->offset, _reg_name(reg));
+        // No Need to Store
+        // _mips_printf("sw %d($gp), %s", result->offset, _reg_name(reg));
     }
     regs[reg].dirty = false;
 }
@@ -477,7 +478,8 @@ tac *emit_dec(tac *dec)
 {
     /* NO NEED TO IMPLEMENT */
     /* COMPLETE Sorry there are bugs. */
-    Register x = get_register_w(gp_tac_opd);
+    Register x = fp;
+    VarMemInfo *p = insert_varmeminfo(_tac_quadruple(dec).var);
     _mips_iprintf("addi %s, %s, %d", _reg_name(x), _reg_name(x), _tac_quadruple(dec).size);
     return dec->next;
 }
@@ -597,23 +599,21 @@ tac *emit_code(tac *head)
 
 void init_gp_counter()
 {
-    VarDesc *gp_counter = (VarDesc *)malloc(sizeof(VarDesc));
-    gp_counter->is_stack = false;
-    gp_counter->next = vars;
-    gp_counter->offset = -32768;
-    gp_counter->reg = zero;
-    strcpy(gp_counter->var, "gpcnt");
-    vars = gp_counter;
+//     VarDesc *gp_counter = (VarDesc *)malloc(sizeof(VarDesc));
+//     gp_counter->next = vars;
+//     gp_counter->reg = fp;
+//     strcpy(gp_counter->var, "gpcnt");
+//     vars = gp_counter;
 
-    gp_tac_opd = (tac_opd *)malloc(sizeof(tac_opd));
-    gp_tac_opd->kind = OP_VARIABLE;
-    strcpy(gp_tac_opd->char_val, "gpcnt");
+//     gp_tac_opd = (tac_opd *)malloc(sizeof(tac_opd));
+//     gp_tac_opd->kind = OP_POINTER;
+//     strcpy(gp_tac_opd->char_val, "gpcnt");
 }
 
 void set_gp_counter()
 {
-    Register x = get_register_w(gp_tac_opd);
-    _mips_iprintf("li %s, -32764", _reg_name(x));
+    Register x = fp;
+    _mips_iprintf("addi %s, $gp, -32768", _reg_name(x));
 }
 
 /* translate a TAC list into mips32 assembly

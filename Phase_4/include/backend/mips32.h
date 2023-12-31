@@ -54,18 +54,24 @@ struct VarDesc
 { // the variable descriptor
     char var[8];
     Register reg;
-    int offset;    // the offset from stack/heap
-    bool is_stack; // the variable is in stack or heap
     /* add other fields as you need */
     struct VarDesc *next;
 } *vars;
 
+struct VarMemInfo{
+    char var[8];
+    int offset;
+    bool is_stack;
+    struct VarMemInfo *next;
+} *varmem;
+
+typedef struct VarMemInfo VarMemInfo;
 typedef struct VarDesc VarDesc;
 typedef struct RegDesc RegDesc;
 
 void _mips_printf(const char *fmt, ...);
 void mips32_gen(tac *head, FILE *_fd);
-struct VarDesc *get_memory_addr(char varname[8]);
+VarMemInfo *get_memory_addr(char varname[8]);
 
 /**
  * varname in offset($gp)
