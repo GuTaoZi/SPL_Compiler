@@ -7,10 +7,7 @@ FILE *fd;
 #define _tac_quadruple(vtac) (((vtac)->code).vtac)
 #define _reg_name(reg) regs[reg].name
 
-void add_gp_addr(const char *varname, int offset)
-{
-    /* COMPLETE this new variable will be saved on offset($gp) through out all program*/
-}
+tac_opd *gp_tac_opd = NULL;
 
 struct VarDesc *get_memory_addr(char varname[8])
 {
@@ -219,6 +216,10 @@ tac *save_args(tac *arg)
 tac *emit_function(tac *function)
 {
     _mips_printf("%s:", _tac_quadruple(function).funcname);
+    if (strcmp("main", _tac_quadruple(function).funcname) == 0)
+    {
+        set_gp_counter();
+    }
     if (function->next->code.kind != PARAM)
     {
         save_sp();
@@ -472,9 +473,9 @@ int deced_size = -32768;
 tac *emit_dec(tac *dec)
 {
     /* NO NEED TO IMPLEMENT */
-    /* Sorry we did. */
-    add_gp_addr(_tac_quadruple(dec).var->char_val, deced_size);
-    deced_size += _tac_quadruple(dec).size;
+    /* COMPLETE Sorry there are bugs. */
+    Register x = get_register_w(gp_tac_opd);
+    _mips_iprintf("addi %s, %s, %d", _reg_name(x), _reg_name(x), _tac_quadruple(dec).size);
     return dec->next;
 }
 
@@ -565,10 +566,10 @@ void emit_write_function()
     _mips_iprintf("jr $ra");
 }
 
-static tac *(*emitter[])(tac *) = {emit_label, emit_function, emit_assign, emit_add,   emit_sub,  emit_mul,
-                                   emit_div,   emit_addr,     emit_fetch,  emit_deref, emit_goto, emit_iflt,
-                                   emit_ifle,  emit_ifgt,     emit_ifge,   emit_ifne,  emit_ifeq, emit_return,
-                                   emit_dec,   emit_arg,      emit_call,   emit_param, emit_read, emit_write};
+static tac *(*emitter[])(tac *) = {emit_label, emit_function, emit_assign, emit_add, emit_sub, emit_mul,
+                                   emit_div, emit_addr, emit_fetch, emit_deref, emit_goto, emit_iflt,
+                                   emit_ifle, emit_ifgt, emit_ifge, emit_ifne, emit_ifeq, emit_return,
+                                   emit_dec, emit_arg, emit_call, emit_param, emit_read, emit_write};
 
 tac *emit_code(tac *head)
 {
@@ -589,6 +590,27 @@ tac *emit_code(tac *head)
             tac_code = tac_code->next;
         }
     }
+}
+
+void init_gp_counter()
+{
+    VarDesc *gp_counter = (VarDesc *)malloc(sizeof(VarDesc));
+    gp_counter->is_stack = false;
+    gp_counter->next = vars;
+    gp_counter->offset = -32768;
+    gp_counter->reg = zero;
+    strcpy(gp_counter->var, "gpcnt");
+    vars = gp_counter;
+
+    gp_tac_opd = (tac_opd *)malloc(sizeof(tac_opd));
+    gp_tac_opd->kind = OP_VARIABLE;
+    strcpy(gp_tac_opd->char_val, "gpcnt");
+}
+
+void set_gp_counter()
+{
+    Register x = get_register_w(gp_tac_opd);
+    _mips_iprintf("li %s, -32764", _reg_name(x));
 }
 
 /* translate a TAC list into mips32 assembly
@@ -630,5 +652,6 @@ void mips32_gen(tac *head, FILE *_fd)
     vars = (struct VarDesc *)malloc(sizeof(struct VarDesc));
     vars->next = NULL;
     fd = _fd;
+    init_gp_counter();
     emit_code(head);
 }

@@ -60,6 +60,9 @@ struct VarDesc
     struct VarDesc *next;
 } *vars;
 
+typedef struct VarDesc VarDesc;
+typedef struct RegDesc RegDesc;
+
 void _mips_printf(const char *fmt, ...);
 void mips32_gen(tac *head, FILE *_fd);
 struct VarDesc *get_memory_addr(char varname[8]);
