@@ -18,6 +18,7 @@ struct VarDesc *get_memory_addr(char varname[8])
         {
             return u;
         }
+        u = u->next;
     }
     return NULL;
 }
@@ -37,10 +38,11 @@ Register get_register(tac_opd *opd)
         {
             tail = u;
         }
+        u = u->next;
     }
     for (Register i = t0; i <= t9; i++)
     {
-        if (!strncmp(regs[i].var, "", 8))
+        if (strncmp(regs[i].var, "", 8) == 0)
         {
             strcpy(regs[i].var, varname);
             u = (struct VarDesc *)malloc(sizeof(struct VarDesc));
@@ -114,6 +116,7 @@ void save_sp()
     _mips_iprintf("move $v1, $sp");
     _mips_iprintf("addi $sp, $sp, -4");
 }
+
 void restore_sp()
 {
     _mips_iprintf("move $sp, $v1");
