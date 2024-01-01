@@ -69,13 +69,12 @@ Register get_register(tac_opd *opd)
             return i;
         }
     }
-    // I guess I need to add a member to the Register struct
-    // to record the line number where it is last used.
     Register victim = get_LRU_victim() ;
     spill_register(victim);
     u = (struct VarDesc *)malloc(sizeof(struct VarDesc));
     strncpy(tail->var, _reg_name(victim), 8);
     u->reg = victim;
+    regs[victim].dirty = true;
     u->next = NULL;
     u->offset = ? ;
     u->is_stack = true;
