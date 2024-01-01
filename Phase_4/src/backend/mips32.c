@@ -7,8 +7,6 @@ FILE *fd;
 #define _tac_quadruple(vtac) (((vtac)->code).vtac)
 #define _reg_name(reg) regs[reg].name
 
-tac_opd *gp_tac_opd = NULL;
-
 /* get LRU victim from t1 - t9 */
 Register get_LRU_victim()
 {
