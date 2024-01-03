@@ -4,6 +4,8 @@
 FILE *fd;
 size_t lru_cnt = 0;
 size_t stack_offset;
+RegDesc regs[NUM_REGS];
+struct MemDesc *varmem;
 
 #define _tac_kind(vtac) (((vtac)->code).kind)
 #define _tac_quadruple(vtac) (((vtac)->code).vtac)

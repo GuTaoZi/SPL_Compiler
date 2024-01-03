@@ -49,13 +49,17 @@ struct RegDesc
     bool dirty; // value updated but not stored
     /* add other fields as you need */
     size_t recent;
-} regs[NUM_REGS];
+};
+
+extern struct RegDesc regs[NUM_REGS];
 
 struct MemDesc{
     char var[8];
     int offset;
     struct MemDesc *next;
-} *varmem;
+};
+
+extern struct MemDesc *varmem;
 
 typedef struct MemDesc MemDesc;
 typedef struct RegDesc RegDesc;
