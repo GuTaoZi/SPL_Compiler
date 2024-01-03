@@ -850,24 +850,24 @@ bool opt_label(IR_list *rootw)
     {
         if (strcmp(p->ss[0], "IF") == 0)
         {
-            int lll = atoi(p->ss[5] + 1);
+            int lll = atoi(p->ss[5] + 5);
             free(p->ss[5]);
-            p->ss[5] = (char *)malloc(mlg10(label_trans[lll]) + 2);
-            sprintf(p->ss[5], "l%d", label_trans[lll]);
+            p->ss[5] = (char *)malloc(mlg10(label_trans[lll]) + 6);
+            sprintf(p->ss[5], "label%d", label_trans[lll]);
         }
         else if (strcmp(p->ss[0], "LABEL") == 0)
         {
-            int lll = atoi(p->ss[1] + 1);
+            int lll = atoi(p->ss[1] + 5);
             free(p->ss[1]);
-            p->ss[1] = (char *)malloc(mlg10(label_trans[lll]) + 2);
-            sprintf(p->ss[1], "l%d", label_trans[lll]);
+            p->ss[1] = (char *)malloc(mlg10(label_trans[lll]) + 6);
+            sprintf(p->ss[1], "label%d", label_trans[lll]);
         }
         else if (strcmp(p->ss[0], "GOTO") == 0)
         {
-            int lll = atoi(p->ss[1] + 1);
+            int lll = atoi(p->ss[1] + 5);
             free(p->ss[1]);
-            p->ss[1] = (char *)malloc(mlg10(label_trans[lll]) + 2);
-            sprintf(p->ss[1], "l%d", label_trans[lll]);
+            p->ss[1] = (char *)malloc(mlg10(label_trans[lll]) + 6);
+            sprintf(p->ss[1], "label%d", label_trans[lll]);
         }
         p = p->next;
     }
