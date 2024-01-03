@@ -52,8 +52,8 @@ void make_IR_list(int cnt, IR_tree *head, ...)
 size_t label_cnt = 0;
 char *alloc_label()
 {
-    char *tlabel = (char *)malloc(sizeof(char) * (2 + mlg10(label_cnt)));
-    sprintf(tlabel, "l%zu", label_cnt++);
+    char *tlabel = (char *)malloc(sizeof(char) * (6 + mlg10(label_cnt)));
+    sprintf(tlabel, "label%zu", label_cnt++);
     return tlabel;
 }
 

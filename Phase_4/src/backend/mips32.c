@@ -36,19 +36,26 @@ VarMemInfo *get_memory_addr(char varname[8])
     return NULL;
 }
 
-VarMemInfo insert_varmeminfo(tac_opd *p){
+VarMemInfo *insert_varmeminfo(tac_opd *p, int size){
     
 }
 
 void deeref(Register x, tac_opd *opd){
     if(opd->kind == OP_POINTER){
         _mips_iprintf("lw %s, 0(%s)", _reg_name(x), _reg_name(x));
+    } else if(opd->kind == OP_REFERENCE){
+        VarMemInfo *vmi = get_memory_addr(opd->char_val);
+        if(vmi->is_stack){
+            _mips_iprintf("addi %s, $sp, %d", _reg_name(x), vmi->offset);
+        }
+        else{
+            _mips_iprintf("addi %s, $gp, %d", _reg_name(x), vmi->offset);
+        }
     }
 }
 
 Register get_register(tac_opd *opd)
 {
-    assert(opd->kind == OP_VARIABLE);
     char *varname = opd->char_val;
     struct VarDesc *u = vars, *tail;
     while (u != NULL)
@@ -488,7 +495,7 @@ tac *emit_dec(tac *dec)
     /* NO NEED TO IMPLEMENT */
     /* COMPLETE Sorry there are bugs. */
     Register x = fp;
-    VarMemInfo *p = insert_varmeminfo(_tac_quadruple(dec).var);
+    VarMemInfo *p = insert_varmeminfo(_tac_quadruple(dec).var, _tac_quadruple(dec).size);
     _mips_iprintf("addi %s, %s, %d", _reg_name(x), _reg_name(x), _tac_quadruple(dec).size);
     return dec->next;
 }

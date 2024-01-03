@@ -19,7 +19,8 @@ struct tac_opd
         OP_LABEL,
         OP_VARIABLE,
         OP_CONSTANT,
-        OP_POINTER
+        OP_POINTER,
+        OP_REFERENCE
     } kind;
     union {
         char char_val[8]; // stores variable name, pointer name
@@ -219,6 +220,7 @@ tac_opd *tac_opd_label(int);
 tac_opd *tac_opd_variable(char *);
 tac_opd *tac_opd_constant(int);
 tac_opd *tac_opd_pointer(char *);
+tac_opd *tac_opd_refernce(char *);
 
 // insert a segment of TAC next to head
 void tac_insert(tac *, tac *);

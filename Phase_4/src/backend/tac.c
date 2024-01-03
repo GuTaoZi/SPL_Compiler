@@ -88,9 +88,13 @@ tac_opd *_tac_opd_from_str(char *tk)
         i = atoi(tk + 1);
         return tac_opd_constant(i);
     }
-    else if (tk[0] == '&')
+    else if (tk[0] == '*')
     {
         return tac_opd_pointer(tk + 1);
+    }
+    else if (tk[0] == '&')
+    {
+        return tac_opd_refernce(tk + 1);
     }
     else if (memcmp(tk, "label", 5) == 0)
     {
@@ -150,7 +154,7 @@ tac *_tac_from_line(char *ln)
         }
         else if (strcmp(tokens[0], "DEC") == 0)
         {
-            t1 = tac_opd_pointer(tokens[1]);
+            t1 = tac_opd_refernce(tokens[1]);
             i = atoi(tokens[2]);
             code = tac_init_dec(t1, i);
         }
@@ -275,6 +279,9 @@ void tac_opd_print(tac_opd *self, FILE *fd)
         fprintf(fd, "#%d", self->int_val);
         break;
     case OP_POINTER:
+        fprintf(fd, "*%s", self->char_val);
+        break;
+    case OP_REFERENCE:
         fprintf(fd, "&%s", self->char_val);
         break;
     }
@@ -308,6 +315,14 @@ tac_opd *tac_opd_pointer(char *pname)
 {
     tac_opd *self = (tac_opd *)malloc(sizeof(tac_opd));
     self->kind = OP_POINTER;
+    sprintf(self->char_val, "%s", pname);
+    return self;
+}
+
+tac_opd *tac_opd_reference(char *pname)
+{
+    tac_opd *self = (tac_opd *)malloc(sizeof(tac_opd));
+    self->kind = OP_REFERENCE;
     sprintf(self->char_val, "%s", pname);
     return self;
 }
@@ -441,7 +456,6 @@ void tac_print(tac *head, FILE *fd)
             fprintf(fd, "\n");
             break;
         case DEC:
-            assert(p->code.dec.var->kind == OP_POINTER);
             // DEC should not followed &v
             fprintf(fd, "DEC %s %d\n", p->code.dec.var->char_val, p->code.dec.size);
             break;
@@ -574,7 +588,7 @@ tac *tac_init_div(tac_opd *left, tac_opd *r1, tac_opd *r2)
 
 tac *tac_init_addr(tac_opd *left, tac_opd *right)
 {
-    assert(right->kind == OP_POINTER);
+    assert(right->kind == OP_REFERENCE);
     tac *self = (tac *)malloc(sizeof(tac));
     self->code.kind = ADDR;
     self->code.addr.left = left;
