@@ -362,14 +362,14 @@ int main(int argc, char **argv)
     yyin = file_in;
     yyout = file_out;
     yyparse();
-    char need_optmize = false;
+    char correct = false;
     if (!has_error)
     {
         if (root != NULL)
         {
             IR_tree *IRroot = build_IR_tree(root);
             output_IR_tree(IRroot, file_out);
-            need_optmize = true;
+            correct = true;
         }
         else
         {
@@ -382,7 +382,7 @@ int main(int argc, char **argv)
     }
     fclose(file_in);
     fclose(file_out);
-    if (need_optmize)
+    if (correct)
     {
         int pos = 0, i = 0;
         while (argv[0][i] != 0)
@@ -396,6 +396,10 @@ int main(int argc, char **argv)
         argv[0][pos] = 0;
         sprintf(my_ttmp, "%s/opt %s %s %zu %zu %zu", argv[0], ofname, optname, label_cnt, tmp_val_cnt,
                 var_val_cnt);
+        printf("%s\n", my_ttmp);
+        system(my_ttmp);
+
+        sprintf(my_ttmp, "%s/tcg %s", argv[0], optname);
         printf("%s\n", my_ttmp);
         system(my_ttmp);
     }
