@@ -1,0 +1,20 @@
+struct hi {
+    int arr[5];
+};
+int foo2(struct hi b){
+    b.arr[0] = 3;
+}
+struct hi foo(){
+    struct hi a;
+    a.arr[3] = 1;
+    foo2(a);
+    return a;
+}
+int main(){
+    struct hi q = foo();
+    int i;
+    q.arr[1] = 2;
+    for(i=0;i<5;i=i+1){
+        write(q.arr[i]);
+    }
+}

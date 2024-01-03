@@ -85,18 +85,18 @@ void _deref(Register x, tac_opd *opd)
     }
 }
 
-void alloc_stack_space(tac_opd *opd)
+MemDesc *alloc_stack_space(tac_opd *opd)
 {
     if (opd->kind == OP_CONSTANT || opd->kind == OP_LABEL)
     {
-        return;
+        return NULL;
     }
     MemDesc *u = varmem->next, *tail = varmem;
     while (u != NULL)
     {
         if (strcmp(u->var, opd->char_val) == 0)
         {
-            return;
+            return u;
         }
         tail = u;
         u = u->next;
@@ -108,6 +108,7 @@ void alloc_stack_space(tac_opd *opd)
     stack_offset += 4;
     strncpy(p->var, opd->char_val, 8);
     tail->next = p;
+    return p;
 }
 
 Register get_LRU_victim()
@@ -129,7 +130,7 @@ Register get_LRU_victim()
 
 Register _get_reg(tac_opd *opd)
 {
-    alloc_stack_space(opd);
+    MemDesc *p = alloc_stack_space(opd);
     Register r;
     char *name = opd->char_val;
     for (r = t0; r <= s7; r++)
@@ -148,8 +149,8 @@ Register _get_reg(tac_opd *opd)
         strcpy(regs[r].var, "");
         return r;
     }
-    MemDesc *p = get_memory_addr(opd->char_val);
-    if(!p->first_seen){
+    if (!p->first_seen)
+    {
         _mips_iprintf("lw %s, -%d(%s)", _reg_name(r), p->offset, _reg_name(sp));
     }
     p->first_seen = 0;
@@ -425,7 +426,15 @@ tac *emit_deref(tac *deref)
     Register x, y;
 
     x = get_register_w(_tac_quadruple(deref).laddr);
-    y = get_register(_tac_quadruple(deref).right);
+    if (_tac_quadruple(deref).right->kind == OP_CONSTANT)
+    {
+        y = get_register_w(_tac_quadruple(deref).right);
+        _mips_iprintf("li %s, %d", _reg_name(y), _tac_quadruple(deref).right->int_val);
+    }
+    else
+    {
+        y = get_register(_tac_quadruple(deref).right);
+    }
     _mips_iprintf("sw %s, 0(%s)", _reg_name(y), _reg_name(x));
     return deref->next;
 }
@@ -509,6 +518,16 @@ tac *emit_return(tac *return_)
         x = get_register(_tac_quadruple(return_).var);
         _mips_iprintf("move $v0, %s", _reg_name(x));
     }
+    else if (_tac_quadruple(return_).var->kind == OP_POINTER)
+    {
+        x = get_register(_tac_quadruple(return_).var);
+        _mips_iprintf("move $v0, %s", _reg_name(x));
+    }
+    else if (_tac_quadruple(return_).var->kind == OP_REFERENCE)
+    {
+        x = get_register(_tac_quadruple(return_).var);
+        _mips_iprintf("move $v0, %s", _reg_name(x));
+    }
     else
     {
         _mips_iprintf("Too Naive.");
@@ -525,10 +544,11 @@ tac *emit_dec(tac *dec)
     /* NO NEED TO IMPLEMENT */
     /* COMPLETE Sorry there are bugs. */
     Register x = fp;
-    alloc_stack_space(_tac_quadruple(dec).var);
+    MemDesc *p = alloc_stack_space(_tac_quadruple(dec).var);
     Register y = get_register_w(_tac_quadruple(dec).var);
     _mips_iprintf("move %s, %s", _reg_name(y), _reg_name(x));
     _mips_iprintf("addi %s, %s, %d", _reg_name(x), _reg_name(x), _tac_quadruple(dec).size);
+    _mips_iprintf("sw %s, -%d($sp)", _reg_name(y), p->offset);
     return dec->next;
 }
 
@@ -548,8 +568,15 @@ tac *emit_call(tac *call)
     /* COMPLETED emit function */
     for (Register r = t0; r <= s7; r++)
         spill_register(r);
+    if (call->prev->code.kind != ARG)
+    {
+        _mips_iprintf("addi %s, %s, -%d", _reg_name(sp), _reg_name(sp), stack_offset);
+    }
+    _mips_iprintf("sw $ra, 0($sp)");
+    _mips_iprintf("addi $sp, $sp, -4");
     _mips_iprintf("jal %s", _tac_quadruple(call).funcname);
-    _mips_iprintf("addi %s, %s, %d", _reg_name(sp), _reg_name(sp), stack_offset);
+    _mips_iprintf("lw $ra, 4($sp)");
+    _mips_iprintf("addi %s, %s, %d", _reg_name(sp), _reg_name(sp), stack_offset+4);
     Register x;
     x = get_register_w(_tac_quadruple(call).ret);
     _mips_iprintf("move %s, $v0", _reg_name(x));
@@ -567,11 +594,11 @@ tac *emit_read(tac *read)
 {
     Register x = get_register(_tac_quadruple(read).p);
 
-    _mips_iprintf("addi $sp, $sp, -%d", stack_offset+4);
+    _mips_iprintf("addi $sp, $sp, -%d", stack_offset + 4);
     _mips_iprintf("sw $ra, 0($sp)");
     _mips_iprintf("jal read");
     _mips_iprintf("lw $ra, 0($sp)");
-    _mips_iprintf("addi $sp, $sp, %d", stack_offset+4);
+    _mips_iprintf("addi $sp, $sp, %d", stack_offset + 4);
     _mips_iprintf("move %s, $v0", _reg_name(x));
     return read->next;
 }
@@ -581,11 +608,11 @@ tac *emit_write(tac *write)
     Register x = get_register_w(_tac_quadruple(write).p);
 
     _mips_iprintf("move $a0, %s", _reg_name(x));
-    _mips_iprintf("addi $sp, $sp, -%d", stack_offset+4);
+    _mips_iprintf("addi $sp, $sp, -%d", stack_offset + 4);
     _mips_iprintf("sw $ra, 0($sp)");
     _mips_iprintf("jal write");
     _mips_iprintf("lw $ra, 0($sp)");
-    _mips_iprintf("addi $sp, $sp, %d", stack_offset+4);
+    _mips_iprintf("addi $sp, $sp, %d", stack_offset + 4);
     return write->next;
 }
 
@@ -622,10 +649,10 @@ void emit_write_function()
     _mips_iprintf("jr $ra");
 }
 
-static tac *(*emitter[])(tac *) = {emit_label, emit_function, emit_assign, emit_add,   emit_sub,  emit_mul,
-                                   emit_div,   emit_addr,     emit_fetch,  emit_deref, emit_goto, emit_iflt,
-                                   emit_ifle,  emit_ifgt,     emit_ifge,   emit_ifne,  emit_ifeq, emit_return,
-                                   emit_dec,   emit_arg,      emit_call,   emit_param, emit_read, emit_write};
+static tac *(*emitter[])(tac *) = {emit_label, emit_function, emit_assign, emit_add, emit_sub, emit_mul,
+                                   emit_div, emit_addr, emit_fetch, emit_deref, emit_goto, emit_iflt,
+                                   emit_ifle, emit_ifgt, emit_ifge, emit_ifne, emit_ifeq, emit_return,
+                                   emit_dec, emit_arg, emit_call, emit_param, emit_read, emit_write};
 
 tac *emit_code(tac *head)
 {
