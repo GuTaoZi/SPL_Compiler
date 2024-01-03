@@ -586,6 +586,7 @@ tac *emit_read(tac *read)
     _mips_iprintf("lw $ra, 0($sp)");
     _mips_iprintf("addi $sp, $sp, %d", stack_offset+4);
     _mips_iprintf("move %s, $v0", _reg_name(x));
+    save_reg(x);
     return read->next;
 }
 
