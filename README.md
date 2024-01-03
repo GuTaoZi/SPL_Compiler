@@ -16,6 +16,8 @@ This project is developed in 4 phases. For more details, please check the report
 
   An intermediate code generator, compile the SPL code into intermediate code which could be run with [IR simulator](https://github.com/GuTaoZi/SPL_Parser/blob/main/Phase_3/irsim_linux-x86_64.zip)
 
+- [Phase 4: MIPS32 Code Generator](https://github.com/GuTaoZi/SPL_Parser/blob/main/Phase_3/report/12110524-12111624-12112012-phase4.pdf)
+
 ## Environment
 
 |   Tool    | Version |
@@ -28,8 +30,10 @@ This project is developed in 4 phases. For more details, please check the report
 
 For usage guide of each phase, please refer to the **How to Run** section in the corresponding report.
 
-1. [Parser](https://github.com/GuTaoZi/SPL_Parser/blob/main/Phase_1/report/12110524-12111624-12112012-phase1.pdf)
+1. [Lexical and Syntax Analyzer](https://github.com/GuTaoZi/SPL_Parser/blob/main/Phase_1/report/12110524-12111624-12112012-phase1.pdf)
 
 2. [Semantic Analyzer](https://github.com/GuTaoZi/SPL_Parser/blob/main/Phase_2/report/12110524-12111624-12112012-phase2.pdf)
 
 3. [Intermediate Code Generator](https://github.com/GuTaoZi/SPL_Parser/blob/main/Phase_3/report/12110524-12111624-12112012-phase3.pdf)
+
+4. [MIPS32 Code Generator](https://github.com/GuTaoZi/SPL_Parser/blob/main/Phase_3/report/12110524-12111624-12112012-phase4.pdf)

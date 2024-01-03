@@ -56,7 +56,9 @@ void spill_register(Register reg)
 {
     /* COMPLETED the register spilling */
     if (!regs[reg].dirty)
+    {
         return;
+    }
     MemDesc *result = get_memory_addr(regs[reg].var);
     if (result == NULL)
     {
@@ -108,9 +110,13 @@ Register get_LRU_victim()
     for (Register t = t0; t <= s7; t++)
     {
         if (strcmp(regs[t].var, "") == 0)
+        {
             return t;
+        }
         else if (regs[t].recent < regs[victim].recent)
+        {
             victim = t;
+        }
     }
     return victim;
 }
@@ -121,26 +127,28 @@ Register _get_reg(tac_opd *opd)
     Register r;
     char *name = opd->char_val;
     for (r = t0; r <= s7; r++)
-        if (strcpy(name, regs[r].var) == 0)
-            break;
-    if (r > s7)
     {
-        r = get_LRU_victim();
-        spill_register(r);
-        regs[r].dirty = false;
-        MemDesc *p = get_memory_addr(opd->char_val);
-        _mips_iprintf("lw %s, -%d(%s)", _reg_name(r), p->offset, _reg_name(sp));
-        if (opd->kind != OP_POINTER && opd->kind != OP_REFERENCE)
+        if (strcpy(name, regs[r].var) == 0)
         {
-            // regs[r].var = (char *)malloc(sizeof(char) * (strlen(name) + 1));
-            strcpy(regs[r].var, name);
+            regs[r].recent = ++lru_cnt;
+            return r;
         }
-        else
-        {
-            // free(regs[r].var);
-            // regs[r].var = NULL;
-            strcpy(regs[r].var, "");
-        }
+    }
+    r = get_LRU_victim();
+    spill_register(r);
+    regs[r].dirty = false;
+    MemDesc *p = get_memory_addr(opd->char_val);
+    _mips_iprintf("lw %s, -%d(%s)", _reg_name(r), p->offset, _reg_name(sp));
+    if (opd->kind != OP_POINTER && opd->kind != OP_REFERENCE)
+    {
+        // regs[r].var = (char *)malloc(sizeof(char) * (strlen(name) + 1));
+        strcpy(regs[r].var, name);
+    }
+    else
+    {
+        // free(regs[r].var);
+        // regs[r].var = NULL;
+        strcpy(regs[r].var, "");
     }
     regs[r].recent = ++lru_cnt;
     return r;
