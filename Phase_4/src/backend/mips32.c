@@ -56,7 +56,7 @@ Register get_LRU_victim()
     Register victim = t0;
     for (Register t = t0; t <= s7; t++)
     {
-        if (!regs[t].dirty)
+        if (!regs[t].name == NULL)
             return t;
         else if (regs[t].recent < regs[victim].recent)
             victim = t;
@@ -68,8 +68,9 @@ Register _get_reg(tac_opd *opd)
 {
     alloc_stack_space(opd);
     Register r;
+    char *name = opd->char_val;
     for (r = t0; r <= s7; r++)
-        if (strcmt(opd->char_val, regs[r].name) == 0)
+        if (strcmt(name, regs[r].name) == 0)
             break;
     if (r > s7)
     {
@@ -79,7 +80,15 @@ Register _get_reg(tac_opd *opd)
         MemDesc *p = get_memory_addr(opd);
         _mips_iprintf("lw %s, -%d(%s)", _reg_name(r), p->offset, _reg_name(sp));
         if (opd->kind != OP_POINTER && opd->kind != OP_REFERENCE)
-            strcpy(regs[r].name, opd->char_val);
+        {
+            regs[r].name = (char *)malloc(sizeof(char) * (strlen(name) + 1));
+            strcpy(regs[r].name, name);
+        }
+        else
+        {
+            free(regs[r].name);
+            regs[r].name = NULL;
+        }
     }
     regs[r].recent = ++lru_cnt;
     return r;
@@ -104,6 +113,8 @@ Register get_register_w(tac_opd *opd)
 void spill_register(Register reg)
 {
     /* COMPLETED the register spilling */
+    if (!regs[reg].dirty)
+        return;
     MemDesc *result = get_memory_addr(regs[reg].var);
     if (result == NULL)
     {
