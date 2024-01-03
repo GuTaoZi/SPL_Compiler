@@ -42,12 +42,12 @@ void deeref(Register x, tac_opd *opd){
         _mips_iprintf("lw %s, 0(%s)", _reg_name(x), _reg_name(x));
     } else if(opd->kind == OP_REFERENCE){
         MemDesc *vmi = get_memory_addr(opd->char_val);
-        _mips_iprintf("addi %s, $sp, -%d", _reg_name(x), vmi->offset);
+        _mips_iprintf("lw %s, -%d($sp)", _reg_name(x), vmi->offset);
     }
 }
 
 void alloc_stack_space(tac_opd *opd){
-    if(opd->kind == OP_CONSTANT || opd->kind == OP_LABEL || opd->char_val[0] != 'v'){
+    if(opd->kind == OP_CONSTANT || opd->kind == OP_LABEL){
         return;
     }
     MemDesc *u = varmem->next, *tail = varmem;
