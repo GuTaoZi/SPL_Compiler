@@ -57,7 +57,7 @@ void set_gp_counter()
 void spill_register(Register reg)
 {
     /* COMPLETED the register spilling */
-    if (!regs[reg].dirty)
+    if (!regs[reg].dirty || regs[reg].var[0] == 0)
     {
         return;
     }
@@ -262,6 +262,8 @@ tac *save_args(tac *arg)
 tac *emit_function(tac *function)
 {
     stack_offset = 0;
+    for (Register r = t0; r <= s7; r++)
+        strcpy(regs[r].var, "");
     _mips_printf("%s:", _tac_quadruple(function).funcname);
     if (strcmp("main", _tac_quadruple(function).funcname) == 0)
     {
