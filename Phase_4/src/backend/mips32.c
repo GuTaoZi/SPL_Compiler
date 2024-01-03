@@ -68,7 +68,7 @@ void spill_register(Register reg)
     }
     else
     {
-        _mips_iprintf("sw -%d($sp), %s", result->offset, _reg_name(reg));
+        _mips_iprintf("sw %s, -%d($sp)", _reg_name(reg), result->offset);
     }
     regs[reg].dirty = false;
 }
