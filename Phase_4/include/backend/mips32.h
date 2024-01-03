@@ -51,17 +51,17 @@ struct RegDesc
     size_t recent;
 } regs[NUM_REGS];
 
-struct VarMemInfo{
+struct MemDesc{
     char var[8];
     int offset;
-    struct VarMemInfo *next;
+    struct MemDesc *next;
 } *varmem;
 
-typedef struct VarMemInfo VarMemInfo;
+typedef struct MemDesc MemDesc;
 typedef struct RegDesc RegDesc;
 
 void _mips_printf(const char *fmt, ...);
 void mips32_gen(tac *head, FILE *_fd);
-VarMemInfo *get_memory_addr(char varname[8]);
+MemDesc *get_memory_addr(char varname[8]);
 
 #endif // MIPS_H

@@ -23,9 +23,9 @@ Register get_LRU_victim()
     return victim;
 }
 
-VarMemInfo *get_memory_addr(char varname[8])
+MemDesc *get_memory_addr(char varname[8])
 {
-    VarMemInfo *u = varmem;
+    MemDesc *u = varmem;
     while (u != NULL)
     {
         if (strncmp(varname, u->var, 8) == 0)
@@ -41,7 +41,7 @@ void deeref(Register x, tac_opd *opd){
     if(opd->kind == OP_POINTER){
         _mips_iprintf("lw %s, 0(%s)", _reg_name(x), _reg_name(x));
     } else if(opd->kind == OP_REFERENCE){
-        VarMemInfo *vmi = get_memory_addr(opd->char_val);
+        MemDesc *vmi = get_memory_addr(opd->char_val);
         _mips_iprintf("addi %s, $sp, -%d", _reg_name(x), vmi->offset);
     }
 }
@@ -50,13 +50,13 @@ void alloc_stack_space(tac_opd *opd){
     if(opd->kind == OP_CONSTANT || opd->kind == OP_LABEL || opd->char_val[0] != 'v'){
         return;
     }
-    VarMemInfo *u = varmem->next, *tail = varmem;
+    MemDesc *u = varmem->next, *tail = varmem;
     while(u != NULL){
         if(strcmp(u->var, opd->char_val) == 0){
             return;
         }
     }
-    VarMemInfo *p = (VarMemInfo*)malloc(sizeof(VarMemInfo));
+    MemDesc *p = (MemDesc*)malloc(sizeof(MemDesc));
     p->next = NULL;
     p->offset = stack_offset;
     stack_offset += 4;
@@ -121,7 +121,7 @@ Register get_register_w(tac_opd *opd)
 void spill_register(Register reg)
 {
     /* COMPLETED the register spilling */
-    VarMemInfo *result = get_memory_addr(regs[reg].var);
+    MemDesc *result = get_memory_addr(regs[reg].var);
     if (result == NULL)
     {
         _mips_printf("Im Angry!!");
@@ -502,7 +502,7 @@ tac *emit_dec(tac *dec)
     /* NO NEED TO IMPLEMENT */
     /* COMPLETE Sorry there are bugs. */
     Register x = fp;
-    VarMemInfo *p = insert_varmeminfo(_tac_quadruple(dec).var, -stack_offset);
+    MemDesc *p = insert_MemDesc(_tac_quadruple(dec).var, -stack_offset);
     _mips_iprintf("addi %s, %s, %d", _reg_name(x), _reg_name(x), _tac_quadruple(dec).size);
     return dec->next;
 }
@@ -667,7 +667,7 @@ void mips32_gen(tac *head, FILE *_fd)
     regs[sp].name = "$sp";
     regs[fp].name = "$fp";
     regs[ra].name = "$ra";
-    varmem = (VarMemInfo *)malloc(sizeof(VarMemInfo));
+    varmem = (MemDesc *)malloc(sizeof(MemDesc));
     varmem->next = NULL;
     fd = _fd;
     init_gp_counter();
