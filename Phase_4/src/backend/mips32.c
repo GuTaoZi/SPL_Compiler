@@ -154,7 +154,6 @@ Register _get_reg(tac_opd *opd)
         strcpy(regs[r].var, "");
         return r;
     }
-    MemDesc *p = get_memory_addr(opd->char_val);
     // if(!p->first_seen){
         _mips_iprintf("lw %s, -%d(%s)", _reg_name(r), p->offset, _reg_name(sp));
     // }
@@ -182,15 +181,15 @@ Register get_register_w(tac_opd *opd)
 
 void save_sp()
 {
-    _mips_iprintf("sw $v1, 0($sp)");
-    _mips_iprintf("move $v1, $sp");
-    _mips_iprintf("addi $sp, $sp, -4");
+    // _mips_iprintf("sw $v1, 0($sp)");
+    // _mips_iprintf("move $v1, $sp");
+    // _mips_iprintf("addi $sp, $sp, -4");
 }
 
 void restore_sp()
 {
-    _mips_iprintf("move $sp, $v1");
-    _mips_iprintf("lw $v1, 0($sp)");
+    // _mips_iprintf("move $sp, $v1");
+    // _mips_iprintf("lw $v1, 0($sp)");
 }
 
 /* PARAM: a pointer to `struct tac_node` instance
@@ -222,7 +221,7 @@ tac *_read_params(tac *param, int *params_num)
         _mips_iprintf("move $v1, $sp");
     }
     (*params_num) += 1;
-
+    save_reg(x);
     return ret;
 }
 
@@ -255,14 +254,13 @@ tac *_save_args(tac *arg, int params_num)
     }
     else
     {
-        _mips_iprintf("sw %s, -%d($sp)", _reg_name(x), 4 * (params_num - 3));
+        _mips_iprintf("sw %s, -%d($sp)", _reg_name(x), 4 * (params_num - 3)+stack_offset);
     }
     return _save_args(arg->next, params_num + 1);
 }
 
 tac *save_args(tac *arg)
 {
-    _mips_iprintf("addi %s, %s, -%d", _reg_name(sp), _reg_name(sp), stack_offset);
     return _save_args(arg, 0);
 }
 
@@ -578,12 +576,9 @@ tac *emit_arg(tac *arg)
 tac *emit_call(tac *call)
 {
     /* COMPLETED emit function */
-    for (Register r = t0; r <= s7; r++)
-        spill_register(r);
-    if (call->prev->code.kind != ARG)
-    {
-        _mips_iprintf("addi %s, %s, -%d", _reg_name(sp), _reg_name(sp), stack_offset);
-    }
+    // for (Register r = t0; r <= s7; r++)
+    //     spill_register(r);
+    _mips_iprintf("addi %s, %s, -%d", _reg_name(sp), _reg_name(sp), stack_offset);
     _mips_iprintf("sw $ra, 0($sp)");
     _mips_iprintf("addi $sp, $sp, -4");
     _mips_iprintf("jal %s", _tac_quadruple(call).funcname);
