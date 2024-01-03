@@ -2,6 +2,7 @@
 
 /* the output file descriptor, may not be explicitly used */
 FILE *fd;
+size_t lru_cnt = 0;
 
 #define _tac_kind(vtac) (((vtac)->code).kind)
 #define _tac_quadruple(vtac) (((vtac)->code).vtac)
@@ -62,30 +63,16 @@ Register get_register(tac_opd *opd)
         }
         u = u->next;
     }
-    for (Register i = t0; i <= t9; i++)
-    {
-        if (strncmp(regs[i].var, "", 8) == 0)
-        {
-            strcpy(regs[i].var, varname);
-            u = (struct VarDesc *)malloc(sizeof(struct VarDesc));
-            strncpy(tail->var, _reg_name(i), 8);
-            u->reg = i;
-            u->next = NULL;
-            u->offset = ? ;
-            u->is_stack = true;
-            tail->next = u;
-            return i;
-        }
-    }
-    Register victim = get_LRU_victim() ;
+    Register victim = get_LRU_victim();
     spill_register(victim);
     u = (struct VarDesc *)malloc(sizeof(struct VarDesc));
     strncpy(tail->var, _reg_name(victim), 8);
     u->reg = victim;
     regs[victim].dirty = true;
+    regs[victim].recent = ++lru_cnt;
     u->next = NULL;
-    u->offset = ? ;
-    u->is_stack = true;
+    // u->offset = ? ;
+    // u->is_stack = true;
     tail->next = u;
     /* COMPLETE the register allocation */
     deeref(victim, opd);
