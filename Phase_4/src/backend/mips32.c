@@ -225,6 +225,7 @@ tac *_save_args(tac *arg, int params_num)
 
 tac *save_args(tac *arg)
 {
+    _mips_iprintf("addi %s, %s, -%d", _reg_name(sp), _reg_name(sp), stack_offset);
     return _save_args(arg, 0);
 }
 
@@ -513,6 +514,7 @@ tac *emit_call(tac *call)
 {
     /* COMPLETED emit function */
     _mips_iprintf("jal %s", _tac_quadruple(call).funcname);
+    _mips_iprintf("addi %s, %s, %d", _reg_name(sp), _reg_name(sp), stack_offset);
     Register x;
     x = get_register_w(_tac_quadruple(call).ret);
     _mips_iprintf("move %s, $v0", _reg_name(x));
