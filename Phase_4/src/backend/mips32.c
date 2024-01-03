@@ -354,13 +354,13 @@ tac *emit_mul(tac *mul)
     {
         y = get_register_w(_tac_quadruple(mul).r1);
         z = get_register(_tac_quadruple(mul).r2);
-        _mips_iprintf("lw %s, %d", _reg_name(y), _tac_quadruple(mul).r1->int_val);
+        _mips_iprintf("li %s, %d", _reg_name(y), _tac_quadruple(mul).r1->int_val);
     }
     else if (_tac_quadruple(mul).r2->kind == OP_CONSTANT)
     {
         y = get_register(_tac_quadruple(mul).r1);
         z = get_register_w(_tac_quadruple(mul).r2);
-        _mips_iprintf("lw %s, %d", _reg_name(z), _tac_quadruple(mul).r2->int_val);
+        _mips_iprintf("li %s, %d", _reg_name(z), _tac_quadruple(mul).r2->int_val);
     }
     else
     {
@@ -380,13 +380,13 @@ tac *emit_div(tac *div)
     {
         y = get_register_w(_tac_quadruple(div).r1);
         z = get_register(_tac_quadruple(div).r2);
-        _mips_iprintf("lw %s, %d", _reg_name(y), _tac_quadruple(div).r1->int_val);
+        _mips_iprintf("li %s, %d", _reg_name(y), _tac_quadruple(div).r1->int_val);
     }
     else if (_tac_quadruple(div).r2->kind == OP_CONSTANT)
     {
         y = get_register(_tac_quadruple(div).r1);
         z = get_register_w(_tac_quadruple(div).r2);
-        _mips_iprintf("lw %s, %d", _reg_name(z), _tac_quadruple(div).r2->int_val);
+        _mips_iprintf("li %s, %d", _reg_name(z), _tac_quadruple(div).r2->int_val);
     }
     else
     {
