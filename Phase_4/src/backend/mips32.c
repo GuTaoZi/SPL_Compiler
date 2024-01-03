@@ -130,7 +130,6 @@ Register _get_reg(tac_opd *opd)
     alloc_stack_space(opd);
     Register r;
     char *name = opd->char_val;
-    printf("Reg: %d: %s\n", opd->int_val, opd->char_val);
     for (r = t0; r <= s7; r++)
     {
         if (strcmp(name, regs[r].var) == 0)
@@ -140,7 +139,6 @@ Register _get_reg(tac_opd *opd)
         }
     }
     r = get_LRU_victim();
-    printf("Find victim\n");
     spill_register(r);
     regs[r].dirty = false;
     if (opd->kind == OP_CONSTANT)
