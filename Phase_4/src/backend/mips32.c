@@ -624,6 +624,9 @@ void emit_preamble()
     _mips_printf("_eol: .asciiz \"\\n\"");
     _mips_printf(".globl main");
     _mips_printf(".text");
+    _mips_printf("jal main");
+    _mips_printf("li $v0, 10");
+    _mips_printf("syscall");
 }
 
 void emit_read_function()
