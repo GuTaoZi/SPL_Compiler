@@ -51,14 +51,6 @@ struct RegDesc
     size_t recent;
 } regs[NUM_REGS];
 
-struct VarDesc
-{ // the variable descriptor
-    char var[8];
-    Register reg;
-    /* add other fields as you need */
-    struct VarDesc *next;
-} *vars;
-
 struct VarMemInfo{
     char var[8];
     int offset;
@@ -67,7 +59,6 @@ struct VarMemInfo{
 } *varmem;
 
 typedef struct VarMemInfo VarMemInfo;
-typedef struct VarDesc VarDesc;
 typedef struct RegDesc RegDesc;
 
 void _mips_printf(const char *fmt, ...);

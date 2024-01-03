@@ -615,15 +615,7 @@ tac *emit_code(tac *head)
 
 void init_gp_counter()
 {
-//     VarDesc *gp_counter = (VarDesc *)malloc(sizeof(VarDesc));
-//     gp_counter->next = vars;
-//     gp_counter->reg = fp;
-//     strcpy(gp_counter->var, "gpcnt");
-//     vars = gp_counter;
 
-//     gp_tac_opd = (tac_opd *)malloc(sizeof(tac_opd));
-//     gp_tac_opd->kind = OP_POINTER;
-//     strcpy(gp_tac_opd->char_val, "gpcnt");
 }
 
 void set_gp_counter()
@@ -668,8 +660,8 @@ void mips32_gen(tac *head, FILE *_fd)
     regs[sp].name = "$sp";
     regs[fp].name = "$fp";
     regs[ra].name = "$ra";
-    vars = (struct VarDesc *)malloc(sizeof(struct VarDesc));
-    vars->next = NULL;
+    varmem = (VarMemInfo *)malloc(sizeof(VarMemInfo));
+    varmem->next = NULL;
     fd = _fd;
     init_gp_counter();
     emit_code(head);
