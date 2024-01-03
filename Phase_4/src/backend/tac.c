@@ -94,7 +94,7 @@ tac_opd *_tac_opd_from_str(char *tk)
     }
     else if (tk[0] == '&')
     {
-        return tac_opd_refernce(tk + 1);
+        return tac_opd_reference(tk + 1);
     }
     else if (memcmp(tk, "label", 5) == 0)
     {
@@ -154,7 +154,7 @@ tac *_tac_from_line(char *ln)
         }
         else if (strcmp(tokens[0], "DEC") == 0)
         {
-            t1 = tac_opd_refernce(tokens[1]);
+            t1 = tac_opd_reference(tokens[1]);
             i = atoi(tokens[2]);
             code = tac_init_dec(t1, i);
         }

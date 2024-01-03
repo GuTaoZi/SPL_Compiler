@@ -9,6 +9,25 @@ size_t stack_offset;
 #define _tac_quadruple(vtac) (((vtac)->code).vtac)
 #define _reg_name(reg) regs[reg].name
 
+void _mips_printf(const char *fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    vfprintf(fd, fmt, args);
+    va_end(args);
+    fputs("\n", fd);
+}
+
+void _mips_iprintf(const char *fmt, ...)
+{
+    va_list args;
+    fputs("  ", fd); // `iprintf` stands for indented printf
+    va_start(args, fmt);
+    vfprintf(fd, fmt, args);
+    va_end(args);
+    fputs("\n", fd);
+}
+
 MemDesc *get_memory_addr(char varname[8])
 {
     MemDesc *u = varmem;
@@ -23,27 +42,59 @@ MemDesc *get_memory_addr(char varname[8])
     return NULL;
 }
 
-void deeref(Register x, tac_opd *opd){
+void init_gp_counter()
+{
+}
+
+void set_gp_counter()
+{
+    Register x = fp;
+    _mips_iprintf("addi %s, $gp, -32768", _reg_name(x));
+}
+
+void spill_register(Register reg)
+{
+    /* COMPLETED the register spilling */
+    if (!regs[reg].dirty)
+        return;
+    MemDesc *result = get_memory_addr(regs[reg].var);
+    if (result == NULL)
+    {
+        _mips_printf("Im Angry!!");
+    }
+    else
+    {
+        _mips_iprintf("sw -%d($sp), %s", result->offset, _reg_name(reg));
+    }
+    regs[reg].dirty = false;
+}
+
+void deeref(Register x, tac_opd *opd)
+{
     if (opd->kind == OP_POINTER)
         _mips_iprintf("lw %s, 0(%s)", _reg_name(x), _reg_name(x));
-    else if(opd->kind == OP_REFERENCE)
+    else if (opd->kind == OP_REFERENCE)
     {
         MemDesc *vmi = get_memory_addr(opd->char_val);
         _mips_iprintf("lw %s, -%d($sp)", _reg_name(x), vmi->offset);
     }
 }
 
-void alloc_stack_space(tac_opd *opd){
-    if(opd->kind == OP_CONSTANT || opd->kind == OP_LABEL){
+void alloc_stack_space(tac_opd *opd)
+{
+    if (opd->kind == OP_CONSTANT || opd->kind == OP_LABEL)
+    {
         return;
     }
     MemDesc *u = varmem->next, *tail = varmem;
-    while(u != NULL){
-        if(strcmp(u->var, opd->char_val) == 0){
+    while (u != NULL)
+    {
+        if (strcmp(u->var, opd->char_val) == 0)
+        {
             return;
         }
     }
-    MemDesc *p = (MemDesc*)malloc(sizeof(MemDesc));
+    MemDesc *p = (MemDesc *)malloc(sizeof(MemDesc));
     p->next = NULL;
     p->offset = stack_offset;
     stack_offset += 4;
@@ -56,7 +107,7 @@ Register get_LRU_victim()
     Register victim = t0;
     for (Register t = t0; t <= s7; t++)
     {
-        if (!regs[t].name == NULL)
+        if (strcmp(regs[t].var, "") == 0)
             return t;
         else if (regs[t].recent < regs[victim].recent)
             victim = t;
@@ -70,24 +121,25 @@ Register _get_reg(tac_opd *opd)
     Register r;
     char *name = opd->char_val;
     for (r = t0; r <= s7; r++)
-        if (strcmt(name, regs[r].name) == 0)
+        if (strcpy(name, regs[r].var) == 0)
             break;
     if (r > s7)
     {
         r = get_LRU_victim();
         spill_register(r);
         regs[r].dirty = false;
-        MemDesc *p = get_memory_addr(opd);
+        MemDesc *p = get_memory_addr(opd->char_val);
         _mips_iprintf("lw %s, -%d(%s)", _reg_name(r), p->offset, _reg_name(sp));
         if (opd->kind != OP_POINTER && opd->kind != OP_REFERENCE)
         {
-            regs[r].name = (char *)malloc(sizeof(char) * (strlen(name) + 1));
-            strcpy(regs[r].name, name);
+            // regs[r].var = (char *)malloc(sizeof(char) * (strlen(name) + 1));
+            strcpy(regs[r].var, name);
         }
         else
         {
-            free(regs[r].name);
-            regs[r].name = NULL;
+            // free(regs[r].var);
+            // regs[r].var = NULL;
+            strcpy(regs[r].var, "");
         }
     }
     regs[r].recent = ++lru_cnt;
@@ -110,23 +162,6 @@ Register get_register_w(tac_opd *opd)
     return r;
 }
 
-void spill_register(Register reg)
-{
-    /* COMPLETED the register spilling */
-    if (!regs[reg].dirty)
-        return;
-    MemDesc *result = get_memory_addr(regs[reg].var);
-    if (result == NULL)
-    {
-        _mips_printf("Im Angry!!");
-    }
-    else
-    {
-        _mips_iprintf("sw -%d($sp), %s", result->offset, _reg_name(reg));
-    }
-    regs[reg].dirty = false;
-}
-
 void save_sp()
 {
     _mips_iprintf("sw $v1, 0($sp)");
@@ -138,25 +173,6 @@ void restore_sp()
 {
     _mips_iprintf("move $sp, $v1");
     _mips_iprintf("lw $v1, 0($sp)");
-}
-
-void _mips_printf(const char *fmt, ...)
-{
-    va_list args;
-    va_start(args, fmt);
-    vfprintf(fd, fmt, args);
-    va_end(args);
-    fputs("\n", fd);
-}
-
-void _mips_iprintf(const char *fmt, ...)
-{
-    va_list args;
-    fputs("  ", fd); // `iprintf` stands for indented printf
-    va_start(args, fmt);
-    vfprintf(fd, fmt, args);
-    va_end(args);
-    fputs("\n", fd);
 }
 
 /* PARAM: a pointer to `struct tac_node` instance
@@ -194,14 +210,12 @@ tac *_read_params(tac *param, int *params_num)
 
 tac *read_params(tac *param)
 {
-    int *p = (int)malloc(sizeof(int));
-    (*p) = 0;
-    tac *ret = _read_params(param, p);
-    if ((*p) > 4)
+    int p = 0;
+    tac *ret = _read_params(param, &p);
+    if (p > 4)
     {
-        _mips_iprintf("addi $sp, $sp, %d", 4 * ((*p) - 4));
+        _mips_iprintf("addi $sp, $sp, %d", 4 * (p - 4));
     }
-    free(p);
     save_sp();
     return ret;
 }
@@ -592,10 +606,10 @@ void emit_write_function()
     _mips_iprintf("jr $ra");
 }
 
-static tac *(*emitter[])(tac *) = {emit_label, emit_function, emit_assign, emit_add, emit_sub, emit_mul,
-                                   emit_div, emit_addr, emit_fetch, emit_deref, emit_goto, emit_iflt,
-                                   emit_ifle, emit_ifgt, emit_ifge, emit_ifne, emit_ifeq, emit_return,
-                                   emit_dec, emit_arg, emit_call, emit_param, emit_read, emit_write};
+static tac *(*emitter[])(tac *) = {emit_label, emit_function, emit_assign, emit_add,   emit_sub,  emit_mul,
+                                   emit_div,   emit_addr,     emit_fetch,  emit_deref, emit_goto, emit_iflt,
+                                   emit_ifle,  emit_ifgt,     emit_ifge,   emit_ifne,  emit_ifeq, emit_return,
+                                   emit_dec,   emit_arg,      emit_call,   emit_param, emit_read, emit_write};
 
 tac *emit_code(tac *head)
 {
@@ -616,17 +630,6 @@ tac *emit_code(tac *head)
             tac_code = tac_code->next;
         }
     }
-}
-
-void init_gp_counter()
-{
-
-}
-
-void set_gp_counter()
-{
-    Register x = fp;
-    _mips_iprintf("addi %s, $gp, -32768", _reg_name(x));
 }
 
 /* translate a TAC list into mips32 assembly
