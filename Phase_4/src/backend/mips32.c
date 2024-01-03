@@ -73,7 +73,7 @@ void spill_register(Register reg)
     regs[reg].dirty = false;
 }
 
-void deeref(Register x, tac_opd *opd)
+void _deref(Register x, tac_opd *opd)
 {
     if (opd->kind == OP_POINTER)
         _mips_iprintf("lw %s, 0(%s)", _reg_name(x), _reg_name(x));
@@ -130,6 +130,7 @@ Register _get_reg(tac_opd *opd)
     alloc_stack_space(opd);
     Register r;
     char *name = opd->char_val;
+    printf("Reg: %d: %s\n", opd->int_val, opd->char_val);
     for (r = t0; r <= s7; r++)
     {
         if (strcmp(name, regs[r].var) == 0)
@@ -139,21 +140,17 @@ Register _get_reg(tac_opd *opd)
         }
     }
     r = get_LRU_victim();
+    printf("Find victim\n");
     spill_register(r);
     regs[r].dirty = false;
+    if (opd->kind == OP_CONSTANT)
+    {
+        strcpy(regs[r].var, "");
+        return r;
+    }
     MemDesc *p = get_memory_addr(opd->char_val);
     _mips_iprintf("lw %s, -%d(%s)", _reg_name(r), p->offset, _reg_name(sp));
-    if (opd->kind != OP_POINTER && opd->kind != OP_REFERENCE)
-    {
-        // regs[r].var = (char *)malloc(sizeof(char) * (strlen(name) + 1));
-        strcpy(regs[r].var, name);
-    }
-    else
-    {
-        // free(regs[r].var);
-        // regs[r].var = NULL;
-        strcpy(regs[r].var, "");
-    }
+    strcpy(regs[r].var, (opd->kind != OP_POINTER && opd->kind != OP_REFERENCE) ? name : "");
     regs[r].recent = ++lru_cnt;
     return r;
 }
@@ -162,7 +159,7 @@ Register _get_reg(tac_opd *opd)
 Register get_register(tac_opd *opd)
 {
     Register r = _get_reg(opd);
-    deeref(r, opd);
+    _deref(r, opd);
     return r;
 }
 
