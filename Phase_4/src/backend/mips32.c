@@ -3,6 +3,7 @@
 /* the output file descriptor, may not be explicitly used */
 FILE *fd;
 size_t lru_cnt = 0;
+size_t stack_offset;
 
 #define _tac_kind(vtac) (((vtac)->code).kind)
 #define _tac_quadruple(vtac) (((vtac)->code).vtac)
@@ -36,26 +37,36 @@ VarMemInfo *get_memory_addr(char varname[8])
     return NULL;
 }
 
-VarMemInfo *insert_varmeminfo(tac_opd *p, int size){
-    
-}
-
 void deeref(Register x, tac_opd *opd){
     if(opd->kind == OP_POINTER){
         _mips_iprintf("lw %s, 0(%s)", _reg_name(x), _reg_name(x));
     } else if(opd->kind == OP_REFERENCE){
         VarMemInfo *vmi = get_memory_addr(opd->char_val);
-        if(vmi->is_stack){
-            _mips_iprintf("addi %s, $sp, %d", _reg_name(x), vmi->offset);
-        }
-        else{
-            _mips_iprintf("addi %s, $gp, %d", _reg_name(x), vmi->offset);
+        _mips_iprintf("addi %s, $sp, -%d", _reg_name(x), vmi->offset);
+    }
+}
+
+void alloc_stack_space(tac_opd *opd){
+    if(opd->kind == OP_CONSTANT || opd->kind == OP_LABEL || opd->char_val[0] != 'v'){
+        return;
+    }
+    VarMemInfo *u = varmem->next, *tail = varmem;
+    while(u != NULL){
+        if(strcmp(u->var, opd->char_val) == 0){
+            return;
         }
     }
+    VarMemInfo *p = (VarMemInfo*)malloc(sizeof(VarMemInfo));
+    p->next = NULL;
+    p->offset = stack_offset;
+    stack_offset += 4;
+    strncpy(p->var, opd->char_val, 8);
+    tail->next = p;
 }
 
 Register get_register(tac_opd *opd)
 {
+    alloc_stack_space(opd);
     char *varname = opd->char_val;
     struct VarDesc *u = vars, *tail;
     while (u != NULL)
@@ -88,7 +99,7 @@ Register get_register(tac_opd *opd)
 
 Register get_register_w(tac_opd *opd)
 {
-    assert(opd->kind == OP_VARIABLE);
+    alloc_stack_space(opd);
     char *var = opd->char_val;
     /* COMPLETE the register allocation (for write) */
     /*
@@ -115,14 +126,9 @@ void spill_register(Register reg)
     {
         _mips_printf("Im Angry!!");
     }
-    else if (result->is_stack)
-    {
-        _mips_printf("sw %d($sp), %s", result->offset, _reg_name(reg));
-    }
     else
     {
-        // No Need to Store
-        // _mips_printf("sw %d($gp), %s", result->offset, _reg_name(reg));
+        _mips_printf("sw -%d($sp), %s", result->offset, _reg_name(reg));
     }
     regs[reg].dirty = false;
 }
@@ -235,6 +241,7 @@ tac *save_args(tac *arg)
 
 tac *emit_function(tac *function)
 {
+    stack_offset = 0;
     _mips_printf("%s:", _tac_quadruple(function).funcname);
     if (strcmp("main", _tac_quadruple(function).funcname) == 0)
     {
@@ -495,7 +502,7 @@ tac *emit_dec(tac *dec)
     /* NO NEED TO IMPLEMENT */
     /* COMPLETE Sorry there are bugs. */
     Register x = fp;
-    VarMemInfo *p = insert_varmeminfo(_tac_quadruple(dec).var, _tac_quadruple(dec).size);
+    VarMemInfo *p = insert_varmeminfo(_tac_quadruple(dec).var, -stack_offset);
     _mips_iprintf("addi %s, %s, %d", _reg_name(x), _reg_name(x), _tac_quadruple(dec).size);
     return dec->next;
 }
