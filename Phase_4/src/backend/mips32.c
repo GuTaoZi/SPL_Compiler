@@ -35,6 +35,16 @@ VarMemInfo *get_memory_addr(char varname[8])
     return NULL;
 }
 
+VarMemInfo insert_varmeminfo(tac_opd *p){
+    
+}
+
+void deeref(Register x, tac_opd *opd){
+    if(opd->kind == OP_POINTER){
+        _mips_iprintf("lw %s, 0(%s)", _reg_name(x), _reg_name(x));
+    }
+}
+
 Register get_register(tac_opd *opd)
 {
     assert(opd->kind == OP_VARIABLE);
@@ -78,7 +88,8 @@ Register get_register(tac_opd *opd)
     u->is_stack = true;
     tail->next = u;
     /* COMPLETE the register allocation */
-    return t0;
+    deeref(victim, opd);
+    return victim;
 }
 
 Register get_register_w(tac_opd *opd)
