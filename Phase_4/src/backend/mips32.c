@@ -103,6 +103,7 @@ void alloc_stack_space(tac_opd *opd)
     MemDesc *p = (MemDesc *)malloc(sizeof(MemDesc));
     p->next = NULL;
     p->offset = stack_offset;
+    p->first_seen = 1;
     stack_offset += 4;
     strncpy(p->var, opd->char_val, 8);
     tail->next = p;
@@ -147,7 +148,10 @@ Register _get_reg(tac_opd *opd)
         return r;
     }
     MemDesc *p = get_memory_addr(opd->char_val);
-    _mips_iprintf("lw %s, -%d(%s)", _reg_name(r), p->offset, _reg_name(sp));
+    if(!p->first_seen){
+        _mips_iprintf("lw %s, -%d(%s)", _reg_name(r), p->offset, _reg_name(sp));
+    }
+    p->first_seen = 0;
     strcpy(regs[r].var, (opd->kind != OP_POINTER && opd->kind != OP_REFERENCE) ? name : "");
     regs[r].recent = ++lru_cnt;
     return r;

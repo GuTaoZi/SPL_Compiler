@@ -56,6 +56,7 @@ extern struct RegDesc regs[NUM_REGS];
 struct MemDesc{
     char var[8];
     int offset;
+    int first_seen;
     struct MemDesc *next;
 };
 
