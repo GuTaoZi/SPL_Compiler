@@ -44,6 +44,11 @@ MemDesc *get_memory_addr(char varname[8])
     return NULL;
 }
 
+void save_reg(Register reg)
+{
+    _mips_iprintf("sw %s, -%d($sp)", _reg_name(reg), get_memory_addr(regs[reg].var)->offset);
+}
+
 void init_gp_counter()
 {
 }
@@ -132,14 +137,14 @@ Register _get_reg(tac_opd *opd)
     alloc_stack_space(opd);
     Register r;
     char *name = opd->char_val;
-    for (r = t0; r <= s7; r++)
-    {
-        if (strcmp(name, regs[r].var) == 0)
-        {
-            regs[r].recent = ++lru_cnt;
-            return r;
-        }
-    }
+    // for (r = t0; r <= s7; r++)
+    // {
+    //     if (strcmp(name, regs[r].var) == 0)
+    //     {
+    //         regs[r].recent = ++lru_cnt;
+    //         return r;
+    //     }
+    // }
     r = get_LRU_victim();
     spill_register(r);
     regs[r].dirty = false;
@@ -149,10 +154,10 @@ Register _get_reg(tac_opd *opd)
         return r;
     }
     MemDesc *p = get_memory_addr(opd->char_val);
-    if(!p->first_seen){
+    // if(!p->first_seen){
         _mips_iprintf("lw %s, -%d(%s)", _reg_name(r), p->offset, _reg_name(sp));
-    }
-    p->first_seen = 0;
+    // }
+    // p->first_seen = 0;
     strcpy(regs[r].var, (opd->kind != OP_POINTER && opd->kind != OP_REFERENCE) ? name : "");
     regs[r].recent = ++lru_cnt;
     return r;
@@ -263,8 +268,8 @@ tac *save_args(tac *arg)
 tac *emit_function(tac *function)
 {
     stack_offset = 0;
-    for (Register r = t0; r <= s7; r++)
-        strcpy(regs[r].var, "");
+    // for (Register r = t0; r <= s7; r++)
+    //     strcpy(regs[r].var, "");
     _mips_printf("%s:", _tac_quadruple(function).funcname);
     if (strcmp("main", _tac_quadruple(function).funcname) == 0)
     {
@@ -295,6 +300,7 @@ tac *emit_assign(tac *assign)
         y = get_register(_tac_quadruple(assign).right);
         _mips_iprintf("move %s, %s", _reg_name(x), _reg_name(y));
     }
+    save_reg(x);
     return assign->next;
 }
 
@@ -319,6 +325,7 @@ tac *emit_add(tac *add)
         z = get_register(_tac_quadruple(add).r2);
         _mips_iprintf("add %s, %s, %s", _reg_name(x), _reg_name(y), _reg_name(z));
     }
+    save_reg(x);
     return add->next;
 }
 
@@ -344,6 +351,7 @@ tac *emit_sub(tac *sub)
         z = get_register(_tac_quadruple(sub).r2);
         _mips_iprintf("sub %s, %s, %s", _reg_name(x), _reg_name(y), _reg_name(z));
     }
+    save_reg(x);
     return sub->next;
 }
 
@@ -370,6 +378,7 @@ tac *emit_mul(tac *mul)
         z = get_register(_tac_quadruple(mul).r2);
     }
     _mips_iprintf("mul %s, %s, %s", _reg_name(x), _reg_name(y), _reg_name(z));
+    save_reg(x);
     return mul->next;
 }
 
@@ -397,6 +406,7 @@ tac *emit_div(tac *div)
     }
     _mips_iprintf("div %s, %s", _reg_name(y), _reg_name(z));
     _mips_iprintf("mflo %s", _reg_name(x));
+    save_reg(x);
     return div->next;
 }
 
@@ -407,6 +417,7 @@ tac *emit_addr(tac *addr)
     x = get_register_w(_tac_quadruple(addr).left);
     y = get_register(_tac_quadruple(addr).right);
     _mips_iprintf("move %s, %s", _reg_name(x), _reg_name(y));
+    save_reg(x);
     return addr->next;
 }
 
@@ -417,6 +428,7 @@ tac *emit_fetch(tac *fetch)
     x = get_register_w(_tac_quadruple(fetch).left);
     y = get_register(_tac_quadruple(fetch).raddr);
     _mips_iprintf("lw %s, 0(%s)", _reg_name(x), _reg_name(y));
+    save_reg(x);
     return fetch->next;
 }
 
@@ -553,6 +565,7 @@ tac *emit_call(tac *call)
     Register x;
     x = get_register_w(_tac_quadruple(call).ret);
     _mips_iprintf("move %s, $v0", _reg_name(x));
+    save_reg(x);
     return call->next;
 }
 
