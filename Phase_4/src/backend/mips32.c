@@ -9,20 +9,6 @@ size_t stack_offset;
 #define _tac_quadruple(vtac) (((vtac)->code).vtac)
 #define _reg_name(reg) regs[reg].name
 
-/* get LRU victim from t1 - t9 */
-Register get_LRU_victim()
-{
-    Register victim = t1;
-    for (Register t = t1; t <= t9; t++)
-    {
-        if (!regs[t].dirty)
-            return t;
-        else if (regs[t].recent < regs[victim].recent)
-            victim = t;
-    }
-    return victim;
-}
-
 MemDesc *get_memory_addr(char varname[8])
 {
     MemDesc *u = varmem;
@@ -38,9 +24,10 @@ MemDesc *get_memory_addr(char varname[8])
 }
 
 void deeref(Register x, tac_opd *opd){
-    if(opd->kind == OP_POINTER){
+    if (opd->kind == OP_POINTER)
         _mips_iprintf("lw %s, 0(%s)", _reg_name(x), _reg_name(x));
-    } else if(opd->kind == OP_REFERENCE){
+    else if(opd->kind == OP_REFERENCE)
+    {
         MemDesc *vmi = get_memory_addr(opd->char_val);
         _mips_iprintf("lw %s, -%d($sp)", _reg_name(x), vmi->offset);
     }
@@ -64,39 +51,39 @@ void alloc_stack_space(tac_opd *opd){
     tail->next = p;
 }
 
-Register get_register(tac_opd *opd)
+Register get_LRU_victim()
 {
-    alloc_stack_space(opd);
-    char *varname = opd->char_val;
-    struct VarDesc *u = vars, *tail;
-    while (u != NULL)
+    Register victim = t0;
+    for (Register t = t0; t <= s7; t++)
     {
-        if (strncmp(varname, u->var, 8) == 0)
-        {
-            return u->reg;
-        }
-        if (!u->next)
-        {
-            tail = u;
-        }
-        u = u->next;
+        if (!regs[t].dirty)
+            return t;
+        else if (regs[t].recent < regs[victim].recent)
+            victim = t;
     }
-    Register victim = get_LRU_victim();
-    spill_register(victim);
-    u = (struct VarDesc *)malloc(sizeof(struct VarDesc));
-    strncpy(tail->var, _reg_name(victim), 8);
-    u->reg = victim;
-    regs[victim].dirty = true;
-    regs[victim].recent = ++lru_cnt;
-    u->next = NULL;
-    // u->offset = ? ;
-    // u->is_stack = true;
-    tail->next = u;
-    /* COMPLETE the register allocation */
-    deeref(victim, opd);
     return victim;
 }
 
+// get the value of the operand
+Register get_register(tac_opd *opd)
+{
+    alloc_stack_space(opd);
+    Register r;
+    for (r = t0; r <= s7; r++)
+        if (strcmt(opd->char_val, regs[r].name) == 0)
+            break;
+    if (strcmp(opd->char_val, regs[r].name) != 0)
+    {
+        r = get_LRU_victim();
+        spill_register(r);
+        regs[r].dirty = false;
+    }
+    regs[r].recent = ++lru_cnt;
+    deeref(r, opd);
+    return r;
+}
+
+// get the address of the operand
 Register get_register_w(tac_opd *opd)
 {
     alloc_stack_space(opd);
@@ -114,6 +101,8 @@ Register get_register_w(tac_opd *opd)
         allocate it to the var
         - update var.reg
         - update reg.var
+    
+    Make reg dirty
     */
     return s0;
 }
@@ -401,7 +390,7 @@ tac *emit_deref(tac *deref)
 {
     Register x, y;
 
-    x = get_register(_tac_quadruple(deref).laddr);
+    x = get_register_w(_tac_quadruple(deref).laddr);
     y = get_register(_tac_quadruple(deref).right);
     _mips_iprintf("sw %s, 0(%s)", _reg_name(y), _reg_name(x));
     return deref->next;
