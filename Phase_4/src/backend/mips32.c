@@ -64,21 +64,31 @@ Register get_LRU_victim()
     return victim;
 }
 
-// get the value of the operand
-Register get_register(tac_opd *opd)
+Register _get_reg(tac_opd *opd)
 {
     alloc_stack_space(opd);
     Register r;
     for (r = t0; r <= s7; r++)
         if (strcmt(opd->char_val, regs[r].name) == 0)
             break;
-    if (strcmp(opd->char_val, regs[r].name) != 0)
+    if (r > s7)
     {
         r = get_LRU_victim();
         spill_register(r);
         regs[r].dirty = false;
+        MemDesc *p = get_memory_addr(opd);
+        _mips_iprintf("lw %s, -%d(%s)", _reg_name(r), p->offset, _reg_name(sp));
+        if (opd->kind != OP_POINTER && opd->kind != OP_REFERENCE)
+            strcpy(regs[r].name, opd->char_val);
     }
     regs[r].recent = ++lru_cnt;
+    return r;
+}
+
+// get the value of the operand
+Register get_register(tac_opd *opd)
+{
+    Register r = _get_reg(opd);
     deeref(r, opd);
     return r;
 }
@@ -86,25 +96,9 @@ Register get_register(tac_opd *opd)
 // get the address of the operand
 Register get_register_w(tac_opd *opd)
 {
-    alloc_stack_space(opd);
-    char *var = opd->char_val;
-    /* COMPLETE the register allocation (for write) */
-    /*
-    If $sx is available
-        directly allocate it to the var
-        - update var.reg
-        - update reg.var
-    Else
-        find a victim register
-        spill the victim register
-        save value of variables binding to the victim into memory
-        allocate it to the var
-        - update var.reg
-        - update reg.var
-    
-    Make reg dirty
-    */
-    return s0;
+    Register r = _get_reg(opd);
+    regs[r].dirty = true;
+    return r;
 }
 
 void spill_register(Register reg)
