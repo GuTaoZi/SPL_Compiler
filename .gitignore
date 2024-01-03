@@ -1,3 +1,4 @@
+.gitignore
 .vscode/
 a.out
 bin/
@@ -11,3 +12,4 @@ test.spl
 **/irsim.log
 test-tmp
 test_tmp.sh
+Phase_4/test/output
