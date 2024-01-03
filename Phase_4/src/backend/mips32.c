@@ -32,7 +32,7 @@ void _mips_iprintf(const char *fmt, ...)
 
 MemDesc *get_memory_addr(char varname[8])
 {
-    MemDesc *u = varmem;
+    MemDesc *u = varmem->next;
     while (u != NULL)
     {
         if (strncmp(varname, u->var, 8) == 0)
@@ -97,6 +97,8 @@ void alloc_stack_space(tac_opd *opd)
         {
             return;
         }
+        tail = u;
+        u = u->next;
     }
     MemDesc *p = (MemDesc *)malloc(sizeof(MemDesc));
     p->next = NULL;
@@ -130,7 +132,7 @@ Register _get_reg(tac_opd *opd)
     char *name = opd->char_val;
     for (r = t0; r <= s7; r++)
     {
-        if (strcpy(name, regs[r].var) == 0)
+        if (strcmp(name, regs[r].var) == 0)
         {
             regs[r].recent = ++lru_cnt;
             return r;
@@ -503,7 +505,7 @@ tac *emit_return(tac *return_)
     else if (_tac_quadruple(return_).var->kind == OP_VARIABLE)
     {
         x = get_register(_tac_quadruple(return_).var);
-        _mips_iprintf("move $v0, %s", x);
+        _mips_iprintf("move $v0, %s", _reg_name(x));
     }
     else
     {
