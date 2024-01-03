@@ -128,7 +128,7 @@ void spill_register(Register reg)
     }
     else
     {
-        _mips_printf("sw -%d($sp), %s", result->offset, _reg_name(reg));
+        _mips_iprintf("sw -%d($sp), %s", result->offset, _reg_name(reg));
     }
     regs[reg].dirty = false;
 }
@@ -502,7 +502,9 @@ tac *emit_dec(tac *dec)
     /* NO NEED TO IMPLEMENT */
     /* COMPLETE Sorry there are bugs. */
     Register x = fp;
-    MemDesc *p = insert_MemDesc(_tac_quadruple(dec).var, -stack_offset);
+    alloc_stack_space(_tac_quadruple(dec).var);
+    Register y = get_register_w(_tac_quadruple(dec).var);
+    _mips_iprintf("move %s, %s", _reg_name(y), _reg_name(x));
     _mips_iprintf("addi %s, %s, %d", _reg_name(x), _reg_name(x), _tac_quadruple(dec).size);
     return dec->next;
 }
@@ -512,7 +514,7 @@ tac *emit_arg(tac *arg)
     /* COMPLETED emit function */
     if (arg->prev->code.kind == ARG)
     {
-        _mips_iprintf("That shouldn't happen");
+        _mips_printf("That shouldn't happen");
         return arg->next;
     }
     return save_args(arg);
@@ -531,7 +533,7 @@ tac *emit_call(tac *call)
 tac *emit_param(tac *param)
 {
     /* COMPLETED emit function */
-    _mips_iprintf("No you shouldn't call me.");
+    _mips_printf("No you shouldn't call me.");
     return param->next;
 }
 
