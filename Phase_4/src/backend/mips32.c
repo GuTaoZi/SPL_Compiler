@@ -70,6 +70,7 @@ void spill_register(Register reg)
     {
         _mips_iprintf("sw %s, -%d($sp)", _reg_name(reg), result->offset);
     }
+    strcpy(regs[reg].var, "");
     regs[reg].dirty = false;
 }
 
@@ -545,6 +546,8 @@ tac *emit_arg(tac *arg)
 tac *emit_call(tac *call)
 {
     /* COMPLETED emit function */
+    for (Register r = t0; r <= s7; r++)
+        spill_register(r);
     _mips_iprintf("jal %s", _tac_quadruple(call).funcname);
     _mips_iprintf("addi %s, %s, %d", _reg_name(sp), _reg_name(sp), stack_offset);
     Register x;
