@@ -563,11 +563,11 @@ tac *emit_read(tac *read)
 {
     Register x = get_register(_tac_quadruple(read).p);
 
-    _mips_iprintf("addi $sp, $sp, -4");
+    _mips_iprintf("addi $sp, $sp, -%d", stack_offset+4);
     _mips_iprintf("sw $ra, 0($sp)");
     _mips_iprintf("jal read");
     _mips_iprintf("lw $ra, 0($sp)");
-    _mips_iprintf("addi $sp, $sp, 4");
+    _mips_iprintf("addi $sp, $sp, %d", stack_offset+4);
     _mips_iprintf("move %s, $v0", _reg_name(x));
     return read->next;
 }
@@ -577,11 +577,11 @@ tac *emit_write(tac *write)
     Register x = get_register_w(_tac_quadruple(write).p);
 
     _mips_iprintf("move $a0, %s", _reg_name(x));
-    _mips_iprintf("addi $sp, $sp, -4");
+    _mips_iprintf("addi $sp, $sp, -%d", stack_offset+4);
     _mips_iprintf("sw $ra, 0($sp)");
     _mips_iprintf("jal write");
     _mips_iprintf("lw $ra, 0($sp)");
-    _mips_iprintf("addi $sp, $sp, 4");
+    _mips_iprintf("addi $sp, $sp, %d", stack_offset+4);
     return write->next;
 }
 
