@@ -826,8 +826,8 @@ bool opt_label(IR_list *rootw)
         {
             if (strcmp(p->ss[0], "LABEL") == 0 && strcmp(p->next->ss[0], "GOTO") == 0)
             {
-                int l1 = atoi(p->ss[1] + 1);
-                int l2 = atoi(p->next->ss[1] + 1);
+                int l1 = atoi(p->ss[1] + 5);
+                int l2 = atoi(p->next->ss[1] + 5);
                 mergel(l1, l2);
                 p = p->next;
                 del_list(p->prev);
@@ -835,8 +835,8 @@ bool opt_label(IR_list *rootw)
             }
             else if (strcmp(p->ss[0], "LABEL") == 0 && strcmp(p->next->ss[0], "LABEL") == 0)
             {
-                int l1 = atoi(p->ss[1] + 1);
-                int l2 = atoi(p->next->ss[1] + 1);
+                int l1 = atoi(p->ss[1] + 5);
+                int l2 = atoi(p->next->ss[1] + 5);
                 mergel(l1, l2);
                 p = p->next;
                 del_list(p->prev);
