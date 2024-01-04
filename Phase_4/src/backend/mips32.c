@@ -66,15 +66,15 @@ void spill_register(Register reg)
     {
         return;
     }
-    MemDesc *result = get_memory_addr(regs[reg].var);
-    if (result == NULL)
-    {
-        _mips_printf("Im Angry!!");
-    }
-    else
-    {
-        _mips_iprintf("sw %s, -%d($sp)", _reg_name(reg), result->offset);
-    }
+    // MemDesc *result = get_memory_addr(regs[reg].var);
+    // if (result == NULL)
+    // {
+    //     _mips_printf("Im Angry!!");
+    // }
+    // else
+    // {
+    //     _mips_iprintf("sw %s, -%d($sp)", _reg_name(reg), result->offset);
+    // }
     strcpy(regs[reg].var, "");
     regs[reg].dirty = false;
 }
@@ -133,9 +133,13 @@ Register get_LRU_victim()
     return victim;
 }
 
-Register _get_reg(tac_opd *opd)
+Register _get_reg(tac_opd *opd, char need_load)
 {
-    MemDesc *p = alloc_stack_space(opd);
+    MemDesc *p;
+    if (opd->kind != OP_CONSTANT && opd->kind != OP_LABEL)
+    {
+        p = alloc_stack_space(opd);
+    }
     Register r;
     char *name = opd->char_val;
     // for (r = t0; r <= s7; r++)
@@ -151,14 +155,17 @@ Register _get_reg(tac_opd *opd)
     regs[r].dirty = false;
     if (opd->kind == OP_CONSTANT)
     {
-        strcpy(regs[r].var, "");
+        strcpy(regs[r].var, "const");
+        _mips_printf("li %s, %d", _reg_name(r), opd->int_val);
+        regs[r].recent = ++lru_cnt;
         return r;
     }
-    // if(!p->first_seen){
+    if (need_load && opd->kind != OP_CONSTANT && opd->kind != OP_LABEL)
+    {
         _mips_iprintf("lw %s, -%d(%s)", _reg_name(r), p->offset, _reg_name(sp));
-    // }
+    }
     // p->first_seen = 0;
-    strcpy(regs[r].var, (opd->kind != OP_POINTER && opd->kind != OP_REFERENCE) ? name : "");
+    strcpy(regs[r].var, (opd->kind != OP_POINTER && opd->kind != OP_REFERENCE) ? name : "tmp");
     regs[r].recent = ++lru_cnt;
     return r;
 }
@@ -166,7 +173,7 @@ Register _get_reg(tac_opd *opd)
 // get the value of the operand
 Register get_register(tac_opd *opd)
 {
-    Register r = _get_reg(opd);
+    Register r = _get_reg(opd, true);
     _deref(r, opd);
     return r;
 }
@@ -174,7 +181,7 @@ Register get_register(tac_opd *opd)
 // get the address of the operand
 Register get_register_w(tac_opd *opd)
 {
-    Register r = _get_reg(opd);
+    Register r = _get_reg(opd, opd->kind != OP_VARIABLE);
     regs[r].dirty = true;
     return r;
 }
@@ -254,7 +261,7 @@ tac *_save_args(tac *arg, int params_num)
     }
     else
     {
-        _mips_iprintf("sw %s, -%d($sp)", _reg_name(x), 4 * (params_num - 3)+stack_offset);
+        _mips_iprintf("sw %s, -%d($sp)", _reg_name(x), 4 * (params_num - 3) + stack_offset);
     }
     return _save_args(arg->next, params_num + 1);
 }
@@ -435,11 +442,10 @@ tac *emit_deref(tac *deref)
 {
     Register x, y;
 
-    x = get_register_w(_tac_quadruple(deref).laddr);
+    x = get_register(_tac_quadruple(deref).laddr);
     if (_tac_quadruple(deref).right->kind == OP_CONSTANT)
     {
         y = get_register_w(_tac_quadruple(deref).right);
-        _mips_iprintf("li %s, %d", _reg_name(y), _tac_quadruple(deref).right->int_val);
     }
     else
     {
@@ -583,7 +589,7 @@ tac *emit_call(tac *call)
     _mips_iprintf("addi $sp, $sp, -4");
     _mips_iprintf("jal %s", _tac_quadruple(call).funcname);
     _mips_iprintf("lw $ra, 4($sp)");
-    _mips_iprintf("addi %s, %s, %d", _reg_name(sp), _reg_name(sp), stack_offset+4);
+    _mips_iprintf("addi %s, %s, %d", _reg_name(sp), _reg_name(sp), stack_offset + 4);
     Register x;
     x = get_register_w(_tac_quadruple(call).ret);
     _mips_iprintf("move %s, $v0", _reg_name(x));
@@ -614,7 +620,7 @@ tac *emit_read(tac *read)
 
 tac *emit_write(tac *write)
 {
-    Register x = get_register_w(_tac_quadruple(write).p);
+    Register x = get_register(_tac_quadruple(write).p);
 
     _mips_iprintf("move $a0, %s", _reg_name(x));
     _mips_iprintf("addi $sp, $sp, -%d", stack_offset + 4);
