@@ -208,24 +208,20 @@ tac *emit_label(tac *label)
     return label->next;
 }
 
-tac *_read_params(tac *param, int *params_num)
+tac *_read_params(tac *param, int depth, int *params_num)
 {
     if (param->code.kind != PARAM)
         return param;
-    tac *ret = _read_params(param->next, params_num);
+    tac *ret = _read_params(param->next, depth+1, params_num);
 
     Register x = get_register_w(_tac_quadruple(param).p);
-    if (*params_num < 4)
+    if ((*params_num) < 4)
     {
         _mips_iprintf("move %s, %s", _reg_name(x), _reg_name(a0 + (*params_num)));
     }
     else
     {
-        _mips_iprintf("lw %s, %d($sp)", _reg_name(x), 4 * ((*params_num) - 3));
-    }
-    if (*params_num == 0)
-    {
-        _mips_iprintf("move $v1, $sp");
+        _mips_iprintf("lw %s, %d($sp)", _reg_name(x), 4 * (depth+1));
     }
     (*params_num) += 1;
     save_reg(x);
@@ -235,14 +231,12 @@ tac *_read_params(tac *param, int *params_num)
 tac *read_params(tac *param)
 {
     int p = 0;
-    tac *ret = _read_params(param, &p);
-    if (p > 4)
-    {
-        _mips_iprintf("addi $sp, $sp, %d", 4 * (p - 4));
-    }
+    tac *ret = _read_params(param, 0, &p);
     save_sp();
     return ret;
 }
+
+int total_arg_num;
 
 tac *_save_args(tac *arg, int params_num)
 {
@@ -251,6 +245,9 @@ tac *_save_args(tac *arg, int params_num)
         if (params_num > 4)
         {
             _mips_iprintf("addi $sp, $sp, -%d", 4 * (params_num - 4));
+            total_arg_num = 4*(params_num - 4);
+        } else {
+            total_arg_num = 0;
         }
         return arg;
     }
@@ -576,6 +573,8 @@ tac *emit_arg(tac *arg)
         _mips_printf("That shouldn't happen");
         return arg->next;
     }
+    _mips_iprintf("sw $ra, -%d($sp)", stack_offset);
+    stack_offset += 4;
     return save_args(arg);
 }
 
@@ -584,12 +583,17 @@ tac *emit_call(tac *call)
     /* COMPLETED emit function */
     // for (Register r = t0; r <= s7; r++)
     //     spill_register(r);
-    _mips_iprintf("addi %s, %s, -%d", _reg_name(sp), _reg_name(sp), stack_offset);
-    _mips_iprintf("sw $ra, 0($sp)");
-    _mips_iprintf("addi $sp, $sp, -4");
+    if(call->prev->code.kind != ARG){
+        _mips_iprintf("sw $ra, -%d($sp)", stack_offset);
+        stack_offset += 4;
+        total_arg_num = 0;
+    }
+    _mips_iprintf("addi $sp, $sp, -%d", stack_offset+4);
     _mips_iprintf("jal %s", _tac_quadruple(call).funcname);
-    _mips_iprintf("lw $ra, 4($sp)");
-    _mips_iprintf("addi %s, %s, %d", _reg_name(sp), _reg_name(sp), stack_offset + 4);
+
+    _mips_iprintf("addi %s, %s, %d", _reg_name(sp), _reg_name(sp), stack_offset+4+total_arg_num);
+    stack_offset -= 4;
+    _mips_iprintf("lw $ra, -%d($sp)", stack_offset);
     Register x;
     x = get_register_w(_tac_quadruple(call).ret);
     _mips_iprintf("move %s, $v0", _reg_name(x));

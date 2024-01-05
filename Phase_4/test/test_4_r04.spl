@@ -10,6 +10,14 @@ struct hi foo(){
     foo2(a);
     return a;
 }
+int fooo(int a, int b, int c, int d, int e, int f){
+    write(a);
+    write(b);
+    write(c);
+    write(d);
+    write(e);
+    write(f);
+}
 int main(){
     struct hi q = foo();
     int i;
@@ -17,4 +25,5 @@ int main(){
     for(i=0;i<5;i=i+1){
         write(q.arr[i]);
     }
+    fooo(6,5,4,3,2,1);
 }
