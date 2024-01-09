@@ -5,7 +5,7 @@ FILE *fd;
 size_t lru_cnt = 0;
 size_t stack_offset;
 RegDesc regs[NUM_REGS];
-struct MemDesc *varmem;
+struct VarDesc *varmem;
 
 #define _tac_kind(vtac) (((vtac)->code).kind)
 #define _tac_quadruple(vtac) (((vtac)->code).vtac)
@@ -30,9 +30,9 @@ void _mips_iprintf(const char *fmt, ...)
     fputs("\n", fd);
 }
 
-MemDesc *get_memory_addr(char varname[8])
+VarDesc *get_memory_addr(char varname[8])
 {
-    MemDesc *u = varmem->next;
+    VarDesc *u = varmem->next;
     while (u != NULL)
     {
         if (strncmp(varname, u->var, 8) == 0)
@@ -66,7 +66,7 @@ void spill_register(Register reg)
     {
         return;
     }
-    // MemDesc *result = get_memory_addr(regs[reg].var);
+    // VarDesc *result = get_memory_addr(regs[reg].var);
     // if (result == NULL)
     // {
     //     _mips_printf("Im Angry!!");
@@ -85,18 +85,18 @@ void _deref(Register x, tac_opd *opd)
         _mips_iprintf("lw %s, 0(%s)", _reg_name(x), _reg_name(x));
     else if (opd->kind == OP_REFERENCE)
     {
-        MemDesc *vmi = get_memory_addr(opd->char_val);
+        VarDesc *vmi = get_memory_addr(opd->char_val);
         _mips_iprintf("lw %s, -%d($sp)", _reg_name(x), vmi->offset);
     }
 }
 
-MemDesc *alloc_stack_space(tac_opd *opd)
+VarDesc *alloc_stack_space(tac_opd *opd)
 {
     if (opd->kind == OP_CONSTANT || opd->kind == OP_LABEL)
     {
         return NULL;
     }
-    MemDesc *u = varmem->next, *tail = varmem;
+    VarDesc *u = varmem->next, *tail = varmem;
     while (u != NULL)
     {
         if (strcmp(u->var, opd->char_val) == 0)
@@ -106,7 +106,7 @@ MemDesc *alloc_stack_space(tac_opd *opd)
         tail = u;
         u = u->next;
     }
-    MemDesc *p = (MemDesc *)malloc(sizeof(MemDesc));
+    VarDesc *p = (VarDesc *)malloc(sizeof(VarDesc));
     p->next = NULL;
     p->offset = stack_offset;
     p->first_seen = 1;
@@ -135,7 +135,7 @@ Register get_LRU_victim()
 
 Register _get_reg(tac_opd *opd, char need_load)
 {
-    MemDesc *p;
+    VarDesc *p;
     if (opd->kind != OP_CONSTANT && opd->kind != OP_LABEL)
     {
         p = alloc_stack_space(opd);
@@ -212,7 +212,7 @@ tac *_read_params(tac *param, int depth, int *params_num)
 {
     if (param->code.kind != PARAM)
         return param;
-    tac *ret = _read_params(param->next, depth+1, params_num);
+    tac *ret = _read_params(param->next, depth + 1, params_num);
 
     Register x = get_register_w(_tac_quadruple(param).p);
     if ((*params_num) < 4)
@@ -221,7 +221,7 @@ tac *_read_params(tac *param, int depth, int *params_num)
     }
     else
     {
-        _mips_iprintf("lw %s, %d($sp)", _reg_name(x), 4 * (depth+1));
+        _mips_iprintf("lw %s, %d($sp)", _reg_name(x), 4 * (depth + 1));
     }
     (*params_num) += 1;
     save_reg(x);
@@ -245,8 +245,10 @@ tac *_save_args(tac *arg, int params_num)
         if (params_num > 4)
         {
             _mips_iprintf("addi $sp, $sp, -%d", 4 * (params_num - 4));
-            total_arg_num = 4*(params_num - 4);
-        } else {
+            total_arg_num = 4 * (params_num - 4);
+        }
+        else
+        {
             total_arg_num = 0;
         }
         return arg;
@@ -557,7 +559,7 @@ tac *emit_dec(tac *dec)
     /* NO NEED TO IMPLEMENT */
     /* COMPLETE Sorry there are bugs. */
     Register x = fp;
-    MemDesc *p = alloc_stack_space(_tac_quadruple(dec).var);
+    VarDesc *p = alloc_stack_space(_tac_quadruple(dec).var);
     Register y = get_register_w(_tac_quadruple(dec).var);
     _mips_iprintf("move %s, %s", _reg_name(y), _reg_name(x));
     _mips_iprintf("addi %s, %s, %d", _reg_name(x), _reg_name(x), _tac_quadruple(dec).size);
@@ -583,15 +585,16 @@ tac *emit_call(tac *call)
     /* COMPLETED emit function */
     // for (Register r = t0; r <= s7; r++)
     //     spill_register(r);
-    if(call->prev->code.kind != ARG){
+    if (call->prev->code.kind != ARG)
+    {
         _mips_iprintf("sw $ra, -%d($sp)", stack_offset);
         stack_offset += 4;
         total_arg_num = 0;
     }
-    _mips_iprintf("addi $sp, $sp, -%d", stack_offset+4);
+    _mips_iprintf("addi $sp, $sp, -%d", stack_offset + 4);
     _mips_iprintf("jal %s", _tac_quadruple(call).funcname);
 
-    _mips_iprintf("addi %s, %s, %d", _reg_name(sp), _reg_name(sp), stack_offset+4+total_arg_num);
+    _mips_iprintf("addi %s, %s, %d", _reg_name(sp), _reg_name(sp), stack_offset + 4 + total_arg_num);
     stack_offset -= 4;
     _mips_iprintf("lw $ra, -%d($sp)", stack_offset);
     Register x;
@@ -671,10 +674,10 @@ void emit_write_function()
     _mips_iprintf("jr $ra");
 }
 
-static tac *(*emitter[])(tac *) = {emit_label, emit_function, emit_assign, emit_add, emit_sub, emit_mul,
-                                   emit_div, emit_addr, emit_fetch, emit_deref, emit_goto, emit_iflt,
-                                   emit_ifle, emit_ifgt, emit_ifge, emit_ifne, emit_ifeq, emit_return,
-                                   emit_dec, emit_arg, emit_call, emit_param, emit_read, emit_write};
+static tac *(*emitter[])(tac *) = {emit_label, emit_function, emit_assign, emit_add,   emit_sub,  emit_mul,
+                                   emit_div,   emit_addr,     emit_fetch,  emit_deref, emit_goto, emit_iflt,
+                                   emit_ifle,  emit_ifgt,     emit_ifge,   emit_ifne,  emit_ifeq, emit_return,
+                                   emit_dec,   emit_arg,      emit_call,   emit_param, emit_read, emit_write};
 
 tac *emit_code(tac *head)
 {
@@ -733,7 +736,7 @@ void mips32_gen(tac *head, FILE *_fd)
     regs[sp].name = "$sp";
     regs[fp].name = "$fp";
     regs[ra].name = "$ra";
-    varmem = (MemDesc *)malloc(sizeof(MemDesc));
+    varmem = (VarDesc *)malloc(sizeof(VarDesc));
     varmem->next = NULL;
     fd = _fd;
     init_gp_counter();

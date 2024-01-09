@@ -19,3 +19,4 @@ backt:
 clean:
 	@cd src/backend && make clean
 	@cd src/frontend && make clean
+	@cd bin && rm -f splc opt tcg
