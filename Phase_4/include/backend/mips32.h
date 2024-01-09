@@ -53,20 +53,21 @@ struct RegDesc
 
 extern struct RegDesc regs[NUM_REGS];
 
-struct MemDesc{
+struct VarDesc
+{
     char var[8];
     int offset;
     int first_seen;
-    struct MemDesc *next;
+    struct VarDesc *next;
 };
 
-extern struct MemDesc *varmem;
+extern struct VarDesc *varmem;
 
-typedef struct MemDesc MemDesc;
+typedef struct VarDesc VarDesc;
 typedef struct RegDesc RegDesc;
 
 void _mips_printf(const char *fmt, ...);
 void mips32_gen(tac *head, FILE *_fd);
-MemDesc *get_memory_addr(char varname[8]);
+VarDesc *get_memory_addr(char varname[8]);
 
 #endif // MIPS_H
