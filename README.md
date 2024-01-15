@@ -14,7 +14,7 @@ This project is developed in 4 phases. For more details, please check the report
 
 - [Phase 3: Intermediate Code Generator](https://github.com/GuTaoZi/SPL_Parser/blob/main/Phase_3/report/Phase3.pdf)
 
-  An intermediate code generator, compile the SPL code into intermediate code which could be run with [IR simulator](https://github.com/GuTaoZi/SPL_Parser/blob/main/Phase_3/irsim_linux-x86_64.zip)
+  An intermediate code generator, compile the SPL code into intermediate code which could be run with IR simulator
 
 - [Phase 4: Target Code Generator](https://github.com/GuTaoZi/SPL_Parser/blob/main/Phase_4/report/Phase4.pdf)
 
